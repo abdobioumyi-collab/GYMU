@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>جيم مانجر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--chalk:#e8ebef;--ink:#11151c;--rubber:#1b2028;--cobalt:#2b4bff;--mute:#6b7686;--line:#cfd5dd;--bad:#c62828;--warn:#b26a00;--ok:#1b7a43}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{font-family:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",system-ui,sans-serif;background:var(--chalk);color:var(--ink);line-height:1.7}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--cobalt);outline-offset:3px}
+
+/* شاشة الدخول: لوحة داكنة فيها البلاطة + لوحة فاتحة للنموذج */
+.split{min-height:100dvh;display:grid;grid-template-columns:1.1fr 1fr}
+.brand{background:var(--ink);color:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:40px 48px}
+.brand svg.plate{position:absolute;inset-inline-start:-18%;bottom:-22%;width:92%;max-width:640px;opacity:.9}
+.brand h1{font-size:clamp(38px,5vw,64px);line-height:1.15;margin:0;font-weight:700;position:relative;max-width:11ch}
+.brand p{color:#aab4c2;margin:14px 0 0;max-width:34ch;position:relative}
+.brand .mark{font-weight:700;letter-spacing:.02em;position:relative;display:flex;align-items:center;gap:10px}
+.brand .mark i{width:14px;height:14px;border-radius:50%;background:var(--cobalt);display:inline-block}
+.form{display:grid;place-items:center;padding:32px 24px}
+.box{width:min(400px,100%)}
+.box h2{font-size:26px;margin:0 0 6px}
+.box .sub{color:var(--mute);margin:0 0 28px}
+.gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;border:1.5px solid var(--ink);border-radius:12px;padding:14px 18px;font-weight:600;font-size:17px;color:var(--ink);transition:transform .12s,background .12s}
+.gbtn:hover{background:var(--ink);color:#fff}
+.gbtn:active{transform:translateY(1px)}
+.gbtn[disabled]{opacity:.6;cursor:wait}
+.gbtn svg{width:22px;height:22px;flex:none}
+.rules{list-style:none;padding:0;margin:28px 0 0;border-top:1px solid var(--line)}
+.rules li{padding:12px 0;border-bottom:1px solid var(--line);color:var(--mute);font-size:15px}
+.rules b{color:var(--ink);font-weight:600}
+.msg{margin-top:16px;color:var(--bad);font-size:15px;min-height:1.5em}
+
+/* شاشات الحالة */
+.center{min-height:100dvh;display:grid;place-items:center;padding:24px}
+.panel{width:min(480px,100%);background:#fff;border:1px solid var(--line);border-radius:16px;padding:32px 28px}
+.panel h2{margin:0 0 8px;font-size:24px}
+.panel p{color:var(--mute);margin:0 0 20px}
+.ghost{background:transparent;border:1.5px solid var(--line);border-radius:10px;padding:10px 16px;color:var(--ink);font-weight:600}
+.ghost:hover{border-color:var(--ink)}
+.spin{width:34px;height:34px;border:4px solid var(--line);border-top-color:var(--cobalt);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.gymlist{display:grid;gap:10px;margin:0 0 18px}
+.gymbtn{text-align:start;background:var(--chalk);border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;font-weight:600}
+.gymbtn:hover{border-color:var(--cobalt)}
+.gymbtn small{display:block;color:var(--mute);font-weight:400}
+
+/* صفحة الجيم */
+.top{background:var(--ink);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:calc(14px + env(safe-area-inset-top,0px))}
+.top .name{font-weight:700;font-size:18px}
+.top .ghost{color:#fff;border-color:#3a4351;padding:8px 14px}
+.top .ghost:hover{border-color:#fff}
+.wrap{max-width:960px;margin:0 auto;padding:28px 20px 56px}
+.banner{border-radius:12px;padding:14px 16px;margin-bottom:20px;font-weight:600}
+.banner.warn{background:#fff3df;color:var(--warn);border:1px solid #f0cf94}
+.banner.bad{background:#fde8e8;color:var(--bad);border:1px solid #f1b3b3}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.facts div{padding:18px 20px;border-inline-end:1px solid var(--line)}
+.facts div:last-child{border-inline-end:0}
+.facts dt{color:var(--mute);font-size:14px}
+.facts dd{margin:2px 0 0;font-weight:700;font-size:20px;word-break:break-word}
+.facts dd.ok{color:var(--ok)}.facts dd.warn{color:var(--warn)}.facts dd.bad{color:var(--bad)}
+h3{margin:36px 0 12px;font-size:19px}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.mod{background:#fff;border:1px dashed var(--line);border-radius:12px;padding:18px;color:var(--mute);font-weight:600}
+.mod small{display:block;font-weight:400}
+
+@media (max-width:820px){
+  .split{grid-template-columns:1fr}
+  .brand{padding:28px 24px 150px;min-height:300px}
+  .brand svg.plate{width:340px;inset-inline-start:auto;inset-inline-end:-80px;bottom:-110px}
+  .brand h1{font-size:36px}
+  .form{align-items:start;padding-top:28px}
+}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}.gbtn{transition:none}}
+</style>
+</head>
+<body>
+
+<!-- تحميل -->
+<section id="loading" class="center"><div class="spin" role="status" aria-label="جاري التحميل"></div></section>
+
+<!-- تسجيل الدخول -->
+<section id="login" class="split" hidden>
+  <div class="brand">
+    <div class="mark"><i></i>جيم مانجر</div>
+    <svg class="plate" viewBox="0 0 400 400" aria-hidden="true" fill="none">
+      <circle cx="200" cy="200" r="196" stroke="#2b4bff" stroke-width="10"/>
+      <circle cx="200" cy="200" r="150" stroke="#2a3340" stroke-width="3"/>
+      <circle cx="200" cy="200" r="104" stroke="#2a3340" stroke-width="3"/>
+      <circle cx="200" cy="200" r="34" stroke="#2b4bff" stroke-width="10"/>
+      <text x="200" y="76" text-anchor="middle" fill="#3b4656" font-size="30" font-weight="700" font-family="IBM Plex Sans Arabic,sans-serif">20 KG</text>
+    </svg>
+    <div>
+      <h1>جيمك كله في مكان واحد</h1>
+      <p>أعضاء واشتراكات وحضور ومبيعات ومصروفات، وبيانات كل جيم معزولة تمامًا عن أي جيم تاني.</p>
+    </div>
+  </div>
+  <div class="form">
+    <div class="box">
+      <h2>تسجيل الدخول</h2>
+      <p class="sub">ادخل بحساب Google، وهنفتح لك صفحة جيمك مباشرة.</p>
+      <button id="gbtn" class="gbtn" type="button">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        <span>المتابعة بحساب Google</span>
+      </button>
+      <div id="err" class="msg" role="alert"></div>
+      <ul class="rules">
+        <li><b>كل جيم له بياناته الخاصة.</b> محدش يشوف بيانات غيره.</li>
+        <li><b>كل موظف بصلاحياته.</b> المالك والمدير والاستقبال والمدرب.</li>
+        <li><b>مفيش كلمة سر عندنا.</b> الدخول كله عن طريق Google.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- حساب غير مرتبط بجيم -->
+<section id="pending" class="center" hidden>
+  <div class="panel">
+    <h2>حسابك في انتظار التفعيل</h2>
+    <p>سجّلت الدخول بـ <b id="pendEmail"></b>، لكن الحساب ده لسه مش مربوط بأي جيم. ابعت الإيميل ده لمالك المنصة عشان يفعّله.</p>
+    <button class="ghost" data-logout type="button">تسجيل الخروج</button>
+  </div>
+</section>
+
+<!-- اختيار الجيم -->
+<section id="picker" class="center" hidden>
+  <div class="panel">
+    <h2>اختار الجيم</h2>
+    <p id="pickEmail"></p>
+    <div id="gymlist" class="gymlist"></div>
+    <button class="ghost" data-logout type="button">تسجيل الخروج</button>
+  </div>
+</section>
+
+<!-- صفحة الجيم -->
+<section id="app" hidden>
+  <header class="top">
+    <span class="name" id="gymName"></span>
+    <span><button id="backBtn" class="ghost" type="button" hidden>تغيير الجيم</button> <button class="ghost" data-logout type="button">خروج</button></span>
+  </header>
+  <main class="wrap">
+    <div id="banner" class="banner" hidden></div>
+    <dl class="facts">
+      <div><dt>رقم الجيم (ID)</dt><dd id="fSlug" dir="ltr" style="text-align:start"></dd></div>
+      <div><dt>صلاحيتك</dt><dd id="fRole"></dd></div>
+      <div><dt>الباقة</dt><dd id="fPlan"></dd></div>
+      <div><dt>حالة الاشتراك</dt><dd id="fStatus"></dd></div>
+    </dl>
+    <h3>الأقسام</h3>
+    <div class="mods">
+      <div class="mod">الأعضاء<small>قريبًا</small></div>
+      <div class="mod">الاشتراكات<small>قريبًا</small></div>
+      <div class="mod">الحضور<small>قريبًا</small></div>
+      <div class="mod">المبيعات<small>قريبًا</small></div>
+      <div class="mod">المصروفات<small>قريبًا</small></div>
+      <div class="mod">التقارير<small>قريبًا</small></div>
+    </div>
+  </main>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(function () {
+  var cfg = window.APP_CONFIG;
+  var sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY, {
+    auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+  var $ = function (id) { return document.getElementById(id); };
+  var SCREENS = ['loading', 'login', 'pending', 'picker', 'app'];
+  var ROLES = { owner: 'مالك الجيم', manager: 'مدير', reception: 'استقبال', trainer: 'مدرب' };
+  var PLANS = { basic: 'Basic', pro: 'Pro', unlimited: 'Unlimited' };
+  var state = { rows: [], admin: false, email: '' };
+
+  function show(name) { SCREENS.forEach(function (s) { $(s).hidden = s !== name; }); }
+  function setErr(t) { $('err').textContent = t || ''; }
+
+  function subscription(g) {
+    var now = Date.now(), until = new Date(g.access_until).getTime();
+    var graceEnd = until + (g.grace_days || 0) * 86400000;
+    if (g.status === 'suspended') return { cls: 'bad', text: 'موقوف', note: 'الحساب موقوف. تواصل مع الدعم. بياناتك محفوظة وتقدر تطّلع عليها فقط.' };
+    if (g.status === 'cancelled') return { cls: 'bad', text: 'ملغي', note: 'الاشتراك ملغي. بياناتك محفوظة وتقدر تطّلع عليها فقط.' };
+    if (now <= until) {
+      var d = Math.ceil((until - now) / 86400000);
+      return { cls: d <= 5 ? 'warn' : 'ok', text: (g.status === 'trial' ? 'تجربة' : 'فعّال') + ' · باقي ' + d + ' يوم', note: d <= 5 ? 'الاشتراك قرّب يخلص. جدّده عشان ماتتوقفش الكتابة.' : '' };
+    }
+    if (now <= graceEnd) return { cls: 'warn', text: 'فترة سماح', note: 'الاشتراك انتهى وإنت في فترة السماح. جدّد دلوقتي.' };
+    return { cls: 'bad', text: 'منتهي', note: 'الاشتراك منتهي. بياناتك محفوظة وتقدر تطّلع عليها فقط لحد التجديد.' };
+  }
+
+  function openGym(row) {
+    var g = row.gyms, s = subscription(g);
+    $('gymName').textContent = g.name;
+    $('fSlug').textContent = g.slug;
+    $('fRole').textContent = ROLES[row.role] || row.role;
+    $('fPlan').textContent = PLANS[g.plan_code] || g.plan_code;
+    var st = $('fStatus'); st.textContent = s.text; st.className = s.cls;
+    var b = $('banner');
+    b.hidden = !s.note; b.textContent = s.note || '';
+    b.className = 'banner ' + (s.cls === 'bad' ? 'bad' : 'warn');
+    $('backBtn').hidden = state.rows.length < 2;
+    show('app');
+  }
+
+  function renderPicker() {
+    $('pickEmail').textContent = state.email;
+    var list = $('gymlist'); list.textContent = '';
+    state.rows.forEach(function (row) {
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'gymbtn';
+      btn.textContent = row.gyms.name;
+      var small = document.createElement('small');
+      small.textContent = (ROLES[row.role] || row.role) + ' · ' + row.gyms.slug;
+      btn.appendChild(small);
+      btn.addEventListener('click', function () { openGym(row); });
+      list.appendChild(btn);
+    });
+    show('picker');
+  }
+
+  async function route(session) {
+    state.email = session.user.email || '';
+    var r = await Promise.all([
+      sb.from('gym_users').select('role, gyms(id, name, slug, status, access_until, grace_days, plan_code)').eq('is_active', true),
+      sb.rpc('am_i_platform_admin')
+    ]);
+    if (r[0].error) throw r[0].error;
+    state.rows = (r[0].data || []).filter(function (x) { return x.gyms; });
+    state.admin = r[1].data === true;
+    if (state.rows.length === 0) { $('pendEmail').textContent = state.email; show('pending'); return; }
+    if (state.rows.length === 1) { openGym(state.rows[0]); return; }
+    renderPicker();
+  }
+
+  async function boot() {
+    var qs = new URLSearchParams(location.search);
+    var urlErr = qs.get('error_description');
+    try {
+      var res = await sb.auth.getSession();
+      if (!res.data.session) { show('login'); if (urlErr) setErr('تعذّر تسجيل الدخول: ' + urlErr); return; }
+      history.replaceState(null, '', location.pathname);
+      await route(res.data.session);
+    } catch (e) {
+      show('login'); setErr('حصلت مشكلة في التحميل. جرّب تاني بعد لحظات.');
+    }
+  }
+
+  $('gbtn').addEventListener('click', async function () {
+    var btn = $('gbtn'); btn.disabled = true; setErr('');
+    var r = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+    if (r.error) { btn.disabled = false; setErr('تعذّر بدء الدخول بحساب Google. تأكد من إعدادات المزوّد.'); }
+  });
+
+  $('backBtn').addEventListener('click', renderPicker);
+  document.querySelectorAll('[data-logout]').forEach(function (b) {
+    b.addEventListener('click', async function () { await sb.auth.signOut(); show('login'); });
+  });
+  sb.auth.onAuthStateChange(function (ev) { if (ev === 'SIGNED_OUT') { $('gbtn').disabled = false; show('login'); } });
+
+  boot();
+})();
+</script>
+</body>
+</html>
