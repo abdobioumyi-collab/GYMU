@@ -55,3 +55,21 @@ self.addEventListener('fetch', (e) => {
     })());
   }
 });
+
+// ضغطة على الإشعار: افتح البرنامج (أو ارجع له لو مفتوح)
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of all) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow('./');
+  })());
+});
+
+// جاهز لإشعارات Web Push (لما البرنامج يكون مقفول) لو فعّلناها بعدين
+self.addEventListener('push', (e) => {
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch (_) {}
+  e.waitUntil(self.registration.showNotification(d.title || 'Active Gym', {
+    body: d.body || '', dir: 'rtl', lang: 'ar', icon: 'icon-192.png', badge: 'icon-192.png', tag: d.tag, vibrate: [200, 100, 200]
+  }));
+});

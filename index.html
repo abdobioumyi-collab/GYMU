@@ -6738,7 +6738,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                             return;
                         }
                         // لو نفس الـ ID أو نفس الاسم والرقم موجودين بالفعل، يتم تجاهله تماماً بدل تكراره بـ ID جديد
-                        if (existingIds.has(String(newMember.id)) || existingMemberSigs.has(sig)) {
+                        if (existingIds.has(String(newMember.id))) { // التجاهل بالكود (ID) فقط: نفس الاسم والرقم ممكن يكونوا اشتراكين مختلفين
                             skippedMembers++;
                             return;
                         }
@@ -9130,6 +9130,90 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
   setInterval(build, 2000);
 })();
 
+</script>
+<script>
+/* إشعارات الشاشة الخارجية: طلبات الحذف + إشعارات "للعلم" على جهاز صاحب الجيم */
+(function () {
+  'use strict';
+  var RawLS = { get: Storage.prototype.getItem, set: Storage.prototype.setItem };
+  var seen = null, SK = 'sh_notif_seen_v1';
+  function isOwner() { try { return typeof currentAppMode !== 'undefined' && currentAppMode === 'OWNER'; } catch (e) { return false; } }
+  function list(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch (e) { return []; } }
+  function loadSeen() { try { seen = JSON.parse(RawLS.get.call(localStorage, SK)) || null; } catch (e) { seen = null; } }
+  function saveSeen() { try { RawLS.set.call(localStorage, SK, JSON.stringify(seen.slice(-500))); } catch (e) {} }
+  function notify(title, body, tag) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    var opts = { body: body, tag: tag, dir: 'rtl', lang: 'ar', icon: 'icon-192.png', badge: 'icon-192.png', vibrate: [200, 100, 200], renotify: true };
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready.then(function (reg) { reg.showNotification(title, opts); }, function () { try { new Notification(title, opts); } catch (e) {} });
+    } else { try { new Notification(title, opts); } catch (e) {} }
+  }
+  function check() {
+    if (!isOwner()) return;
+    var items = [];
+    list('gym_pro_delete_requests_v1').forEach(function (r) {
+      items.push({ id: 'd' + r.id, title: '🗑️ طلب حذف جديد', body: ((r.itemTypeLabel || '') + ' ' + (r.itemName || '')).trim() + (r.requestedBy ? ' — من ' + r.requestedBy : '') });
+    });
+    list('gym_pro_admin_notices_v1').forEach(function (n) {
+      items.push({ id: 'n' + n.id, title: '🔔 إشعار للعلم', body: String(n.message || '').replace(/<[^>]+>/g, '') });
+    });
+    if (seen === null) { seen = items.map(function (x) { return x.id; }); saveSeen(); return; } // أول تشغيل: منزعجش بالقديم
+    var fresh = items.filter(function (x) { return seen.indexOf(x.id) < 0; });
+    fresh.forEach(function (x) { seen.push(x.id); notify(x.title, x.body, x.id); });
+    if (fresh.length) saveSeen();
+  }
+  /* ===== كارت طلب إذن الإشعارات: نفس شكل كارت التثبيت، ويظهر بعده بـ 4 ثواني ===== */
+  var SNZ = 'sh_notif_snooze', t0 = Date.now(), lastInstall = 0, card = null;
+  function gl(k) { try { return +RawLS.get.call(localStorage, k) || 0; } catch (e) { return 0; } }
+  function installOn() { var o = document.getElementById('gmPwaCard'); return !!(o && o.classList.contains('on')); }
+  function buildCard() {
+    if (card) return card;
+    var st = document.createElement('style');
+    st.textContent =
+      '#gmNotifCard{--nc:#0066ff;--nf:#fff;position:fixed;inset:0;z-index:99998;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(8,10,16,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;transition:opacity .45s ease;font-family:Cairo,sans-serif;direction:rtl}' +
+      '#gmNotifCard.on{display:flex}#gmNotifCard.vis{opacity:1}' +
+      '#gmNotifCard .box{width:100%;max-width:380px;text-align:center;padding:30px 24px 22px;border-radius:30px;background:linear-gradient(180deg,#1b1e27,#12141a);color:#fff;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 80px rgba(0,0,0,.5);transform:translateY(24px) scale(.94);transition:transform .55s cubic-bezier(.2,.8,.2,1)}' +
+      '#gmNotifCard.vis .box{transform:none}' +
+      '#gmNotifCard .ic{width:92px;height:92px;margin:0 auto 16px;border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:46px;background:var(--nc);box-shadow:0 14px 34px rgba(0,0,0,.45),0 0 0 3px color-mix(in srgb,var(--nc) 55%,transparent);animation:gmBell 2.4s ease-in-out infinite}' +
+      '@keyframes gmBell{0%,60%,100%{transform:rotate(0)}65%{transform:rotate(14deg)}75%{transform:rotate(-12deg)}85%{transform:rotate(8deg)}95%{transform:rotate(-4deg)}}' +
+      '#gmNotifCard h3{font-size:1.3rem;font-weight:900;margin:0 0 6px}' +
+      '#gmNotifCard p{font-size:.95rem;line-height:1.7;opacity:.75;margin:0 0 20px;font-weight:600}' +
+      '#gmNotifCard button{display:block;width:100%;border:0;cursor:pointer;font:800 1rem Cairo,sans-serif;border-radius:16px;padding:14px}' +
+      '#gmNotifGo{background:var(--nc);color:var(--nf);box-shadow:0 10px 26px color-mix(in srgb,var(--nc) 45%,transparent)}#gmNotifGo:active{transform:scale(.98)}' +
+      '#gmNotifLater{background:transparent;color:#fff;opacity:.6;margin-top:6px;font-size:.9rem!important;padding:10px!important}';
+    document.head.appendChild(st);
+    card = document.createElement('div'); card.id = 'gmNotifCard'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true');
+    card.innerHTML = '<div class="box"><div class="ic">🔔</div><h3>فعّل الإشعارات</h3><p>هتوصلك طلبات الحذف وتنبيهات الجيم على شاشة موبايلك فوراً، حتى لو البرنامج في الخلفية</p><button id="gmNotifGo" type="button">تفعيل الإشعارات</button><button id="gmNotifLater" type="button">مش دلوقتي</button></div>';
+    document.body.appendChild(card);
+    card.querySelector('#gmNotifGo').onclick = function () {
+      hideCard();
+      Notification.requestPermission().then(function (p) {
+        if (p === 'granted') { notify('✅ تم تفعيل الإشعارات', 'هتوصلك التنبيهات على شاشة الموبايل من دلوقتي', 'welcome'); check(); }
+      });
+    };
+    card.querySelector('#gmNotifLater').onclick = function () { hideCard(); try { RawLS.set.call(localStorage, SNZ, String(Date.now() + 864e5)); } catch (e) {} };
+    return card;
+  }
+  function hideCard() { if (!card) return; card.classList.remove('vis'); setTimeout(function () { card.classList.remove('on'); }, 450); }
+  function showNotifCard() {
+    var c = buildCard(), th = (document.querySelector('meta[name="theme-color"]') || {}).content || '#0066ff';
+    var r = parseInt(th.substr(1, 2), 16), g = parseInt(th.substr(3, 2), 16), b = parseInt(th.substr(5, 2), 16);
+    c.style.setProperty('--nc', th); c.style.setProperty('--nf', (0.299 * r + 0.587 * g + 0.114 * b) > 165 ? '#12151f' : '#fff');
+    c.classList.add('on');
+    requestAnimationFrame(function () { requestAnimationFrame(function () { c.classList.add('vis'); }); });
+  }
+  function maybeShow() {
+    if (installOn()) { lastInstall = Date.now(); if (card && card.classList.contains('on')) hideCard(); return; } // التثبيت الأول
+    if (!isOwner() || !('Notification' in window) || Notification.permission !== 'default') return;
+    if (Date.now() < gl(SNZ) || (card && card.classList.contains('on'))) return;
+    if (Date.now() - t0 < 7000 || Date.now() - lastInstall < 4000) return;      // بعد كارت التثبيت بـ 4 ثواني
+    showNotifCard();
+  }
+  loadSeen();
+  setInterval(check, 4000);
+  setInterval(maybeShow, 500);
+  document.addEventListener('visibilitychange', check);
+})();
 </script>
 </body>
 </html>
