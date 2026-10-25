@@ -7883,7 +7883,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
     return sb.from('gym_users').select('role, section_id, gyms(id, name, slug, status, access_until, grace_days, plan_code, layout_mode, layout_request)').eq('is_active', true).then(function (r) {
       if (r.error) throw r.error;
       var rows = (r.data || []).filter(function (x) { return x.gyms; });
-      if (rows.length) cacheSet(CK + state.userId, rows);
+      cacheSet(CK + state.userId, rows);   // حتى لو فاضي: عشان الجيم المحذوف ما يفضلش في الكاش
       return rows;
     }).catch(function (e) {
       var c = cacheGet(CK + state.userId);
@@ -8202,7 +8202,17 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
       if (!blocked && !confirm('إيقاف "' + g.name + '"؟ هيشوف بياناته بس ومايقدرش يسجّل.')) return;
       rpc('platform_set_gym_status', { p_gym_id: g.id, p_status: blocked ? 'active' : 'suspended' }).then(kgLoad, function (e) { alert(e.message); });
     });
-    var mix = g.layout_mode === 'mixed';
+    b('حذف نهائي', 'danger', function () {
+if (!confirm('⚠️ حذف نهائي لجيم "' + g.name + '"؟\n\nهتتمسح كل بياناته (المشتركين، الحسابات، الفريق) ومش هتتسترجع.\nنصيحة: ادخل الجيم واعمل نسخة احتياطية الأول.')) return;
+var t = prompt('للتأكيد اكتب اسم الجيم بالظبط:\n' + g.name);
+if (t === null) return;
+t = t.trim() === String(g.name).trim() ? g.name : t;
+rpc('platform_delete_gym', { p_gym_id: g.id, p_confirm_name: t }).then(function () {
+alert('✅ اتحذف الجيم نهائياً.' + (g.owner_email ? '\nالجيميل ' + g.owner_email + ' يقدر يدخل دلوقتي ويعمل جيم جديد عادي.' : ''));
+kgLoad();
+}, function (e) { alert(e.message === 'name_mismatch' ? 'الاسم مش مطابق، ماحصلش حذف.' : e.message); });
+});
+var mix = g.layout_mode === 'mixed';
     b(mix ? 'حوّل لمنفصل' : 'حوّل لمختلط', '', function () {
       if (!confirm('تحويل "' + g.name + '" إلى ' + (mix ? 'رجالي وبنات منفصلين' : 'جيم مختلط') + '؟ البيانات ما بتتغيّر، دي طريقة العرض بس.')) return;
       rpc('platform_set_gym_layout', { p_gym_id: g.id, p_mode: mix ? 'split' : 'mixed' }).then(kgLoad, function (e) { alert(e.message); });
