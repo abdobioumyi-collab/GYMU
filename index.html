@@ -7643,8 +7643,18 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
       var rows = (r.data || []).slice().sort(function (a, b) {
         return (b.role === 'owner') - (a.role === 'owner') || (b.is_active - a.is_active);
       });
-      rows.forEach(function (u) {
-        var isMe = u.user_id === state.userId, owner = u.role === 'owner';
+      function mkDel(u) {
+      var dl = el('button', 'tm-btn tm-danger', 'حذف'); dl.type = 'button';
+      dl.addEventListener('click', function () {
+        if (!confirm('تحذف "' + (u.display_name || 'الموظف') + '" نهائياً من الفريق؟\nهيتشال خالص، ومش هيقدر يدخل إلا لو اتضاف من جديد.')) return;
+        sb.rpc('gym_delete_staff', { p_gym_id: state.current.gyms.id, p_user_id: u.user_id }).then(function (x) {
+          if (x.error) alert(staffErr(x.error.message || '')); else loadStaff();
+        });
+      });
+      return dl;
+    }
+    rows.forEach(function (u) {
+      var isMe = u.user_id === state.userId, owner = u.role === 'owner';
         var d = el('div', 'tm-row' + (u.is_active ? '' : ' off'));
         var who = el('div', 'tm-who');
         who.appendChild(el('b', '', u.display_name || (isMe ? state.email : 'موظف')));
@@ -7661,7 +7671,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
               if (x.error) alert(staffErr(x.error.message || '')); else loadStaff();
             });
           });
-          ops.appendChild(ed); ops.appendChild(bl);
+          ops.appendChild(ed); ops.appendChild(bl); ops.appendChild(mkDel(u));
         } else {
           ops.appendChild(el('span', 'sh-badge bad', 'محظور'));
           var un = el('button', 'tm-btn', 'إلغاء الحظر'); un.type = 'button';
@@ -7671,8 +7681,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
               if (x.error) alert(staffErr(x.error.message || '')); else loadStaff();
             });
           });
-          ops.appendChild(un);
-        }
+          ops.appendChild(un); ops.appendChild(mkDel(u));
+      }
         d.appendChild(ops); list.appendChild(d);
       });
     });
@@ -8168,7 +8178,16 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
       if (!rows.length) { host.appendChild(el('div', 'kg-muted', 'مفيش أعضاء.')); return; }
       rows.forEach(function (u) {
         var r = el('div', 'kg-team'); r.appendChild(el('b', '', u.email));
-        r.appendChild(el('span', 'kg-muted', (ROLES[u.role] || u.role) + (u.section_name ? ' · ' + u.section_name : '') + (u.is_active ? '' : ' · موقوف'))); host.appendChild(r);
+        r.appendChild(el('span', 'kg-muted', (ROLES[u.role] || u.role) + (u.section_name ? ' · ' + u.section_name : '') + (u.is_active ? '' : ' · موقوف')));
+      if (u.role !== 'owner') {
+        var dx = el('button', 'kg-btn danger', 'حذف'); dx.type = 'button';
+        dx.onclick = function () {
+          if (!confirm('حذف "' + u.email + '" نهائياً من فريق "' + g.name + '"؟')) return;
+          rpc('gym_delete_staff', { p_gym_id: g.id, p_user_id: u.user_id }).then(function () { teamBox(g, host); }, function (e) { alert(e.message); });
+        };
+        r.appendChild(dx);
+      }
+      host.appendChild(r);
       });
     }, function (e) { host.textContent = 'تعذّر التحميل: ' + e.message; });
   }
