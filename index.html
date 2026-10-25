@@ -1365,8 +1365,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
     </div>
     <div id="capPinWrap">
       <div class="cap-pinbox" id="capPinBox">
-        <div class="cap-dots" id="capDots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <input id="capPin" class="cap-ghost" type="password" inputmode="numeric" maxlength="6" placeholder="" autocomplete="off" aria-label="الرقم السري">
+        <div class="cap-dots" id="capDots" aria-hidden="true"><i></i><i></i><i></i><i></i><b class="cap-real" id="capReal"></b></div>
+        <input id="capPin" class="cap-ghost" type="password" inputmode="numeric" placeholder="" autocomplete="off" aria-label="الرقم السري">
         <button id="capEye" class="cap-eye" type="button" aria-label="إظهار أو إخفاء الرقم"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
       </div>
       <div id="capMsg" class="sh-msg" role="alert"></div>
@@ -1375,8 +1375,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
     </div>
     <div id="capSetWrap">
       <p class="cap-hint">الرقم ده بتفتح بيه الخزنة والإعدادات، فخليه سر.</p>
-      <input id="capNew1" class="cap-pin cap-small" type="password" inputmode="numeric" maxlength="6" placeholder="رقم من 4 لـ 6 أرقام" autocomplete="off">
-      <input id="capNew2" class="cap-pin cap-small" type="password" inputmode="numeric" maxlength="6" placeholder="اكتبه تاني" autocomplete="off">
+      <input id="capNew1" class="cap-pin cap-small" type="password" inputmode="numeric" placeholder="4 أرقام أو أكتر" autocomplete="off">
+      <input id="capNew2" class="cap-pin cap-small" type="password" inputmode="numeric" placeholder="اكتبه تاني" autocomplete="off">
       <button id="capSetGo" class="sh-btn cap-go" type="button">حفظ ودخول</button>
       <button id="capBack2" class="cap-cancel" type="button">رجوع</button>
     </div>
@@ -1419,6 +1419,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             <button class="gate-admin-btn" onclick="openGatePasswordPrompt('OWNER')">
                 <span class="ico" data-i="fa-vault"></span> الخزنة والإدارة
             </button>
+            <div class="gate-deco" aria-hidden="true"><span></span><span></span><span></span></div>
 
             <!-- الجيم المختلط: مفيش بوابة أقسام، كلمة السر بس -->
             <div class="gate-pin" id="gatePinInline">
@@ -1426,7 +1427,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 <div class="gate-pin-title">أهلاً بيك 👋</div>
                 <div class="gate-pin-hint">اكتب كلمة السر بتاعتك وهندخلك على طول</div>
                 <div class="gate-pin-field" id="gatePinField">
-                    <input id="gatePinInput" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="••••" aria-label="كلمة السر">
+                    <input id="gatePinInput" type="password" inputmode="numeric" autocomplete="off" placeholder="••••" aria-label="كلمة السر">
                     <button type="button" class="gate-pin-eye" id="gatePinEye" aria-label="إظهار أو إخفاء كلمة السر"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
                 </div>
                 <div class="gate-pin-msg" id="gatePinMsg" role="alert"></div>
@@ -1457,7 +1458,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             </div>
             <p class="pw-clear-label">من فضلك أدخل كلمة السر للدخول</p>
             <div class="pw-input-wrap">
-                <input type="password" id="gatePasswordInput" class="pw-clear-input" placeholder="••••" maxlength="12" onkeydown="if(event.key==='Enter'){ verifyGatePassword(); }">
+                <input type="password" id="gatePasswordInput" class="pw-clear-input" placeholder="••••" onkeydown="if(event.key==='Enter'){ verifyGatePassword(); }">
                 <button type="button" class="pw-toggle-eye" onclick="toggleGatePasswordVisibility()"><span class="ico" id="pwToggleIcon" data-i="fa-eye"></span></button>
             </div>
             <button class="btn-submit" onclick="verifyGatePassword()">دخول</button>
@@ -2314,7 +2315,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             <div class="panel-head"><span class="ph-ico"><span class="ico" data-i="fa-key"></span></span><div><h2>الكباتن والأرقام السرية</h2><p>ضيف كابتن، غيّر رقمه، أوقفه أو انقله. كل واحد ليه رقم مختلف والبرنامج يعرفه منه.</p></div></div>
 
             <section class="set-card">
-<h3 class="admin-section-title"><span class="ico" data-i="fa-key"></span> الكباتن والأرقام السرية</h3><p class="hint-note">كل كابتن بيدخل قسمه باسمه ورقمه السري الشخصي (4 لـ 6 أرقام)، وكل حركة بتتسجل باسمه في «سجل النشاطات». أنت بس اللي بتضيف وتغيّر الأرقام.</p><div id="capAdmin"></div>
+<h3 class="admin-section-title"><span class="ico" data-i="fa-key"></span> الكباتن والأرقام السرية</h3><p class="hint-note">كل كابتن بيدخل قسمه باسمه ورقمه السري الشخصي (4 أرقام أو أكتر)، وكل حركة بتتسجل باسمه في «سجل النشاطات». أنت بس اللي بتضيف وتغيّر الأرقام.</p><div id="capAdmin"></div>
 
             </section>
 
@@ -7178,7 +7179,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
     function fail(id) { var m = lockMap(), e = m[id] || { n: 0, until: 0 }; e.n++; if (e.n % 3 === 0) e.until = Date.now() + (e.n >= 6 ? 600000 : 30000); m[id] = e; localStorage.setItem(LOCK, JSON.stringify(m)); }
     function clear(id) { var m = lockMap(); delete m[id]; localStorage.setItem(LOCK, JSON.stringify(m)); }
     function fmt(s) { return s >= 60 ? Math.ceil(s / 60) + ' دقيقة' : s + ' ثانية'; }
-    function validPin(p) { return /^\d{4,6}$/.test(p); }
+    function validPin(p) { return /^\d{4,}$/.test(p); }
     function note(m) { try { logActivity(m, 'fa-users'); } catch (e) {} }
     function show(id) { ['capPickWrap', 'capPinWrap', 'capSetWrap'].forEach(function (x) { $(x).style.display = x === id ? 'block' : 'none'; }); var m = $('capMsg'); if (id === 'capSetWrap') $('capSetWrap').insertBefore(m, $('capSetGo')); else if (id === 'capPinWrap') $('capPinWrap').insertBefore(m, $('capGo')); else $('capPickWrap').appendChild(m); }
     function captainsOf(sec) { return load().list.filter(function (c) { return c.active !== false && (sec === 'ALL' || c.section === sec); }); }
@@ -7231,7 +7232,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
     async function attempt(pin, msg, btn, inp, fieldId) {
       pin = norm(pin); var s = wait('gate');
       if (s) { msg.textContent = 'متقفل ' + fmt(s) + ' بسبب محاولات غلط.'; return; }
-      if (!validPin(pin)) { msg.textContent = 'اكتب كلمة السر (4 لـ 6 أرقام).'; shake(fieldId); return; }
+      if (!validPin(pin)) { msg.textContent = 'اكتب كلمة السر (4 أرقام أو أكتر).'; shake(fieldId); return; }
       btn.disabled = true; var m = []; try { m = await identify(pin, cur.target); } finally { btn.disabled = false; }
       if (!m.length) {
         fail('gate'); var s2 = wait('gate'); inp.value = ''; shake(fieldId);
@@ -7243,7 +7244,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
     function go() { if (!cur) return; attempt($('capPin').value, $('capMsg'), $('capGo'), $('capPin'), 'capPinBox'); }
     async function setOwner() {
       var a = norm($('capNew1').value), b = norm($('capNew2').value), msg = $('capMsg');
-      if (!validPin(a)) { msg.textContent = 'الرقم لازم يكون من 4 لـ 6 أرقام.'; return; }
+      if (!validPin(a)) { msg.textContent = 'الرقم لازم يكون 4 أرقام أو أكتر.'; return; }
       if (a !== b) { msg.textContent = 'الرقمين مش زي بعض.'; return; }
       if (await pinTaken(a, 'owner')) { msg.textContent = TAKEN; return; }
       var d = load(), salt = rnd(); d.owner = { salt: salt, hash: await hash(a, salt) }; save(d); inlineSetup(); enter({ id: 'owner', name: 'المالك', type: 'owner' });
@@ -7262,31 +7263,32 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
       var t = null, busy = false;
       inp.addEventListener('input', function () {
         clearTimeout(t); var v = norm(inp.value);
-        if (!/^\d{4,6}$/.test(v)) return;
+        if (!/^\d{4,}$/.test(v)) return;
         t = setTimeout(async function () {
           if (busy || norm(inp.value) !== v) return;
-          if (v.length === 6) { submit(); return; }
+          
           if (wait('gate')) return;
           busy = true; var m = []; try { m = await identify(v, getTarget()); } finally { busy = false; }
           if (norm(inp.value) !== v || !m.length) return;
           clear('gate'); inp.value = ''; msg.textContent = '';
           if (m.length === 1) enter(m[0]); else ambiguous(m);
-        }, v.length === 6 ? 0 : 450);
+        }, 450);
       });
     }
 
     // ---- لوحة الأرقام + نقاط الرقم السري ----
     var capPinEl = $('capPin'), capDots = $('capDots'), capCard = $('capModal').querySelector('.cap-card'), capReveal = false;
     function capReset() { capReveal = false; capCard.classList.remove('cap-reveal'); capPaint(); }
+    var capLast = 0;
     function capPaint() {
-      var v = capPinEl.value, d = capDots.children;
-      for (var i = 0; i < d.length; i++) {
-        d[i].className = i < v.length ? 'on' : (i === v.length ? 'cur' : '');
-        d[i].textContent = (capReveal && i < v.length) ? v.charAt(i) : '';
-      }
+      var v = capPinEl.value, dots = capDots.querySelectorAll('i'), real = $('capReal');
+      for (var i = 0; i < dots.length; i++) { dots[i].className = v.length ? 'on' : (i === 0 ? 'cur' : ''); dots[i].textContent = ''; }
+      real.textContent = capReveal ? v : '';
+      capDots.classList.toggle('show-real', !!(capReveal && v.length));
       $('capGo').disabled = v.length < 4;
+      if (v.length !== capLast) { capLast = v.length; if (v.length) { capDots.classList.remove('tick'); void capDots.offsetWidth; capDots.classList.add('tick'); } }
     }
-    capPinEl.addEventListener('input', function () { capPinEl.value = norm(capPinEl.value).replace(/\D/g, '').slice(0, 6); capPaint(); });
+    capPinEl.addEventListener('input', function () { capPinEl.value = norm(capPinEl.value).replace(/\D/g, ''); capPaint(); });
     autoEnter(capPinEl, function () { return cur && cur.target; }, $('capMsg'), function () { if (cur) go(); });
     $('capEye').onclick = function () { capReveal = !capReveal; capCard.classList.toggle('cap-reveal', capReveal); capPaint(); };
     capDots.parentNode.addEventListener('click', function (e) { if (!(e.target.closest && e.target.closest('.cap-eye'))) capPinEl.focus(); });
@@ -7334,14 +7336,14 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
 
     // ---- إدارة الكباتن (في الإعدادات) ----
     function field(lbl, node) { var g = el('div', 'form-group'); g.appendChild(el('label', '', lbl)); g.appendChild(node); return g; }
-    function pinInput(ph) { var i = el('input', 'form-control'); i.type = 'password'; i.inputMode = 'numeric'; i.maxLength = 6; i.placeholder = ph || '4 لـ 6 أرقام'; i.autocomplete = 'new-password'; return i; }
+    function pinInput(ph) { var i = el('input', 'form-control'); i.type = 'password'; i.inputMode = 'numeric'; i.placeholder = ph || '4 أرقام أو أكتر'; i.autocomplete = 'new-password'; return i; }
     function renderAdmin() {
       var box = $('capAdmin'); if (!box) return; box.textContent = ''; var d = load();
       box.appendChild(el('h4', 'cap-h', d.owner ? 'رقمك السري كمالك' : 'لسه معيّنتش رقمك السري كمالك'));
       var g1 = el('div', 'form-grid'), op = pinInput('رقم جديد'), ob = el('button', 'btn-submit', d.owner ? 'تغيير رقم المالك' : 'حفظ رقم المالك'); ob.type = 'button';
       g1.appendChild(field('الرقم السري للمالك', op)); box.appendChild(g1); box.appendChild(ob);
       ob.onclick = async function () {
-        if (!validPin(op.value.trim())) { alert('الرقم لازم يكون من 4 لـ 6 أرقام.'); return; }
+        if (!validPin(op.value.trim())) { alert('الرقم لازم يكون 4 أرقام أو أكتر.'); return; }
         if (await pinTaken(op.value.trim(), 'owner')) { alert(TAKEN); return; } var dd = load(), salt = rnd(); dd.owner = { salt: salt, hash: await hash(op.value.trim(), salt) }; save(dd); note('👑 تم تغيير الرقم السري للمالك'); alert('تم حفظ رقم المالك ✅'); renderAdmin();
       };
       box.appendChild(el('h4', 'cap-h', 'إضافة كابتن')); box.appendChild(el('p', 'hint-note', 'كل شخص (كابتن أو مالك) له رقم سري مختلف، والبرنامج بيعرف مين الداخل من رقمه بس من غير ما يختار اسمه.'));
@@ -7354,7 +7356,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
       ab.onclick = async function () {
         var n = nm.value.trim(), p = pp.value.trim(), dd = load();
         if (n.length < 2) { alert('اكتب اسم الكابتن.'); return; }
-        if (!validPin(p)) { alert('الرقم السري لازم يكون من 4 لـ 6 أرقام.'); return; }
+        if (!validPin(p)) { alert('الرقم السري لازم يكون 4 أرقام أو أكتر.'); return; }
         if (dd.list.some(function (c) { return (mixed || c.section === secVal()) && c.name === n; })) { alert('الاسم ده موجود بالفعل.'); return; }
         if (await pinTaken(p, null)) { alert(TAKEN); return; } var salt = rnd(); dd.list.push({ id: 'c' + Date.now().toString(36) + rnd().slice(0, 4), name: n, section: secVal(), salt: salt, hash: await hash(p, salt), active: true });
         save(dd); note('👤 تمت إضافة الكابتن "' + n + '" ' + (mixed ? 'للجيم' : 'لقسم ' + SEC[secVal()])); renderAdmin();
@@ -7367,8 +7369,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         var ops = el('div', 'cap-ops');
         function btn(t, cls, fn) { var b = el('button', 'cap-btn ' + (cls || ''), t); b.type = 'button'; b.onclick = fn; ops.appendChild(b); }
         btn('تغيير الرقم', '', async function () {
-          var p = prompt('الرقم السري الجديد لـ ' + c.name + ' (4 لـ 6 أرقام):'); if (p == null) return; p = p.trim();
-          if (!validPin(p)) { alert('الرقم لازم يكون من 4 لـ 6 أرقام.'); return; }
+          var p = prompt('الرقم السري الجديد لـ ' + c.name + ' (4 أرقام أو أكتر):'); if (p == null) return; p = p.trim();
+          if (!validPin(p)) { alert('الرقم لازم يكون 4 أرقام أو أكتر.'); return; }
           var dd = load(), t = dd.list.filter(function (x) { return x.id === c.id; })[0]; if (!t) return;
           if (await pinTaken(p, c.id)) { alert(TAKEN); return; } t.salt = rnd(); t.hash = await hash(p, t.salt); save(dd); clear(c.id); note('🔑 تم تغيير الرقم السري للكابتن "' + c.name + '"'); alert('تم ✅');
         });
@@ -8765,7 +8767,7 @@ body.custom-brand #mainContentArea>.brand-container::before{display:none}
 (function(){var i=document.querySelector('img.gm-gate');if(i&&i.src)document.documentElement.style.setProperty('--gm-logo','url("'+i.src+'")');})();
 </script>
 <script>
-/* فتح الإدارة بخمس ضغطات متتالية على شاشة الدخول */
+/* فتح الإدارة بأربع ضغطات متتالية على شاشة الدخول */
 (function () {
   var n = 0, t = null, g = document.getElementById('gateScreen');
   if (!g) return;
@@ -8773,7 +8775,7 @@ body.custom-brand #mainContentArea>.brand-container::before{display:none}
     if (e.target.closest && e.target.closest('button, input, a, .gate-pin')) { n = 0; return; }
     if (getComputedStyle(g).display === 'none') { n = 0; return; }
     n++; clearTimeout(t); t = setTimeout(function () { n = 0; }, 1500);
-    if (n >= 5) { n = 0; if (typeof window.openGatePasswordPrompt === 'function') window.openGatePasswordPrompt('OWNER'); }
+    if (n >= 4) { n = 0; if (typeof window.openGatePasswordPrompt === 'function') window.openGatePasswordPrompt('OWNER'); }
   });
 })();
 </script>
@@ -9244,5 +9246,57 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
   document.addEventListener('visibilitychange', check);
 })();
 </script>
+
+<style id="gate-v5">
+/* ===== واجهة الدخول v5: خلفية بيضة + لوجو بإطاره + كروت أقسام + 3 مستطيلات للزينة ===== */
+#gateScreen#gateScreen{background:#fff!important;background-image:radial-gradient(760px 380px at 50% -90px,color-mix(in srgb,var(--primary,#0a66ff) 9%,transparent),transparent 70%)!important;align-items:flex-start!important;overflow:auto!important;padding:clamp(28px,6vh,60px) 18px calc(28px + env(safe-area-inset-bottom,0px))!important}
+#gateScreen#gateScreen::before{display:none!important}
+#gateScreen#gateScreen .gate-wrap{margin:auto!important;width:100%;max-width:560px!important}
+#gateScreen#gateScreen .gate-header-block{background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:0!important;max-width:none!important;margin:0 0 clamp(22px,4vh,34px)!important;text-align:center}
+#gateScreen#gateScreen .gate-logo{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0 auto 18px!important;line-height:0;overflow:visible}
+#gateScreen#gateScreen .gate-logo img.gm-gate,#gateScreen#gateScreen #gateLogoImage{display:block;width:clamp(128px,36vw,172px)!important;height:clamp(128px,36vw,172px)!important;max-height:none!important;margin:0 auto!important;padding:0!important;border:0!important;border-radius:30px!important;object-fit:contain!important;background:var(--lg-bg,#10151c)!important;-webkit-mask-image:none!important;mask-image:none!important;mix-blend-mode:normal!important;filter:none!important;box-shadow:0 0 0 1px rgba(15,23,42,.06),0 18px 40px -8px rgba(15,23,42,.35),0 6px 14px rgba(15,23,42,.12)!important}
+#gateScreen#gateScreen #gateLogoImage{margin-bottom:18px!important}
+#gateScreen#gateScreen .gate-header-block h1{margin:0!important;font-size:clamp(2rem,9.5vw,3rem)!important;font-weight:900!important;letter-spacing:1px;line-height:1.1;color:var(--primary,#0a66ff)!important;-webkit-text-fill-color:var(--primary,#0a66ff)!important;background:none!important;text-shadow:none!important}
+#gateScreen#gateScreen .gate-custom-subtitle{color:#475569!important;letter-spacing:2px;font-size:1rem!important;margin-top:8px}
+#gateScreen#gateScreen .gate-hint-text{display:block;background:none!important;border:0!important;box-shadow:none!important;padding:0!important;margin:14px 0 0!important;color:#64748b!important;font-weight:700;font-size:1rem!important}
+
+#gateScreen#gateScreen .gate-main-grid{display:grid!important;grid-template-columns:1fr!important;gap:16px!important}
+@media(min-width:640px){#gateScreen#gateScreen .gate-wrap{max-width:760px!important}#gateScreen#gateScreen .gate-main-grid{grid-template-columns:1fr 1fr!important}}
+#gateScreen#gateScreen .gate-big-btn{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:4px!important;position:relative;overflow:hidden;isolation:isolate;min-height:clamp(132px,19vh,180px)!important;padding:22px 18px!important;border:0!important;border-radius:30px!important;color:#fff!important;transition:transform .22s,box-shadow .22s,filter .22s}
+#gateScreen#gateScreen .gate-big-men{background:radial-gradient(120% 90% at 10% 0%,rgba(255,255,255,.26),transparent 55%),linear-gradient(145deg,var(--men,#0a66ff),color-mix(in srgb,var(--men,#0a66ff) 50%,#000))!important;box-shadow:0 18px 36px -12px color-mix(in srgb,var(--men,#0a66ff) 60%,transparent)!important}
+#gateScreen#gateScreen .gate-big-women{background:radial-gradient(120% 90% at 10% 0%,rgba(255,255,255,.26),transparent 55%),linear-gradient(145deg,#ec4899,#8e0f4c)!important;box-shadow:0 18px 36px -12px rgba(219,39,119,.6)!important}
+#gateScreen#gateScreen .gate-big-btn::before{display:block!important;content:"";position:absolute;z-index:-1;top:-72px;right:-48px;left:auto;bottom:auto;width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.11)!important}
+#gateScreen#gateScreen .gate-big-btn::after{display:none!important}
+#gateScreen#gateScreen .gate-big-btn:hover{transform:translateY(-4px);filter:brightness(1.06)}
+#gateScreen#gateScreen .gate-big-btn:active{transform:scale(.98)}
+#gateScreen#gateScreen .gate-big-btn .gate-ic{display:flex!important;align-items:center;justify-content:center;width:62px!important;height:62px!important;border-radius:20px!important;margin:0 0 6px!important;background:rgba(255,255,255,.18)!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)!important}
+#gateScreen#gateScreen .gate-big-btn .gate-ic .ico{width:34px!important;height:34px!important}
+#gateScreen#gateScreen .gate-big-btn .gate-lbl{color:#fff!important;font-size:clamp(1.5rem,6vw,1.9rem)!important;font-weight:900}
+#gateScreen#gateScreen .gate-big-btn .gate-sub{color:rgba(255,255,255,.8)!important;font-size:.85rem!important;font-weight:700}
+
+#gateScreen .gate-deco{display:flex;gap:10px;margin-top:22px;direction:ltr;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+#gateScreen .gate-deco span{position:relative;flex:1;height:46px;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,#16161c,#000);border:1px solid rgba(255,255,255,.07);box-shadow:0 10px 22px -8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1)}
+#gateScreen .gate-deco span:nth-child(2){flex:1.7}
+#gateScreen .gate-deco span::before{content:"";position:absolute;inset:0;margin:auto;width:26px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent)}
+#gateScreen .gate-deco span::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.17),transparent);transform:skewX(-20deg);animation:gdSheen 5.5s ease-in-out infinite}
+#gateScreen .gate-deco span:nth-child(2)::after{animation-delay:.9s}
+#gateScreen .gate-deco span:nth-child(3)::after{animation-delay:1.8s}
+@keyframes gdSheen{0%,55%{left:-60%}100%{left:130%}}
+@media(prefers-reduced-motion:reduce){#gateScreen .gate-deco span::after{animation:none}}
+#gateScreen.gate-mixed-pin .gate-deco{display:none!important}
+
+/* كلمة السر للجيم المختلط: كارت أبيض + نقاط ثابتة ما بتكشفش عدد الأرقام */
+#gateScreen#gateScreen .gate-pin{background:#fff!important;border:1.5px solid #e2e8f0!important;box-shadow:0 18px 44px rgba(15,23,42,.1)!important}
+#gateScreen#gateScreen .gate-pin-field input{background-color:#f1f5f9!important;color:#0f172a!important}
+#gatePinInput[type=password]:not(:placeholder-shown){color:transparent!important;caret-color:transparent;background-repeat:no-repeat!important;background-position:center!important;background-size:88px 16px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='16'%3E%3Cg fill='%23334155'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Ccircle cx='32' cy='8' r='6'/%3E%3Ccircle cx='56' cy='8' r='6'/%3E%3Ccircle cx='80' cy='8' r='6'/%3E%3C/g%3E%3C/svg%3E")!important}
+
+/* نافذة كلمة السر: 4 نقاط ثابتة، والعين تظهر الرقم الحقيقي */
+#capModal .cap-dots{max-width:100%;min-width:0}
+#capModal .cap-real{display:none;direction:ltr;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font:800 1.7rem 'Cairo',sans-serif;letter-spacing:.14em;color:#12151f}
+#capModal .cap-dots.show-real i{display:none}
+#capModal .cap-dots.show-real .cap-real{display:block}
+#capModal .cap-dots.tick i.on{animation:capTick .2s}
+@keyframes capTick{0%{transform:scale(1.12)}50%{transform:scale(1.34)}100%{transform:scale(1.12)}}
+</style>
 </body>
 </html>
