@@ -1365,7 +1365,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
     </div>
     <div id="capPinWrap">
       <div class="cap-pinbox" id="capPinBox">
-        <div class="cap-dots" id="capDots" aria-hidden="true"><i></i><i></i><i></i><i></i><b class="cap-real" id="capReal"></b></div>
+        <div class="cap-dots" id="capDots" aria-hidden="true"><b class="cap-real" id="capReal"></b></div>
         <input id="capPin" class="cap-ghost" type="password" inputmode="numeric" placeholder="" autocomplete="off" aria-label="الرقم السري">
         <button id="capEye" class="cap-eye" type="button" aria-label="إظهار أو إخفاء الرقم"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
       </div>
@@ -1428,6 +1428,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 <div class="gate-pin-hint">اكتب كلمة السر بتاعتك وهندخلك على طول</div>
                 <div class="gate-pin-field" id="gatePinField">
                     <input id="gatePinInput" type="password" inputmode="numeric" autocomplete="off" placeholder="••••" aria-label="كلمة السر">
+                    <div class="gate-pin-stars" id="gatePinStars" aria-hidden="true"></div>
                     <button type="button" class="gate-pin-eye" id="gatePinEye" aria-label="إظهار أو إخفاء كلمة السر"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
                 </div>
                 <div class="gate-pin-msg" id="gatePinMsg" role="alert"></div>
@@ -7279,14 +7280,17 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
     // ---- لوحة الأرقام + نقاط الرقم السري ----
     var capPinEl = $('capPin'), capDots = $('capDots'), capCard = $('capModal').querySelector('.cap-card'), capReveal = false;
     function capReset() { capReveal = false; capCard.classList.remove('cap-reveal'); capPaint(); }
-    var capLast = 0;
+    var capKey = '', capPrev = 0;
     function capPaint() {
-      var v = capPinEl.value, dots = capDots.querySelectorAll('i'), real = $('capReal');
-      for (var i = 0; i < dots.length; i++) { dots[i].className = v.length ? 'on' : (i === 0 ? 'cur' : ''); dots[i].textContent = ''; }
-      real.textContent = capReveal ? v : '';
-      capDots.classList.toggle('show-real', !!(capReveal && v.length));
+      var v = capPinEl.value, real = $('capReal'), key = (capReveal ? 'r|' : 'm|') + v;
       $('capGo').disabled = v.length < 4;
-      if (v.length !== capLast) { capLast = v.length; if (v.length) { capDots.classList.remove('tick'); void capDots.offsetWidth; capDots.classList.add('tick'); } }
+      if (key === capKey) return; capKey = key;
+      var grew = v.length > capPrev; capPrev = v.length; real.textContent = '';
+      var caret = '<span class="caret"></span>';
+      if (!v) { real.innerHTML = '<span class="ph">اكتب كلمة السر</span>' + caret; return; }
+      if (capReveal) { var t = document.createElement('span'); t.className = 'txt'; t.textContent = v; real.appendChild(t); real.insertAdjacentHTML('beforeend', caret); return; }
+      var h = ''; for (var i = 0; i < v.length; i++) h += '<span class="st' + (grew && i === v.length - 1 ? ' new' : '') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/></svg></span>';
+      real.innerHTML = h + caret;
     }
     capPinEl.addEventListener('input', function () { capPinEl.value = norm(capPinEl.value).replace(/\D/g, ''); capPaint(); });
     autoEnter(capPinEl, function () { return cur && cur.target; }, $('capMsg'), function () { if (cur) go(); });
@@ -8834,7 +8838,7 @@ html.lg-tone.lg-custom .prof-brand img{background:transparent;border-radius:0}
   }
   function setTone(res,custom){
     if(window.__gmBrand)return;
-    root.classList.toggle('lg-custom',!!custom);
+    root.classList.toggle('lg-custom',!!custom);root.classList.remove('lg-tone');return;
     if(!res||res.a<.9||res.spread>46){root.classList.remove('lg-tone');return;}
     var lum=.2126*res.r+.7152*res.g+.0722*res.b,dark=lum<140;
     var s=root.style;
@@ -9247,56 +9251,94 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
 })();
 </script>
 
-<style id="gate-v5">
-/* ===== واجهة الدخول v5: خلفية بيضة + لوجو بإطاره + كروت أقسام + 3 مستطيلات للزينة ===== */
-#gateScreen#gateScreen{background:#fff!important;background-image:radial-gradient(760px 380px at 50% -90px,color-mix(in srgb,var(--primary,#0a66ff) 9%,transparent),transparent 70%)!important;align-items:flex-start!important;overflow:auto!important;padding:clamp(28px,6vh,60px) 18px calc(28px + env(safe-area-inset-bottom,0px))!important}
+
+
+<style id="gate-v6">
+/* ===== واجهة الدخول v6: كل الألوان من الثيم المختار (مش من اللوجو) ===== */
+#gateScreen#gateScreen{--gp:var(--primary,#b57a00);--gon:var(--on-primary,#fff);--gw:color-mix(in srgb,var(--gp) 12%,#ec4899);
+ background:radial-gradient(640px 360px at 50% -70px,color-mix(in srgb,var(--gp) 24%,transparent),transparent 70%),radial-gradient(460px 320px at 108% 108%,color-mix(in srgb,var(--gp) 13%,transparent),transparent 72%),radial-gradient(420px 280px at -8% 70%,color-mix(in srgb,var(--gw) 9%,transparent),transparent 72%),var(--bg-main)!important;
+ align-items:flex-start!important;overflow:auto!important;padding:clamp(28px,6vh,60px) 18px calc(28px + env(safe-area-inset-bottom,0px))!important}
 #gateScreen#gateScreen::before{display:none!important}
-#gateScreen#gateScreen .gate-wrap{margin:auto!important;width:100%;max-width:560px!important}
-#gateScreen#gateScreen .gate-header-block{background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:0!important;max-width:none!important;margin:0 0 clamp(22px,4vh,34px)!important;text-align:center}
-#gateScreen#gateScreen .gate-logo{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0 auto 18px!important;line-height:0;overflow:visible}
-#gateScreen#gateScreen .gate-logo img.gm-gate,#gateScreen#gateScreen #gateLogoImage{display:block;width:clamp(128px,36vw,172px)!important;height:clamp(128px,36vw,172px)!important;max-height:none!important;margin:0 auto!important;padding:0!important;border:0!important;border-radius:30px!important;object-fit:contain!important;background:var(--lg-bg,#10151c)!important;-webkit-mask-image:none!important;mask-image:none!important;mix-blend-mode:normal!important;filter:none!important;box-shadow:0 0 0 1px rgba(15,23,42,.06),0 18px 40px -8px rgba(15,23,42,.35),0 6px 14px rgba(15,23,42,.12)!important}
-#gateScreen#gateScreen #gateLogoImage{margin-bottom:18px!important}
-#gateScreen#gateScreen .gate-header-block h1{margin:0!important;font-size:clamp(2rem,9.5vw,3rem)!important;font-weight:900!important;letter-spacing:1px;line-height:1.1;color:var(--primary,#0a66ff)!important;-webkit-text-fill-color:var(--primary,#0a66ff)!important;background:none!important;text-shadow:none!important}
-#gateScreen#gateScreen .gate-custom-subtitle{color:#475569!important;letter-spacing:2px;font-size:1rem!important;margin-top:8px}
-#gateScreen#gateScreen .gate-hint-text{display:block;background:none!important;border:0!important;box-shadow:none!important;padding:0!important;margin:14px 0 0!important;color:#64748b!important;font-weight:700;font-size:1rem!important}
+#gateScreen#gateScreen .gate-wrap{margin:auto!important;width:100%;max-width:520px!important}
+#gateScreen#gateScreen .gate-header-block{background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:0!important;max-width:none!important;margin:0 0 clamp(24px,4.5vh,38px)!important;text-align:center}
+#gateScreen#gateScreen .gate-logo{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0 auto 20px!important;line-height:0;overflow:visible}
+#gateScreen#gateScreen .gate-logo img.gm-gate,#gateScreen#gateScreen #gateLogoImage{display:block;width:clamp(124px,34vw,160px)!important;height:clamp(124px,34vw,160px)!important;max-height:none!important;margin:0 auto!important;padding:0!important;border:0!important;border-radius:32px!important;object-fit:contain!important;background:#10141b!important;-webkit-mask-image:none!important;mask-image:none!important;mix-blend-mode:normal!important;filter:none!important;
+ box-shadow:0 0 0 1px color-mix(in srgb,var(--gp) 45%,transparent),0 0 0 7px color-mix(in srgb,var(--gp) 11%,transparent),0 26px 54px -14px color-mix(in srgb,var(--gp) 55%,transparent)!important}
+#gateScreen#gateScreen #gateLogoImage{margin-bottom:20px!important}
+#gateScreen#gateScreen .gate-header-block h1{margin:0!important;font-size:clamp(2rem,9vw,2.9rem)!important;font-weight:900!important;letter-spacing:1.5px;line-height:1.12;background:linear-gradient(135deg,var(--gp),color-mix(in srgb,var(--gp) 50%,var(--text-main)))!important;-webkit-background-clip:text!important;background-clip:text!important;-webkit-text-fill-color:transparent!important;color:var(--gp)!important;text-shadow:none!important}
+#gateScreen#gateScreen .gate-custom-subtitle{color:var(--text-muted)!important;letter-spacing:2px;font-size:.98rem!important;margin-top:8px}
+#gateScreen#gateScreen .gate-hint-text{display:flex!important;align-items:center;justify-content:center;gap:14px;background:none!important;border:0!important;box-shadow:none!important;padding:0!important;margin:16px 0 0!important;color:var(--text-muted)!important;font-weight:700;font-size:.98rem!important}
+#gateScreen#gateScreen .gate-hint-text::before,#gateScreen#gateScreen .gate-hint-text::after{content:"";width:34px;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--gp) 70%,transparent))}
+#gateScreen#gateScreen .gate-hint-text::after{transform:scaleX(-1)}
 
 #gateScreen#gateScreen .gate-main-grid{display:grid!important;grid-template-columns:1fr!important;gap:16px!important}
 @media(min-width:640px){#gateScreen#gateScreen .gate-wrap{max-width:760px!important}#gateScreen#gateScreen .gate-main-grid{grid-template-columns:1fr 1fr!important}}
-#gateScreen#gateScreen .gate-big-btn{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:4px!important;position:relative;overflow:hidden;isolation:isolate;min-height:clamp(132px,19vh,180px)!important;padding:22px 18px!important;border:0!important;border-radius:30px!important;color:#fff!important;transition:transform .22s,box-shadow .22s,filter .22s}
-#gateScreen#gateScreen .gate-big-men{background:radial-gradient(120% 90% at 10% 0%,rgba(255,255,255,.26),transparent 55%),linear-gradient(145deg,var(--men,#0a66ff),color-mix(in srgb,var(--men,#0a66ff) 50%,#000))!important;box-shadow:0 18px 36px -12px color-mix(in srgb,var(--men,#0a66ff) 60%,transparent)!important}
-#gateScreen#gateScreen .gate-big-women{background:radial-gradient(120% 90% at 10% 0%,rgba(255,255,255,.26),transparent 55%),linear-gradient(145deg,#ec4899,#8e0f4c)!important;box-shadow:0 18px 36px -12px rgba(219,39,119,.6)!important}
-#gateScreen#gateScreen .gate-big-btn::before{display:block!important;content:"";position:absolute;z-index:-1;top:-72px;right:-48px;left:auto;bottom:auto;width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.11)!important}
+#gateScreen#gateScreen .gate-big-btn{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:4px!important;position:relative;overflow:hidden;isolation:isolate;min-height:clamp(128px,18vh,172px)!important;padding:22px 18px!important;border:0!important;border-radius:28px!important;color:var(--gon)!important;transition:transform .22s,box-shadow .22s,filter .22s}
+#gateScreen#gateScreen .gate-big-men{background:linear-gradient(155deg,color-mix(in srgb,var(--gp) 86%,#fff),var(--gp) 48%,color-mix(in srgb,var(--gp) 58%,#000))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 0 0 1px rgba(255,255,255,.1),0 20px 38px -14px color-mix(in srgb,var(--gp) 70%,transparent)!important}
+#gateScreen#gateScreen .gate-big-women{background:linear-gradient(155deg,color-mix(in srgb,var(--gw) 86%,#fff),var(--gw) 48%,color-mix(in srgb,var(--gw) 58%,#000))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 0 0 1px rgba(255,255,255,.1),0 20px 38px -14px color-mix(in srgb,var(--gw) 70%,transparent)!important}
+#gateScreen#gateScreen .gate-big-btn::before{display:block!important;content:"";position:absolute;z-index:-1;top:-80px;right:-50px;left:auto;bottom:auto;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.2),rgba(255,255,255,0) 68%)!important}
 #gateScreen#gateScreen .gate-big-btn::after{display:none!important}
 #gateScreen#gateScreen .gate-big-btn:hover{transform:translateY(-4px);filter:brightness(1.06)}
 #gateScreen#gateScreen .gate-big-btn:active{transform:scale(.98)}
-#gateScreen#gateScreen .gate-big-btn .gate-ic{display:flex!important;align-items:center;justify-content:center;width:62px!important;height:62px!important;border-radius:20px!important;margin:0 0 6px!important;background:rgba(255,255,255,.18)!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)!important}
-#gateScreen#gateScreen .gate-big-btn .gate-ic .ico{width:34px!important;height:34px!important}
-#gateScreen#gateScreen .gate-big-btn .gate-lbl{color:#fff!important;font-size:clamp(1.5rem,6vw,1.9rem)!important;font-weight:900}
-#gateScreen#gateScreen .gate-big-btn .gate-sub{color:rgba(255,255,255,.8)!important;font-size:.85rem!important;font-weight:700}
+#gateScreen#gateScreen .gate-big-btn .gate-ic{display:flex!important;align-items:center;justify-content:center;width:60px!important;height:60px!important;border-radius:20px!important;margin:0 0 6px!important;background:color-mix(in srgb,var(--gon) 16%,transparent)!important;color:var(--gon)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gon) 28%,transparent)!important}
+#gateScreen#gateScreen .gate-big-btn .gate-ic .ico{width:32px!important;height:32px!important}
+#gateScreen#gateScreen .gate-big-btn .gate-lbl{color:var(--gon)!important;font-size:clamp(1.45rem,6vw,1.85rem)!important;font-weight:900}
+#gateScreen#gateScreen .gate-big-btn .gate-sub{color:color-mix(in srgb,var(--gon) 78%,transparent)!important;font-size:.84rem!important;font-weight:700}
 
 #gateScreen .gate-deco{display:flex;gap:10px;margin-top:22px;direction:ltr;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
-#gateScreen .gate-deco span{position:relative;flex:1;height:46px;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,#16161c,#000);border:1px solid rgba(255,255,255,.07);box-shadow:0 10px 22px -8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1)}
+#gateScreen .gate-deco span{position:relative;flex:1;height:40px;border-radius:15px;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--gp) 16%,var(--bg-card)),color-mix(in srgb,var(--gp) 7%,var(--bg-card)));border:1px solid color-mix(in srgb,var(--gp) 30%,transparent);box-shadow:0 10px 22px -12px color-mix(in srgb,var(--gp) 60%,transparent),inset 0 1px 0 rgba(255,255,255,.14)}
 #gateScreen .gate-deco span:nth-child(2){flex:1.7}
-#gateScreen .gate-deco span::before{content:"";position:absolute;inset:0;margin:auto;width:26px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent)}
-#gateScreen .gate-deco span::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.17),transparent);transform:skewX(-20deg);animation:gdSheen 5.5s ease-in-out infinite}
+#gateScreen .gate-deco span::before{content:"";position:absolute;inset:0;margin:auto;width:24px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--gp),transparent);opacity:.85}
+#gateScreen .gate-deco span::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.22),transparent);transform:skewX(-20deg);animation:gdSheen 5.5s ease-in-out infinite}
 #gateScreen .gate-deco span:nth-child(2)::after{animation-delay:.9s}
 #gateScreen .gate-deco span:nth-child(3)::after{animation-delay:1.8s}
 @keyframes gdSheen{0%,55%{left:-60%}100%{left:130%}}
 @media(prefers-reduced-motion:reduce){#gateScreen .gate-deco span::after{animation:none}}
 #gateScreen.gate-mixed-pin .gate-deco{display:none!important}
 
-/* كلمة السر للجيم المختلط: كارت أبيض + نقاط ثابتة ما بتكشفش عدد الأرقام */
-#gateScreen#gateScreen .gate-pin{background:#fff!important;border:1.5px solid #e2e8f0!important;box-shadow:0 18px 44px rgba(15,23,42,.1)!important}
-#gateScreen#gateScreen .gate-pin-field input{background-color:#f1f5f9!important;color:#0f172a!important}
-#gatePinInput[type=password]:not(:placeholder-shown){color:transparent!important;caret-color:transparent;background-repeat:no-repeat!important;background-position:center!important;background-size:88px 16px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='16'%3E%3Cg fill='%23334155'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Ccircle cx='32' cy='8' r='6'/%3E%3Ccircle cx='56' cy='8' r='6'/%3E%3Ccircle cx='80' cy='8' r='6'/%3E%3C/g%3E%3C/svg%3E")!important}
+/* الجيم المختلط */
+#gateScreen#gateScreen .gate-pin{background:var(--bg-card)!important;border:1.5px solid color-mix(in srgb,var(--gp) 30%,var(--border-color))!important;box-shadow:0 20px 48px -18px color-mix(in srgb,var(--gp) 40%,transparent)!important}
+#gateScreen#gateScreen .gate-pin-title{color:var(--text-main)!important}
+#gateScreen#gateScreen .gate-pin-hint{color:var(--text-muted)!important}
+#gateScreen#gateScreen .gate-pin-field{position:relative}
+#gateScreen#gateScreen .gate-pin-field input{background-color:color-mix(in srgb,var(--text-main) 6%,var(--bg-card))!important;color:var(--text-main)!important}
+#gatePinInput.masked{color:transparent!important;-webkit-text-fill-color:transparent!important;caret-color:transparent!important}
+.gate-pin-stars{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 6px;direction:ltr;pointer-events:none;padding:0 46px;overflow:hidden}
+.gate-pin-stars .st{width:18px;height:18px;color:var(--primary)}
+.gate-pin-stars .st svg{width:100%;height:100%;display:block}
 
-/* نافذة كلمة السر: 4 نقاط ثابتة، والعين تظهر الرقم الحقيقي */
-#capModal .cap-dots{max-width:100%;min-width:0}
-#capModal .cap-real{display:none;direction:ltr;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font:800 1.7rem 'Cairo',sans-serif;letter-spacing:.14em;color:#12151f}
-#capModal .cap-dots.show-real i{display:none}
-#capModal .cap-dots.show-real .cap-real{display:block}
-#capModal .cap-dots.tick i.on{animation:capTick .2s}
-@keyframes capTick{0%{transform:scale(1.12)}50%{transform:scale(1.34)}100%{transform:scale(1.12)}}
+/* نافذة كلمة السر: ألوانها من الثيم، ونجمة لكل حرف */
+#capModal#capModal{--tc:var(--primary,#b57a00)}
+#capModal#capModal[data-t="WOMEN"]{--tc:color-mix(in srgb,var(--primary,#b57a00) 12%,#ec4899)}
+#capModal#capModal[data-t="OWNER"]{--tc:color-mix(in srgb,var(--primary,#b57a00) 82%,#000)}
+#capModal .cap-card{background:var(--bg-card)!important;color:var(--text-main)!important}
+#capModal .cap-head::after{background:var(--bg-card)!important}
+#capModal .cap-pinbox{background:color-mix(in srgb,var(--text-main) 6%,var(--bg-card))!important;border-color:color-mix(in srgb,var(--text-main) 12%,var(--bg-card))!important;min-height:78px;padding:20px 46px!important}
+#capModal .cap-pinbox:focus-within{border-color:var(--tc)!important}
+#capModal .cap-cancel{color:var(--text-muted)!important}
+#capModal .cap-cancel:hover{color:var(--text-main)!important}
+#capModal .cap-eye{color:var(--text-muted)}
+#capModal .cap-hint{color:var(--text-muted)!important}
+#capModal .cap-pin,#capModal .cap-pick{background:color-mix(in srgb,var(--text-main) 6%,var(--bg-card))!important;color:var(--text-main)!important;border-color:color-mix(in srgb,var(--text-main) 12%,var(--bg-card))!important}
+#capModal .cap-dots{max-width:100%;min-width:0;width:100%;justify-content:center}
+#capModal .cap-dots i{display:none!important}
+#capModal .cap-real{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 5px;direction:ltr;min-height:30px;max-width:100%}
+#capModal .cap-real .st{width:17px;height:17px;color:var(--tc)}
+#capModal .cap-real .st svg{width:100%;height:100%;display:block}
+#capModal .cap-real .st.new{animation:capPop .2s ease-out}
+#capModal .cap-real .ph{color:var(--text-muted);font:700 1rem 'Cairo',sans-serif;direction:rtl}
+#capModal .cap-real .txt{font:800 1.5rem 'Cairo',sans-serif;letter-spacing:.1em;word-break:break-all;color:var(--text-main)}
+#capModal .cap-real .caret{width:2px;height:22px;border-radius:2px;background:var(--tc);animation:capBlink 1s infinite}
+@keyframes capPop{0%{transform:scale(.3) rotate(-60deg);opacity:0}70%{transform:scale(1.25) rotate(8deg)}100%{transform:scale(1) rotate(0);opacity:1}}
 </style>
+<script>
+/* نجمة لكل حرف في حقل كلمة السر بتاع الجيم المختلط */
+(function(){
+  var inp=document.getElementById('gatePinInput'),ov=document.getElementById('gatePinStars');if(!inp||!ov)return;
+  var STAR='<span class="st"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/></svg></span>',k='';
+  function paint(){var m=inp.type==='password',v=inp.value,key=(m?'m':'r')+v;inp.classList.toggle('masked',m&&v.length>0);if(key===k)return;k=key;ov.innerHTML=(m&&v)?new Array(v.length+1).join(STAR):'';}
+  setInterval(paint,100);inp.addEventListener('input',paint);
+})();
+</script>
 </body>
 </html>
