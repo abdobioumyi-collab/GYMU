@@ -1130,13 +1130,12 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
   }
   function check(){
     var l=document.getElementById('shLoading');
-    if(l&&l.hidden)return out();
-    var g=document.getElementById('gateScreen');
-    if(g&&g.offsetParent!==null&&getComputedStyle(g).display!=='none'&&(!l||l.hidden))return out();
+    if(document.body.classList.contains('gym-running'))return out();   /* البرنامج فتح مباشرة على الجيم */
+    if(l&&l.hidden)return out();                                      /* ظهرت شاشة تسجيل الدخول/اختيار الجيم */
   }
-  var iv=setInterval(function(){check();if(done)clearInterval(iv);},120);
+  var iv=setInterval(function(){check();if(done)clearInterval(iv);},60);
   window.addEventListener('load',check);
-  setTimeout(out,8000);
+  setTimeout(out,5000);
   window.__gmSplashOut=out;
 })();
 </script>
@@ -2410,7 +2409,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
     <!-- Firebase SDK (Compat) - يعمل مباشرة بتاج script بدون أي أدوات بناء -->
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script id="gmSbLib" async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" onload="window.__gmSbDone=1;window.__gmSbReady&&window.__gmSbReady()" onerror="window.__gmSbDone=1;window.__gmSbReady&&window.__gmSbReady()"></script>
 <script type="text/plain" id="gymScriptDate">
                 // ==========================================================
                 // منتقي التاريخ (يوم / شهر / سنة) — بديل حقل التاريخ العادي
@@ -4378,9 +4377,12 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
 
         function applyTheme(themeName, element) {
             if (!GM_THEMES.some(t => t.id === themeName)) themeName = 'default';
-            document.documentElement.setAttribute('data-theme', themeName);
+            const root = document.documentElement;
+            root.classList.add('gm-switching');
+            root.setAttribute('data-theme', themeName);
             localStorage.setItem('gym_pro_active_theme', themeName);
             gmRenderThemeStudio();
+            requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('gm-switching')));
         }
 
         function bootstrapGymApplication() {
@@ -7053,7 +7055,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         applyIcons();
 </script>
 <script>
-(function () {
+window.__gmShellRun = function () {
   'use strict';
   var CFG = {
     url: 'https://wvekeoemprxbxjklbaig.supabase.co',
@@ -7098,7 +7100,12 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
   var realSb = null, offlineMode = false, sb;
   if (window.supabase && window.supabase.createClient) {
     realSb = window.supabase.createClient(CFG.url, CFG.key, {
-      auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+      global: { fetch: function (u, o) {   // مهلة 15 ثانية لأي طلب: لو النت معلّق نفشل بسرعة ونشتغل من الكاش المحلي
+        o = o || {}; var c = new AbortController(), t = setTimeout(function () { c.abort(); }, 15000);
+        if (o.signal) { if (o.signal.aborted) c.abort(); else o.signal.addEventListener('abort', function () { c.abort(); }); }
+        return fetch(u, Object.assign({}, o, { signal: c.signal })).finally(function () { clearTimeout(t); });
+      } }
     });
     sb = realSb;
   } else {
@@ -8458,16 +8465,27 @@ var mix = g.layout_mode === 'mixed';
     var urlErr = readUrlError();
     try {
       var cu = cacheGet('sh_cache_user'), ses = null;
+      var haveCache = !!(cu && readBk() && cacheGet(CK + cu.id));
+      function tmo(p, ms) { return Promise.race([p, new Promise(function (r) { setTimeout(function () { r(null); }, ms); })]); }
       var upP = offlineMode ? Promise.resolve(false) : reachable();
       var gsP = offlineMode ? null : sb.auth.getSession();
-      var up = offlineMode ? false : (navigator.onLine ? await Promise.race([upP, new Promise(function (r) { setTimeout(function () { r(true); }, 600); })]) : await upP);
-      if (!up && cu && readBk() && cacheGet(CK + cu.id)) {
+      var up;
+      if (offlineMode || !navigator.onLine) up = false;
+      else if (haveCache) up = await tmo(upP, 1500);   // عندنا بيانات محلية: لو السيرفر ما ردّش في ثانية ونص نشتغل محلياً فوراً
+      else up = await upP;                              // أول مرة على الجهاز: لازم نت
+      var res = null;
+      if (up) {
+        res = await tmo(gsP || sb.auth.getSession(), haveCache ? 5000 : 15000);
+        if (!res && haveCache) up = false;               // الجلسة اتأخرت: نكمل أوفلاين
+      }
+      if (!up && haveCache) {
         // مفيش نت: ندخل بآخر حساب اتسجّل على الجهاز، وكل حاجة تتحفظ محلياً وتترفع لما النت يرجع
         if (!sb.__stub) { sb = makeStub(); window.__gmSb = sb; }
         offlineMode = true;
         ses = { user: { id: cu.id, email: cu.email } };
       } else {
-        var res = gsP ? await gsP : await sb.auth.getSession(); ses = res.data.session;
+        if (!res) res = await tmo(sb.auth.getSession(), 8000) || { data: { session: null } };
+        ses = res.data.session;
         if (!ses && /[?&#](code|access_token|refresh_token)=/.test(location.search + location.hash)) { await new Promise(function (r) { setTimeout(r, 700); }); res = await sb.auth.getSession(); ses = res.data.session; }
         if (!ses) ses = await restoreSession();
         if (ses) { saveBk(ses); cacheSet('sh_cache_user', { id: ses.user.id, email: ses.user.email }); }
@@ -8485,8 +8503,23 @@ var mix = g.layout_mode === 'mixed';
     if (r.error) { btn.disabled = false; btn.classList.remove('is-loading'); $('shGlabel').textContent = 'المتابعة بحساب Google'; setErr(friendlyAuthError(r.error.message || '') || 'تعذّر بدء الدخول بحساب Google.'); }
   });
   boot();
+};
+</script>
+<script>
+/* تشغيل شاشة الدخول: أول ما المكتبة تتحمل، أو بعد مهلة قصيرة لو النت ضعيف/مفيش إنترنت فعلي (عشان ما نعلقش على اللوجو) */
+(function () {
+  var started = false;
+  function go() {
+    if (started) return; started = true;
+    try { window.__gmShellRun(); }
+    catch (e) { console.error(e); var l = document.getElementById('shLoading'), lg = document.getElementById('shLogin'); if (l) l.hidden = true; if (lg) lg.hidden = false; }
+  }
+  window.__gmSbReady = go;
+  var hasCache = false;
+  try { hasCache = !!localStorage.getItem('sh_cache_user'); } catch (e) {}
+  if (window.__gmSbDone || window.supabase) go();
+  else setTimeout(go, !navigator.onLine ? 0 : (hasCache ? 2500 : 12000));
 })();
-
 </script>
 <script>
 /* جولة تعريفية أول مرة */
@@ -10181,5 +10214,20 @@ body:not(.custom-brand) #adminDashboardArea#adminDashboardArea>.brand-container>
   setInterval(sync,600);document.addEventListener('DOMContentLoaded',sync);window.addEventListener('load',sync);
 })();
 </script>
+<style id="gm-perf">
+/* ===== أداء: شيل الحركات الزخرفية اللانهائية (كانت بتخلّي المعالج شغّال طول الوقت وبتبطّأ الكتابة) ===== */
+#gateScreen .gate-deco span::after,
+#gateScreen#gateScreen .gate-header-block::before,
+#gateScreen#gateScreen .gate-logo img.gm-gate,
+#gateScreen#gateScreen #gateLogoImage,
+#shLogin .lx-bg::before,#shLogin .lx-bg::after,#shLogin#shLogin .lx-logo,
+#shLoading::before{animation:none!important}
+#gateScreen .gate-deco span::after{display:none!important}
+.badge-danger,.badge-warning{animation-iteration-count:4!important}
+/* تبديل الثيم: من غير انتقالات على آلاف العناصر مرة واحدة */
+html.gm-switching *,html.gm-switching *::before,html.gm-switching *::after{transition:none!important;animation-play-state:paused!important}
+/* الشاشات المخفية ما تتحسبش في التخطيط */
+.sh-screen[hidden]{display:none!important}
+</style>
 </body>
 </html>
