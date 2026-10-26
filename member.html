@@ -303,6 +303,23 @@ h1{font-size:1.15rem}
       var url = cv.toDataURL('image/png'); cardCache = { sig: sig, url: url }; return url;
     });
   }
+
+  function printCardImage(url) {
+    var f = document.createElement('iframe');
+    f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    document.body.appendChild(f);
+    var d = f.contentWindow.document; d.open();
+    d.write('<!doctype html><html><head><meta charset="utf-8"><title>الكارنيه</title><style>@page{size:A4;margin:0}html,body{margin:0;background:#fff}body{display:flex;justify-content:center;padding-top:18mm}img{display:block;width:85.6mm;height:54mm;outline:.2mm dashed #bbb}</style></head><body><img id="c" alt="" src="' + url + '"></body></html>');
+    d.close();
+    var im = d.getElementById('c'), done = false;
+    function go() {
+      if (done) return; done = true;
+      try { f.contentWindow.focus(); f.contentWindow.print(); }
+      catch (e) { var w = window.open(''); if (w) { w.document.write('<img src="' + url + '" style="width:85.6mm;height:54mm"><script>setTimeout(function(){print()},400)<\/script>'); w.document.close(); } }
+      setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 60000);
+    }
+    if (im.complete) setTimeout(go, 150); else im.onload = function () { setTimeout(go, 150); };
+  }
   function downloadCard() {
     drawCard().then(function (url) {
       var a = document.createElement('a'); a.href = url; a.download = 'card-' + me.member.id + '.png'; document.body.appendChild(a); a.click(); a.remove();
@@ -335,7 +352,7 @@ h1{font-size:1.15rem}
       '<div class="hero"><button class="avatar" id="chg" ' + av + ' aria-label="تغيير الصورة">' + (me.photo ? '' : esc((m.name || '?').charAt(0))) + '<i>📷</i></button><div><div class="hi">' + (hr < 12 ? 'صباح الخير' : hr < 18 ? 'أهلاً بيك' : 'مساء الخير') + ' يا ' + esc(first) + ' 👋</div><div class="nm">' + esc(m.name) + '</div><div class="mot">' + mot + '</div><div class="chips"><span class="chip ' + st.k + '">' + esc(st.t) + '</span><span class="chip num">كود #' + esc(m.id) + '</span>' + (m.plan ? '<span class="chip">' + esc(m.plan) + '</span>' : '') + '</div></div></div>' +
       (inf.notice ? '<div class="alert warn"><span>📢 ' + esc(inf.notice) + '</span></div>' : '') + (st.k !== 'ok' && left != null ? '<div class="alert ' + st.k + '"><span>' + (left < 0 ? 'اشتراكك خلص يوم ' + endTxt + '. جدّد دلوقتي وكمّل تمرينك' + priceTxt + '.' : (left === 0 ? 'النهارده آخر يوم في اشتراكك' : 'اشتراكك بينتهي يوم ' + endTxt + ' (باقي ' + left + ' يوم)') + '. جدّد قبل ما يفوتك يوم' + priceTxt + '.') + '</span><button class="btn" data-k="renewal">جدّد اشتراكك</button></div>' : '') +
       '<div class="grid">' +
-      '<div class="box s7"><img class="cardimg" id="cardImg" alt="الكارنيه"' + (cardCache.url ? ' src="' + cardCache.url + '"' : '') + '><div class="tools"><button class="btn" id="dl">⬇️ تحميل الكارنيه</button><button class="btn ghost" id="chg2">📷 غيّر صورتي</button><button class="btn ghost" id="shr">📤 شارك الكارنيه</button></div><div style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap"><span class="sub" style="margin:0">لغة الكارنيه</span><span class="seg"><button data-l="en" class="' + (cardLang === 'en' ? 'on' : '') + '">English</button><button data-l="ar" class="' + (cardLang === 'ar' ? 'on' : '') + '">عربي</button></span></div><div style="text-align:center">' + (cardLang === 'en' ? '<button class="link" id="en">✏️ تعديل الاسم اللي على الكارنيه (' + esc(enName(m)) + ')</button>' : '') + '</div></div>' +
+      '<div class="box s7"><img class="cardimg" id="cardImg" alt="الكارنيه"' + (cardCache.url ? ' src="' + cardCache.url + '"' : '') + '><div class="tools"><button class="btn" id="dl">⬇️ تحميل الكارنيه</button><button class="btn ghost" id="prt">🖨️ طباعة الكارنيه</button><button class="btn ghost" id="chg2">📷 غيّر صورتي</button><button class="btn ghost" id="shr">📤 شارك الكارنيه</button></div><div style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap"><span class="sub" style="margin:0">لغة الكارنيه</span><span class="seg"><button data-l="en" class="' + (cardLang === 'en' ? 'on' : '') + '">English</button><button data-l="ar" class="' + (cardLang === 'ar' ? 'on' : '') + '">عربي</button></span></div><div style="text-align:center">' + (cardLang === 'en' ? '<button class="link" id="en">✏️ تعديل الاسم اللي على الكارنيه (' + esc(enName(m)) + ')</button>' : '') + '</div></div>' +
       '<div class="box s5"><h2>اشتراكك الحالي</h2><div class="ringbox"><div class="ring"><svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="52" fill="none" stroke="#e8edf9" stroke-width="12"/><circle cx="66" cy="66" r="52" fill="none" stroke="' + col + '" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - frac)).toFixed(1) + '"/></svg><div><b class="num" style="color:' + col + '">' + (left == null ? '—' : Math.max(0, left)) + '</b><small>يوم متبقي</small></div></div><div style="flex:1">' + kv([['من', fmt(m.start, 'ar')], ['إلى', fmt(m.end, 'ar')], total ? ['مدة الاشتراك', total + ' يوم'] : null, used != null ? ['اللي عدّى', used + ' يوم'] : null]) + '</div></div></div>' +
       (lim ? '<div class="box s6"><h2>حصصك</h2><div class="num" style="font-size:2rem;font-weight:800;color:var(--goldt)">' + done + ' <small style="font-size:1rem;color:var(--mut)">/ ' + lim + ' حصة</small></div><div class="bartrack"><i style="width:' + Math.min(100, done / lim * 100) + '%"></i></div><div class="sub" style="margin:0">' + (expired ? 'الاشتراك انتهى، وباقي الحصص اتلغى. جدّد عشان تكمّل.' : done >= lim ? 'خلصت كل حصص الباقة.' : 'فاضل لك <b class="num">' + (lim - done) + '</b> حصة لحد ' + fmt(m.end, 'ar') + '.') + '</div></div>' : '') +
       (total ? '<div class="box s12"><h2>تقدّم اشتراكك</h2><div class="plbl"><span>اليوم <b class="num">' + Math.min(left < 0 ? total : used + 1, total) + '</b> من <b class="num">' + total + '</b></span><span><b class="num">' + prog + '%</b></span><span>' + (left < 0 ? 'منتهي' : left === 0 ? 'آخر يوم' : 'باقي <b class="num">' + left + '</b> يوم') + '</span></div>' + (cells ? '<div class="pbar">' + cells + '</div>' : '<div class="bartrack"><i style="width:' + prog + '%"></i></div>') + '<div class="plbl"><span>' + fmt(m.start, 'ar') + '</span><span>' + endTxt + '</span></div><div class="rnw">🔄 ' + (left < 0 ? 'التجديد متاح دلوقتي' : 'موعد التجديد: ' + endTxt) + (price ? ' · المبلغ ' + price + ' ج' : '') + '</div></div>' : '') +
@@ -345,7 +362,7 @@ h1{font-size:1.15rem}
       ((inf.promo || inf.wa || inf.fb || inf.hours || ph || waA) ? '<div class="box s6 ct"><h2>من الجيم</h2>' + (inf.hours ? '<p class="sub" style="color:var(--txt)">🕒 ' + esc(inf.hours) + '</p>' : '') + (ph ? '<p class="sub" style="color:var(--txt)">📞 <a href="tel:' + esc(ph) + '" dir="ltr" style="color:inherit;font-weight:800">' + esc(ph) + '</a></p>' : '') + (waA ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(waA) + '">💬 كلّم الكابتن على واتساب</a>' : '') + '' + (inf.promo ? '<div class="rnw" style="margin:12px 0">🎁 ' + esc(inf.promo) + '</div>' : '') + '<div class="tools" style="margin-top:0">' + (inf.wa ? '<a class="btn" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="' + esc(inf.wa) + '">💬 جروب الواتساب</a>' : '') + (inf.fb ? '<a class="btn ghost" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="' + esc(inf.fb) + '">صفحة الفيسبوك</a>' : '') + '</div></div>' : '') + '<div class="box s6"><h2>إنجازاتك</h2>' + (mdays != null ? '<div class="cnt">🗓️ عضو معانا من ' + mdays + ' يوم</div>' : '') + '<div class="bdg">' + BD.map(function (b) { return '<div class="bd' + (b[2] ? '' : ' off') + '"><span>' + b[0] + '</span>' + b[1] + '<small>' + b[3] + '</small></div>'; }).join('') + '</div></div><div class="box s6"><h2>نصيحة النهارده</h2><div class="tip2"><em>💡</em><div>' + tip + '<small>' + new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' }) + '</small></div></div></div>' +
       '<p class="sub s12" style="text-align:center;margin:4px 0 0">🔒 رابط بوابتك خاص بيك وبيفتح كارنيهك وبياناتك، متشاركوش مع حد.</p></div>';
     document.getElementById('lo').onclick = function () { sdel(TK); token = null; authView(); };
-    document.getElementById('rf').onclick = load; document.getElementById('chg').onclick = document.getElementById('chg2').onclick = pickPhoto; document.getElementById('dl').onclick = downloadCard; document.getElementById('shr').onclick = shareCard;
+    document.getElementById('rf').onclick = load; document.getElementById('chg').onclick = document.getElementById('chg2').onclick = pickPhoto; document.getElementById('dl').onclick = downloadCard; document.getElementById('prt').onclick = function () { drawCard().then(printCardImage); }; document.getElementById('shr').onclick = shareCard;
     [].forEach.call(document.querySelectorAll('[data-l]'), function (b) { b.onclick = function () { cardLang = b.getAttribute('data-l'); try { localStorage.setItem('mp_cl', cardLang); } catch (e) {} home(); }; });
     if (document.getElementById('en')) document.getElementById('en').onclick = function () { var v = prompt('اكتب اسمك بالإنجليزي زي ما عايزه على الكارنيه:', enName(m)); if (v && v.trim()) { try { localStorage.setItem('mp_en_' + slug + '_' + m.id, v.trim().slice(0, 40)); } catch (e) {} home(); } };
     [].forEach.call(document.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { sheet(b.getAttribute('data-k')); }; });
@@ -616,13 +633,12 @@ h1{font-size:1.15rem}
   var timerDone = false, shown = false;
   function setLS(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function canShow() {
-    if (shown || isStandalone() || ls(LS_INST) === '1') return false;
-    return Date.now() >= (+ls(LS_NEXT) || 0);
+    if (shown || isStandalone()) return false;     // اتفتح من البرنامج المثبّت → ماتظهرش
+    if (!isIOS()) return true;                       // أندرويد: كروم نفسه مابيبعتش الطلب لو مثبّت
+    return Date.now() >= (+ls(LS_NEXT) || 0);        // آيفون مفيش طريقة نعرف: نسكت يوم بعد الرفض
   }
   function snooze() {                                // رفض: اسأله تاني بعد مدة بتزيد كل مرة
-    var n = (+ls(LS_N) || 0) + 1;
-    setLS(LS_N, n);
-    setLS(LS_NEXT, Date.now() + DELAYS[Math.min(n - 1, DELAYS.length - 1)] * 864e5);
+    if (isIOS()) setLS(LS_NEXT, Date.now() + 864e5);
   }
   function markInstalled() { setLS(LS_INST, '1'); deferred = null; closeCard(true); }
 
@@ -683,10 +699,10 @@ h1{font-size:1.15rem}
     setTimeout(function () { o.classList.remove('on'); }, 450);
   }
   function later() { closeCard(); snooze(); }
-  function tryShow() { if (timerDone && mpInfo().name && canShow() && (deferred || isIOS())) showCard(); }
+  function tryShow() { if (timerDone && (mpInfo().name || mpInfo().gym) && canShow() && (deferred || isIOS())) showCard(); }
 
   var armed = false;
-  function arm() { if (armed || !mpInfo().name) return; armed = true; setTimeout(function () { timerDone = true; tryShow(); }, 2000); }
+  function arm() { if (armed || !(mpInfo().name || mpInfo().gym)) return; armed = true; setTimeout(function () { timerDone = true; tryShow(); }, 1200); }
   window.addEventListener('mpinfo', function () { arm(); build(); });
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; tryShow(); });
   window.addEventListener('appinstalled', markInstalled);

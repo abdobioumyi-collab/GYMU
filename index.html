@@ -18,8 +18,8 @@ window.addEventListener('unhandledrejection', function (e) { try { window.__gmEr
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://wvekeoemprxbxjklbaig.supabase.co" crossorigin>
     <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"></noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet"></noscript>
     <style>
         /* ========================================================
            نظام الـ THEMES (10 قوالب احترافية مصممة بعناية)
@@ -1884,9 +1884,11 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 <a href="#" id="waAbsenceBtn" target="waSendWindow" class="btn-action btn-wa-absent"><span class="ico" data-i="fa-whatsapp"></span> رسالة الغياب ومفتقدينك</a>
                 <a href="#" id="waGymLinksBtn" target="waSendWindow" class="btn-action btn-wa-remind" style="background:var(--success-light); color:var(--success);"><span class="ico" data-i="fa-whatsapp"></span> إرسال روابط الجيم (جروب + فيسبوك)</a>
                 <a href="#" id="waCardBtn" target="waSendWindow" class="btn-action btn-wa-remind" style="background:var(--warning-light); color:var(--warning);"><span class="ico" data-i="fa-whatsapp"></span> إرسال الكارنيه واتساب</a>
-                
+                <button type="button" class="btn-action btn-edit" id="gmCardShowBtn">🪪 إظهار الكارت</button>
+                <button type="button" class="btn-action btn-edit" id="gmCardPrintBtn">🖨️ طباعة الكارت</button>
                 <button class="btn-action btn-del" id="memberDeleteBtn" onclick="removeMemberPermanently()"><span class="ico" data-i="fa-trash-can"></span> حذف المشترك نهائيًا</button>
             </div>
+            <div id="gmCardPreview" style="display:none;margin-top:16px"></div>
             <button onclick="closeActiveModal('profileViewerModal')" style="width:100%; margin-top:20px; background:var(--bg-main); padding: 12px; border-radius: 12px; border:none; color:var(--text-main); font-weight:800; cursor:pointer; transition: 0.3s;">إغلاق النافذة</button>
         </div>
     </div>
@@ -1924,6 +1926,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 <button class="tab-btn" data-tab="expenses" onclick="switchAdminView('expenses')"><span class="ico" data-i="fa-coins"></span> الحسابات والمصروفات</button>
                 <div class="nav-group">الفريق والأمان</div>
                 <button class="tab-btn" data-tab="captains" onclick="switchAdminView('captains')"><span class="ico" data-i="fa-key"></span> الكباتن والأرقام السرية</button>
+                <button class="tab-btn" data-tab="attendance" onclick="switchAdminView('attendance')"><span class="ico" data-i="fa-clock"></span> حضور الكباتن</button>
                 <button class="tab-btn" data-tab="activity" onclick="switchAdminView('activity')"><span class="ico" data-i="fa-bell"></span> سجل النشاطات</button>
                 <button class="tab-btn" id="adminTeamTabBtn" data-tab="team" onclick="switchAdminView('team')" style="display:none"><span class="ico" data-i="fa-users"></span> <span id="adminTeamTabLbl">الفريق</span></button>
                 <div class="nav-group">الإعدادات</div>
@@ -2220,6 +2223,18 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         </div>
 
         <!-- ===== سجل النشاطات (مراقبة شاملة للكباتن) ===== -->
+        <!-- ===== حضور الكباتن: أول دخول لكل كابتن/كابتنة كل يوم (اليوم بيبدأ الساعة 4 الفجر بتوقيت القاهرة) ===== -->
+        <div id="adminViewAttendance" class="admin-view-panel">
+            <h3 class="admin-section-title"><span class="ico" data-i="fa-clock"></span> حضور الكباتن</h3>
+            <p class="hint-note">بيتسجل تلقائيًا أول دخول لكل كابتن وكابتنة كل يوم بكلمة السر، بتوقيت القاهرة. اليوم الجديد بيبدأ الساعة 4 الفجر.</p>
+            <div id="attTodayBox" class="att-today"></div>
+            <div class="att-filters">
+                <label>الشهر: <input type="month" id="attMonth" class="form-control" style="display:inline-block;width:auto" onchange="renderAttendancePanel()"></label>
+                <label>الكابتن: <select id="attWho" class="form-control" style="display:inline-block;width:auto;min-width:180px" onchange="renderAttendancePanel()"><option value="">الكل</option></select></label>
+            </div>
+            <div id="attList" class="att-list"></div>
+        </div>
+
         <div id="adminViewActivity" class="admin-view-panel">
             <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
                 <h3 class="admin-section-title" style="margin:0; border:none; padding:0;"><span class="ico" data-i="fa-bell"></span> سجل النشاطات - كل حركة تحصل من الكباتن أول بأول</h3>
@@ -2975,7 +2990,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 ['recalculateMetricsDashboard', 'renderMembersList', 'renderSpecialPackageTrackerGrid',
                  'renderActivityLogPanel', 'renderSalesTable', 'renderWorkspaceSalesTable',
                  'renderAdminFinancialVault', 'renderDailySessionsView', 'renderSubscriptionSelectOptions',
-                 'renderExpenseCategoriesEditor', 'renderExpensesTable'].forEach(safeCall);
+                 'renderExpenseCategoriesEditor', 'renderExpensesTable', 'renderSubsPlanEditorIfIdle'].forEach(safeCall);
             }
 
             // ============================================================================
@@ -3736,6 +3751,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             if (viewName === 'expenses') { renderExpenseCategoriesEditor(); renderExpensesTable(); }
             if (viewName === 'subs') renderSubsPlanEditor();
             if (viewName === 'activity') renderActivityLogPanel();
+            if (viewName === 'attendance') renderAttendancePanel();
             if (viewName === 'customerdata') renderCustomerDataPanel();
             if (viewName === 'hidemembers') renderHideMembersPanel();
         }
@@ -3850,7 +3866,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         function showWelcomeAlertsModal() {
             const sectionName = currentAppMode === 'ALL' ? 'كابتن الجيم 🏋️' : (currentAppMode === 'MEN' ? 'كابتن القسم الرجالي 🚹' : 'كابتن قسم البنات 🚺');
             const _capNm = (window.__captain && window.__captain.id !== 'owner') ? String(window.__captain.name || '').trim().replace(/^كابتن\s+/, '') : '';
-            document.getElementById('welcomeAlertsGreeting').innerText = _capNm ? `أهلاً بيك يا كابتن ${_capNm} 👋` : `أهلاً بيك يا ${sectionName} 👋`;
+            document.getElementById('welcomeAlertsGreeting').innerText = _capNm ? `مرحباً بك يا كابتن ${_capNm} 👋` : `أهلاً بيك يا ${sectionName} 👋`;
 
             const now = new Date();
             const weekdayName = getArabicWeekdayShort(now);
@@ -3889,6 +3905,15 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                         </div>`;
                 }
             }
+            // كارت الحضور (هادي وبدون أي تحذير): وقت تسجيل الدخول بتوقيت القاهرة
+            const _att = window.__attendanceToday;
+            if (_capNm && _att && _att.ts) {
+                bodyHtml = `<div class="att-welcome">
+                    <div class="att-welcome-lbl">${_att.first ? 'تم تسجيل حضورك اليوم' : 'حضورك مسجّل اليوم'}</div>
+                    <div class="att-welcome-time">${attTimeLabel(_att.ts)}</div>
+                    <div class="att-welcome-sub">بتوقيت القاهرة 🕓</div>
+                </div>` + bodyHtml;
+            }
             document.getElementById('welcomeAlertsBody').innerHTML = bodyHtml;
             document.getElementById('welcomeAlertsModal').style.display = 'flex';
         }
@@ -3920,6 +3945,85 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         const getFormattedTimeString = (dateObj) => {
             return dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
         };
+
+        // ==========================================================
+        // حضور الكباتن: بتوقيت القاهرة، واليوم بيبدأ الساعة 4 الفجر
+        // ==========================================================
+        const GYM_TZ = 'Africa/Cairo';
+        const ATT_KEY = 'gym_pro_attendance_v1';
+        function attLoad() { try { const a = JSON.parse(localStorage.getItem(ATT_KEY)); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+        function attDayKey(d) {
+            const shifted = new Date(d.getTime() - 4 * 3600 * 1000);   // قبل 4 الفجر يتحسب من اليوم اللي فات
+            const o = {};
+            new Intl.DateTimeFormat('en-CA', { timeZone: GYM_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(shifted).forEach(p => { o[p.type] = p.value; });
+            return o.year + '-' + o.month + '-' + o.day;
+        }
+        function attTimeLabel(ts) {
+            try { return new Date(ts).toLocaleTimeString('ar-EG', { timeZone: GYM_TZ, hour: '2-digit', minute: '2-digit', hour12: true }); }
+            catch (e) { return new Date(ts).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }); }
+        }
+        function attDayLabel(day) {
+            try { return new Date(day + 'T12:00:00Z').toLocaleDateString('ar-EG', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
+            catch (e) { return day; }
+        }
+        function attEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+        // بيتنادى لما كابتن/كابتنة يدخل بكلمة السر. أول دخول في اليوم بيتسجل، وأي دخول بعده بيعرض نفس وقت الحضور
+        function recordCaptainAttendance(cap, section) {
+            window.__attendanceToday = null;
+            try {
+                if (!cap || !cap.id || cap.id === 'owner') return;
+                const now = new Date(), day = attDayKey(now);
+                let arr = attLoad();
+                let rec = arr.find(r => r.day === day && r.captainId === cap.id);
+                let first = false;
+                if (!rec) {
+                    rec = { id: now.getTime(), day, captainId: cap.id, name: cap.name, section: section, ts: now.getTime() };
+                    arr.unshift(rec);
+                    if (arr.length > 4000) arr = arr.slice(0, 4000);
+                    localStorage.setItem(ATT_KEY, JSON.stringify(arr));
+                    first = true;
+                }
+                window.__attendanceToday = { ts: rec.ts, first: first, day: day };
+            } catch (e) { window.__attendanceToday = null; }
+        }
+        function renderAttendancePanel() {
+            const list = document.getElementById('attList'); if (!list) return;
+            const all = attLoad();
+            const todayKey = attDayKey(new Date());
+            const SEC_L = { MEN: 'رجالي 🚹', WOMEN: 'بنات 🚺', ALL: 'الجيم 🏋️' };
+
+            // ملخص النهارده
+            const todayRecs = all.filter(r => r.day === todayKey).sort((a, b) => a.ts - b.ts);
+            const tb = document.getElementById('attTodayBox');
+            if (tb) {
+                tb.innerHTML = '<div class="att-today-title">اليوم — ' + attEsc(attDayLabel(todayKey)) + '</div>' +
+                    (todayRecs.length
+                        ? '<div class="att-chips">' + todayRecs.map(r => '<span class="att-chip"><b>' + attEsc(r.name) + '</b><small>' + attEsc(SEC_L[r.section] || '') + '</small><em>' + attEsc(attTimeLabel(r.ts)) + '</em></span>').join('') + '</div>'
+                        : '<div class="att-empty">لسه ما حدش سجّل حضوره النهارده.</div>');
+            }
+
+            // الفلاتر
+            const monthEl = document.getElementById('attMonth');
+            if (monthEl && !monthEl.value) monthEl.value = todayKey.substring(0, 7);
+            const whoEl = document.getElementById('attWho');
+            if (whoEl) {
+                const keep = whoEl.value, seen = {}, opts = [];
+                all.forEach(r => { if (!seen[r.captainId]) { seen[r.captainId] = 1; opts.push(r); } });
+                whoEl.innerHTML = '<option value="">الكل</option>' + opts.map(r => '<option value="' + attEsc(r.captainId) + '">' + attEsc(r.name) + '</option>').join('');
+                whoEl.value = opts.some(r => r.captainId === keep) ? keep : '';
+            }
+            const month = monthEl ? monthEl.value : '', who = whoEl ? whoEl.value : '';
+            const rows = all.filter(r => (!month || r.day.indexOf(month) === 0) && (!who || r.captainId === who));
+            if (!rows.length) { list.innerHTML = '<div class="att-empty">مفيش حضور مسجل في الفترة دي.</div>'; return; }
+
+            const byDay = {};
+            rows.forEach(r => { (byDay[r.day] = byDay[r.day] || []).push(r); });
+            list.innerHTML = Object.keys(byDay).sort().reverse().map(day => {
+                const items = byDay[day].sort((a, b) => a.ts - b.ts);
+                return '<div class="att-day"><div class="att-day-head">' + attEsc(attDayLabel(day)) + '<span>' + items.length + ' حضور</span></div>' +
+                    items.map(r => '<div class="att-row"><div class="att-name">👤 ' + attEsc(r.name) + '</div><div class="att-sec">' + attEsc(SEC_L[r.section] || '') + '</div><div class="att-time">' + attEsc(attTimeLabel(r.ts)) + '</div></div>').join('') + '</div>';
+            }).join('');
+        }
 
         // --- سجل النشاطات: مراقبة شاملة لكل عملية يقوم بها الكابتن في القسمين ---
         const ACTIVITY_LOG_MAX_ENTRIES = 400;
@@ -4476,6 +4580,15 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         let subscriptionPlansMen = _loadedSubscriptionPlans.men;
         let subscriptionPlansWomen = _loadedSubscriptionPlans.women;
 
+        // بعد أي تحديث جاي من جهاز تاني: نعيد رسم محرر الباقات من البيانات المحفوظة، إلا لو إنت بتكتب فيه دلوقتي
+        function renderSubsPlanEditorIfIdle() {
+            const c = document.getElementById('subsPlanEditorList');
+            if (!c || !c.children.length) return;
+            const a = document.activeElement;
+            if (a && c.contains(a)) return;
+            renderSubsPlanEditor();
+        }
+
         function persistSubscriptionPlans() {
             localStorage.setItem('gym_pro_sub_plans_men_v1', JSON.stringify(subscriptionPlansMen));
             localStorage.setItem('gym_pro_sub_plans_women_v1', JSON.stringify(subscriptionPlansWomen));
@@ -4525,18 +4638,21 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             return adminSubsEditorGender === 'WOMEN' ? subscriptionPlansWomen : subscriptionPlansMen;
         }
 
+        function _planEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
         function renderSubsPlanEditor() {
             const container = document.getElementById('subsPlanEditorList');
+            if (!container) return;
             container.innerHTML = '';
             const genderLabel = adminSubsEditorGender === 'WOMEN' ? 'بنات 🚺' : 'رجالي 🚹';
             getAdminEditorPlansArray().forEach((plan, idx) => {
                 const row = document.createElement('div');
                 row.className = 'subs-plan-row';
                 row.innerHTML = `
-                    <input type="text" class="form-control sub-plan-name" value="${plan.name}">
+                    <input type="text" class="form-control sub-plan-name" value="${_planEsc(plan.name)}">
                     <div class="sub-plan-price-wrap">
                         <label>سعر ${genderLabel}</label>
-                        <input type="number" class="form-control sub-plan-price" value="${plan.price}">
+                        <input type="number" class="form-control sub-plan-price" value="${_planEsc(plan.price)}">
                     </div>
                     <button class="btn-action btn-del" onclick="deleteSubscriptionPlan(${idx})"><span class="ico" data-i="fa-trash"></span></button>
                 `;
@@ -4545,42 +4661,66 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             applyIcons();
         }
 
+        // بيرجّع الباقات زي ما هي ظاهرة قدامك في الشاشة (بما فيها اللي لسه بتكتبها)، بنفس ترتيب الصفوف
+        function readPlanEditorRows() {
+            const rows = document.querySelectorAll('#subsPlanEditorList .subs-plan-row');
+            if (!rows.length) return getAdminEditorPlansArray().map(p => ({ name: p.name, price: p.price }));
+            return Array.from(rows).map(row => ({
+                name: row.querySelector('.sub-plan-name').value.trim(),
+                price: parseFloat(row.querySelector('.sub-plan-price').value) || 0
+            }));
+        }
+
+        // بيحفظ القائمة فورًا (من غير ما تستنى زرار الحفظ) ويشيل الأسماء الفاضية والمكررة
+        function commitPlanEditorList(list) {
+            const seen = new Set(), clean = [];
+            let dupes = 0;
+            list.forEach(p => {
+                const name = String(p.name || '').trim();
+                if (!name) return;
+                const key = name.toLowerCase();
+                if (seen.has(key)) { dupes++; return; }
+                seen.add(key);
+                clean.push({ name, price: parseFloat(p.price) || 0 });
+            });
+            if (adminSubsEditorGender === 'WOMEN') subscriptionPlansWomen = clean;
+            else subscriptionPlansMen = clean;
+            persistSubscriptionPlans();
+            renderSubscriptionSelectOptions();
+            renderSubsPlanEditor();
+            return { count: clean.length, dupes };
+        }
+
         function addNewSubscriptionPlan() {
             const nameField = document.getElementById('newSubPlanName');
             const priceField = document.getElementById('newSubPlanPrice');
             const name = nameField.value.trim();
             const price = parseFloat(priceField.value) || 0;
             if (!name) { alert("⚠️ برجاء كتابة اسم الباقة الجديدة."); return; }
-            getAdminEditorPlansArray().push({ name, price });
+            const list = readPlanEditorRows();
+            if (list.some(p => p.name.toLowerCase() === name.toLowerCase())) { alert("⚠️ الباقة دي موجودة بالفعل في القسم ده بنفس الاسم. غيّر الاسم أو عدّل الباقة الموجودة."); return; }
+            list.push({ name, price });
+            commitPlanEditorList(list);
             nameField.value = ''; priceField.value = '';
-            renderSubsPlanEditor();
         }
 
         function deleteSubscriptionPlan(index) {
-            const plans = getAdminEditorPlansArray();
             const genderLabel = adminSubsEditorGender === 'WOMEN' ? 'البنات' : 'الرجالي';
-            if (plans.length <= 1) { alert("⚠️ لا يمكن حذف كل باقات قسم " + genderLabel + "، يجب أن تبقى باقة واحدة على الأقل."); return; }
-            if (!confirm("هل تريد حذف هذه الباقة من قسم " + genderLabel + " فقط؟ (لن يتأثر القسم الآخر)")) return;
-            plans.splice(index, 1);
-            renderSubsPlanEditor();
+            const list = readPlanEditorRows();
+            if (list.length <= 1) { alert("⚠️ لا يمكن حذف كل باقات قسم " + genderLabel + "، يجب أن تبقى باقة واحدة على الأقل."); return; }
+            const target = list[index];
+            if (!target) return;
+            if (!confirm("هل تريد حذف باقة \"" + (target.name || 'بدون اسم') + "\" من قسم " + genderLabel + " فقط؟ (لن يتأثر القسم الآخر)")) return;
+            list.splice(index, 1);
+            commitPlanEditorList(list);
         }
 
         function saveSubscriptionPlansEdits() {
-            const rows = document.querySelectorAll('#subsPlanEditorList .subs-plan-row');
-            const updatedPlans = [];
-            rows.forEach(row => {
-                const name = row.querySelector('.sub-plan-name').value.trim();
-                const price = parseFloat(row.querySelector('.sub-plan-price').value) || 0;
-                if (name) updatedPlans.push({ name, price });
-            });
             const genderLabel = adminSubsEditorGender === 'WOMEN' ? 'البنات' : 'الرجالي';
-            if (updatedPlans.length === 0) { alert("⚠️ يجب أن تبقى باقة واحدة على الأقل في قسم " + genderLabel + "."); return; }
-            if (adminSubsEditorGender === 'WOMEN') subscriptionPlansWomen = updatedPlans;
-            else subscriptionPlansMen = updatedPlans;
-            persistSubscriptionPlans();
-            renderSubscriptionSelectOptions();
-            renderSubsPlanEditor();
-            alert("✅ تم حفظ تعديلات باقات قسم " + genderLabel + " بنجاح! (القسم الآخر لم يتأثر إطلاقاً)");
+            const list = readPlanEditorRows().filter(p => p.name);
+            if (list.length === 0) { alert("⚠️ يجب أن تبقى باقة واحدة على الأقل في قسم " + genderLabel + "."); return; }
+            const r = commitPlanEditorList(list);
+            alert("✅ تم حفظ باقات قسم " + genderLabel + " (" + r.count + " باقة)." + (r.dupes ? "\nتم دمج " + r.dupes + " باقة مكررة بنفس الاسم." : "") + "\n(القسم الآخر لم يتأثر إطلاقاً)");
         }
 
         // ============== قسم المبيعات (الأصناف والعمليات) ==============
@@ -5447,6 +5587,21 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             if (!card || !currentAppMode) return;
             const monthInput = document.getElementById('msubMonthSelect');
             const currentMonth = getFormattedDateString(new Date()).substring(0, 7);
+            // التنقل بين الشهور لصاحب الجيم والإدارة بس. الكابتن/الكابتنة يشوفوا الشهر الحالي بس (مفيش أرقام شهور فاتت)
+            const canBrowseMonths = (currentAppMode === 'OWNER');
+            if (!canBrowseMonths) {
+                monthInput.value = currentMonth; monthInput.dataset.auto = currentMonth;
+                monthInput.style.display = 'none';
+                let _ml = document.getElementById('msubMonthLabel');
+                if (!_ml) { _ml = document.createElement('span'); _ml.id = 'msubMonthLabel'; _ml.style.cssText = 'font-weight:800;font-size:.95rem;color:var(--text-muted);padding:8px 14px;border-radius:12px;background:var(--bg-main);border:1px solid var(--border-color)'; monthInput.parentNode.appendChild(_ml); }
+                const _mn = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+                const _pm = currentMonth.split('-');
+                _ml.textContent = '📅 ' + (_mn[(+_pm[1]) - 1] || '') + ' ' + _pm[0];
+                _ml.style.display = '';
+            } else {
+                monthInput.style.display = '';
+                const _ml2 = document.getElementById('msubMonthLabel'); if (_ml2) _ml2.style.display = 'none';
+            }
             // الشهر يتحدث تلقائيًا لما الشهر الجديد يبدأ، إلا لو المستخدم اختار شهر تاني بنفسه
             if (!monthInput.value || (monthInput.dataset.auto === monthInput.value && monthInput.value !== currentMonth)) {
                 monthInput.value = currentMonth; monthInput.dataset.auto = currentMonth;
@@ -7498,6 +7653,7 @@ window.__gmShellRun = function () {
     function enter(w) {
       if (w.type === 'owner' && cur.target === 'ALL') cur.target = 'OWNER';
       window.__captain = { id: w.id, name: w.name, section: cur.target };
+      try { if (w.type === 'captain' && typeof recordCaptainAttendance === 'function') recordCaptainAttendance(w, cur.target); } catch (e) {}
       currentAppMode = cur.target; pendingGateTarget = cur.target; $('capModal').style.display = 'none';
       if (cur.target === 'OWNER') enterAdminDashboardDirect(); else enterApplicationWorkspace();
       try { logActivity('🔓 دخل ' + w.name + (cur.target === 'OWNER' ? ' على الخزنة والإدارة' : cur.target === 'ALL' ? ' على الجيم' : ' على قسم ' + SEC[cur.target]), 'fa-lock'); } catch (e) {}
@@ -8402,16 +8558,7 @@ window.__gmShellRun = function () {
               window.__gmPersonalAsync(m.phone).then(function (pl) { cardFin(pl, true); }, function () { cardFin(null, true); });
               setTimeout(function () { cardFin(null, false); }, 11000);
             }
-            if (window.__gmKeysOk && !$('waRotBtn') && m.phone) {
-              var rb = document.createElement('a'); rb.href = '#'; rb.id = 'waRotBtn'; rb.className = a.className; rb.style.cssText = 'background:var(--danger-light,#fde8e8);color:var(--danger,#c0392b)';
-              rb.textContent = '🔄 إلغاء رابط المشترك وإصدار رابط جديد';
-              rb.onclick = function (ev) {
-                ev.preventDefault();
-                if (!confirm('الرابط الحالي لـ ' + m.name + ' هيتلغى وأي جهاز مفتوح بيه هيتفصل. تكمل؟')) return;
-                window.__gmRotateKey(m.phone).then(function () { alert('تم إلغاء الرابط القديم. افتح البروفايل تاني وابعت الكارنيه للمشترك برابطه الجديد.'); }).catch(function () { alert('حصلت مشكلة، حاول تاني.'); });
-              };
-              a.parentNode.appendChild(rb);
-            }
+            { var _old = $('waRotBtn'); if (_old) _old.remove(); }   // زرار "إلغاء رابط المشترك" اتشال، وحذف المشترك نهائيًا هو آخر زرار
           }
         } catch (e) {}
         return r;
@@ -9191,19 +9338,19 @@ body.custom-brand #mainContentArea>.brand-container::before{display:none}
 })();
 </script>
 <script>
-/* فتح الإدارة من جوه قسم الرجال أو البنات: 10 ضغطات متتالية في مكان فاضي، وبعدها كلمة السر */
+/* فتح الإدارة من جوه قسم الرجال أو البنات: 4 ضغطات سريعة في أي مكان (مش على زرار أو خانة)، وبعدها كلمة السر */
 (function () {
   var n = 0, t = null, area = document.getElementById('mainContentArea');
   if (!area) return;
   var st = document.createElement('style'); st.textContent = '#mainContentArea{touch-action:manipulation}'; document.head.appendChild(st);
-  var BLOCK = 'button, input, select, textarea, a, label, table, [onclick], .modal-overlay, .member-item, .stat-card, .tracker-card, .form-container, .nav-tabs, .top-actions-bar, .brand-container';
+  var BLOCK = 'button, input, select, textarea, a, label, .modal-overlay';
   area.addEventListener('click', function (e) {
     if (getComputedStyle(area).display === 'none') { n = 0; return; }
     if (e.target.closest && e.target.closest(BLOCK)) { n = 0; return; }
     var open = document.querySelector('.modal-overlay[style*="display: flex"], .modal-overlay[style*="display:flex"]');
     if (open) { n = 0; return; }
     n++; clearTimeout(t); t = setTimeout(function () { n = 0; }, 1500);
-    if (n >= 10) { n = 0; if (typeof window.openGatePasswordPrompt === 'function') window.openGatePasswordPrompt('OWNER'); }
+    if (n >= 4) { n = 0; if (typeof window.openGatePasswordPrompt === 'function') window.openGatePasswordPrompt('OWNER'); }
   });
 })();
 </script>
@@ -10662,6 +10809,13 @@ html.gm-switching *,html.gm-switching *::before,html.gm-switching *::after{trans
   // أي حاجة تظهر في نص الشاشة (بوب-أب) تتقفل بالضغط على الخلفية، والقائمة الجانبية تتقفل بالضغط برّاها
   var OV = '.modal-overlay,.cap-overlay,#shModal,#ftSheet,#fbDiagModal,#dataCmpModal';
   var downT = null;
+  // حماية نافذة كلمة سر الإدارة: الضغطات الزيادة بعد فتحها (أو الضغط السريع المتتابع) ما تقفلهاش
+  var capOpenedAt = 0, lastClickAt = 0, prevClickAt = 0, capEl = document.getElementById('capModal'), capWas = false;
+  if (capEl && window.MutationObserver) new MutationObserver(function () {
+    var on = getComputedStyle(capEl).display !== 'none';
+    if (on && !capWas) capOpenedAt = Date.now(); capWas = on;
+  }).observe(capEl, { attributes: true, attributeFilter: ['style'] });
+  function capGuard(t) { if (t.id !== 'capModal') return false; var now = Date.now(); return now - capOpenedAt < 2500 || now - prevClickAt < 900; }
   function vis(el) { return el && el.isConnected && getComputedStyle(el).display !== 'none'; }
   function closeOverlay(ov) {
     var id = ov.id || '';
@@ -10690,8 +10844,9 @@ html.gm-switching *,html.gm-switching *::before,html.gm-switching *::after{trans
   });
   document.addEventListener('click', function (e) {
     var t = e.target; if (!t || !t.closest) return;
+    prevClickAt = lastClickAt; lastClickAt = Date.now();
     // 1) بوب-أب: الضغط على الخلفية نفسها (مش جوه الصندوق) يقفله
-    if (t.matches(OV) && downT === t && vis(t)) closeOverlay(t);
+    if (t.matches(OV) && downT === t && vis(t) && !capGuard(t)) closeOverlay(t);
     // 2) القائمة الجانبية: أي ضغطة برّاها تقفلها (إلا أزرار فتحها نفسها)
     var sb = document.getElementById('sidebar');
     if (sb && sb.classList.contains('open') && !sb.contains(t) &&
@@ -10752,6 +10907,24 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
   #mainContentArea#mainContentArea{max-width:min(96vw,2100px)!important}
   #adminDashboardArea#adminDashboardArea[style*="block"]{max-width:min(97vw,2200px)!important;grid-template-columns:340px minmax(0,1fr)!important}
 }
+
+/* ===== حضور الكباتن + كارت الترحيب ===== */
+.att-welcome{background:linear-gradient(135deg,var(--primary-light),var(--bg-card));border:1px solid var(--border-color);border-radius:18px;padding:16px 18px 14px;margin-bottom:14px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.att-welcome-lbl{font-size:.88rem;font-weight:700;color:var(--text-muted)}
+.att-welcome-time{font-size:2.3rem;font-weight:900;color:var(--primary);line-height:1.25;margin:2px 0;letter-spacing:1px}
+.att-welcome-sub{font-size:.78rem;font-weight:600;color:var(--text-muted)}
+.att-today{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:14px 16px;margin:12px 0}
+.att-today-title{font-weight:800;margin-bottom:10px}
+.att-chips{display:flex;flex-wrap:wrap;gap:8px}
+.att-chip{display:inline-flex;align-items:center;gap:8px;background:var(--primary-light);color:var(--text-main);padding:8px 12px;border-radius:12px;font-size:.9rem}
+.att-chip small{color:var(--text-muted);font-weight:700}.att-chip em{font-style:normal;font-weight:900;color:var(--primary)}
+.att-filters{display:flex;flex-wrap:wrap;gap:14px;margin:6px 0 14px;font-weight:700}
+.att-day{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.att-day-head{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:var(--primary-light);font-weight:800}
+.att-day-head span{font-size:.82rem;color:var(--text-muted)}
+.att-row{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;padding:11px 16px;border-top:1px solid var(--border-color)}
+.att-name{font-weight:800}.att-sec{color:var(--text-muted);font-weight:700;font-size:.88rem}.att-time{font-weight:900;color:var(--primary);min-width:84px;text-align:left}
+.att-empty{color:var(--text-muted);font-weight:700;padding:14px;text-align:center}
 </style>
 <script id="gmAdminBrand">
 (function(){
@@ -10829,6 +11002,179 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
     if (!shown && stuck && performance.now() > 20000) { shown = true; build(); fill(); setInterval(function () { if (document.getElementById('gmDiagTxt')) fill(); }, 8000); }
     if (shown && panel && !stuck) { panel.remove(); panel = null; shown = false; }
   }, 2000);
+})();
+</script>
+<script id="gmCardModule">
+/* ===== كارت المشترك جوه نافذة المشترك: إظهار الكارت + طباعة الكارت ===== */
+(function () {
+  'use strict';
+  var me = null, gymName = '', gymLogo = '', cardCache = { sig: '', url: '' }, cardLang = 'en', slug = '';
+  function $(i) { return document.getElementById(i); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var NAMES = { 'محمد': 'Mohamed', 'احمد': 'Ahmed', 'أحمد': 'Ahmed', 'محمود': 'Mahmoud', 'خالد': 'Khaled', 'علي': 'Ali', 'حسن': 'Hassan', 'حسين': 'Hussein', 'ابراهيم': 'Ibrahim', 'إبراهيم': 'Ibrahim', 'اسماعيل': 'Ismail', 'إسماعيل': 'Ismail', 'مصطفى': 'Mostafa', 'عمر': 'Omar', 'عثمان': 'Othman', 'يوسف': 'Youssef', 'كريم': 'Karim', 'طارق': 'Tarek', 'ياسر': 'Yasser', 'هاني': 'Hany', 'سعيد': 'Said', 'سيد': 'Sayed', 'رضا': 'Reda', 'صلاح': 'Salah', 'عادل': 'Adel', 'ماجد': 'Maged', 'نور': 'Nour', 'ايمن': 'Ayman', 'أيمن': 'Ayman', 'اسلام': 'Islam', 'إسلام': 'Islam', 'هشام': 'Hesham', 'وائل': 'Wael', 'حسام': 'Hossam', 'عماد': 'Emad', 'سامي': 'Sami', 'سمير': 'Samir', 'عصام': 'Essam', 'شريف': 'Sherif', 'عبده': 'Abdo', 'ايهاب': 'Ihab', 'ابو': 'Abou', 'أبو': 'Abou', 'فاطمة': 'Fatma', 'مريم': 'Mariam', 'سارة': 'Sara', 'منى': 'Mona', 'نهى': 'Noha', 'ايمان': 'Eman', 'إيمان': 'Eman', 'هبة': 'Heba', 'دعاء': 'Doaa', 'رنا': 'Rana', 'ياسمين': 'Yasmin', 'نورا': 'Nora', 'اسماء': 'Asmaa', 'أسماء': 'Asmaa', 'شيماء': 'Shaimaa', 'اية': 'Aya', 'آية': 'Aya', 'ملك': 'Malak', 'جنى': 'Jana', 'هدى': 'Hoda', 'امل': 'Amal', 'أمل': 'Amal', 'ريم': 'Reem', 'داليا': 'Dalia', 'ندى': 'Nada', 'سلمى': 'Salma', 'حبيبة': 'Habiba', 'زينب': 'Zeinab', 'النبي': 'Nabi', 'الله': 'Allah', 'الرحمن': 'Rahman', 'العزيز': 'Aziz', 'الحميد': 'Hamid', 'المنعم': 'Monem', 'الفتاح': 'Fattah', 'الرحيم': 'Rahim', 'الكريم': 'Karim', 'السيد': 'El Sayed', 'الشيخ': 'El Sheikh' };
+  var LET = { 'ا': 'a', 'أ': 'a', 'إ': 'e', 'آ': 'aa', 'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'g', 'ح': 'h', 'خ': 'kh', 'د': 'd', 'ذ': 'z', 'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'd', 'ط': 't', 'ظ': 'z', 'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'k', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h', 'و': 'o', 'ي': 'y', 'ى': 'a', 'ة': 'a', 'ء': '', 'ئ': 'e', 'ؤ': 'o' };
+  function cap(w) { return w.charAt(0).toUpperCase() + w.slice(1); }
+  function enName(m) {
+    var o = null; try { o = localStorage.getItem('mp_en_' + slug + '_' + m.id); } catch (e) {}
+    if (o) return o;
+    var n = String(m.name || '').trim();
+    if (!/[\u0600-\u06FF]/.test(n)) return n;
+    return n.split(/\s+/).map(function (w) {
+      if (NAMES[w]) return NAMES[w];
+      if (w === 'عبد') return 'Abdel';
+      return cap(w.replace(/^ال/, '').split('').map(function (c) { return LET[c] != null ? LET[c] : c; }).join(''));
+    }).join(' ').replace('Abdel Allah', 'Abdullah').replace('Abdel Rahman', 'Abdelrahman');
+  }
+  function planEn(p) {
+    p = String(p || '').trim(); if (!p) return '—'; if (!/[\u0600-\u06FF]/.test(p)) return p;
+    var r = p.replace(/شامل/g, 'All-Inclusive ·').replace(/حديد/g, 'Weights ·').replace(/كل يوم/g, 'Daily').replace(/اسبوعي|أسبوعي/g, 'Weekly').replace(/حصص|حصة|حصه/g, 'Sessions').replace(/يومي/g, 'Single Day').replace(/شهور/g, 'Months').replace(/شهر/g, 'Month').replace(/سنة/g, 'Year').replace(/عروض:?/g, 'Offer').replace(/\s*\/\s*/g, ' / ');
+    return r.replace(/[\u0600-\u06FF]+/g, '').replace(/\s+/g, ' ').trim() || p;
+  }
+  function pd(s) { var x = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')), d = x ? new Date(+x[1], +x[2] - 1, +x[3]) : new Date(s); return isNaN(d) ? null : d; }
+  function fmt(s, lang) { var d = pd(s); return d ? d.toLocaleDateString(lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'; }
+  function today() { return new Date().setHours(0, 0, 0, 0); }
+  function status(m, lang) {
+    var end = pd(m.end), left = end ? Math.round((new Date(end).setHours(0, 0, 0, 0) - today()) / 864e5) : null, ar = lang !== 'en';
+    if (left == null) return { k: 'warn', left: left, t: ar ? 'غير محدد' : 'NOT SET' };
+    if (left < 0) return { k: 'bad', left: left, t: ar ? 'منتهي من ' + (-left) + ' يوم' : 'EXPIRED ' + (-left) + ' DAYS AGO' };
+    if (left === 0) return { k: 'warn', left: 0, t: ar ? 'آخر يوم في اشتراكك' : 'LAST DAY' };
+    if (left <= 5) return { k: 'warn', left: left, t: ar ? 'باقي ' + left + ' يوم' : 'EXPIRING · ' + left + ' DAYS LEFT' };
+    return { k: 'ok', left: left, t: ar ? 'ساري — باقي ' + left + ' يوم' : 'ACTIVE · ' + left + ' DAYS LEFT' };
+  }
+  function loadImg(src) { return new Promise(function (res) { if (!src) return res(null); var i = new Image(); i.onload = function () { res(i); }; i.onerror = function () { res(null); }; i.src = src; }); }
+  function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+  function fl(f) { return document.fonts && document.fonts.load ? document.fonts.load(f, f.indexOf('Cairo') > -1 ? 'أبجد' : 'ABC123') : 0; }
+  function drawCard() {
+    var m = me.member, W = 1012, H = 638, M = 60, lang = cardLang, rtl = lang === 'ar', st = status(m, lang);
+    var en = rtl ? String(m.name || '') : enName(m), pen = rtl ? (m.plan || '—') : planEn(m.plan), sig = [lang, gymName, m.id, en, pen, m.start, m.end, st.t, (me.photo || '').length, gymLogo.length].join('|');
+    if (cardCache.sig === sig && cardCache.url) return Promise.resolve(cardCache.url);
+    var fam = rtl ? 'Cairo,Montserrat,sans-serif' : 'Montserrat,Cairo,sans-serif';
+    return Promise.all([fl('800 40px Montserrat'), fl('500 22px Montserrat'), fl('800 40px Cairo'), fl('600 22px Cairo'), loadImg(gymLogo), loadImg(me.photo)]).then(function (r) {
+      var logo = r[4], photo = r[5], cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      var c = cv.getContext('2d');
+      function X(x, w) { return rtl ? W - x - (w || 0) : x; }
+      function T(t, x, y, size, wt, col, al, ls, maxW) {
+        t = String(t == null ? '' : t); var s = size; c.direction = rtl ? 'rtl' : 'ltr';
+        if ('letterSpacing' in c) c.letterSpacing = (rtl ? 0 : ls || 0) + 'px';
+        do { c.font = wt + ' ' + s + 'px ' + fam; s -= 2; } while (maxW && c.measureText(t).width > maxW && s > 14);
+        c.fillStyle = col; c.textAlign = al === 'c' ? 'center' : al === 'e' ? (rtl ? 'left' : 'right') : (rtl ? 'right' : 'left'); c.fillText(t, x, y);
+        if ('letterSpacing' in c) c.letterSpacing = '0px';
+      }
+      var gold = c.createLinearGradient(0, 0, W, 0); gold.addColorStop(0, '#f9d25c'); gold.addColorStop(.5, '#c8921a'); gold.addColorStop(1, '#f9d25c');
+      rr(c, 0, 0, W, H, 40); c.save(); c.clip();
+      var g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1d2750'); g.addColorStop(.55, '#0b0f1f'); g.addColorStop(1, '#2b2008'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+      var rg = c.createRadialGradient(W * .85, -40, 10, W * .85, -40, 520); rg.addColorStop(0, 'rgba(242,193,78,.32)'); rg.addColorStop(1, 'rgba(242,193,78,0)'); c.fillStyle = rg; c.fillRect(0, 0, W, H);
+      c.strokeStyle = 'rgba(255,255,255,.03)'; c.lineWidth = 2; for (var i = -H; i < W; i += 26) { c.beginPath(); c.moveTo(i, H); c.lineTo(i + H, 0); c.stroke(); }
+      c.restore();
+      rr(c, 3, 3, W - 6, H - 6, 38); c.lineWidth = 4; c.strokeStyle = gold; c.stroke();
+      rr(c, 14, 14, W - 28, H - 28, 30); c.lineWidth = 1; c.strokeStyle = 'rgba(242,193,78,.25)'; c.stroke();
+      // header
+      var lcx = X(M + 44), ly = 90;
+      c.save(); c.beginPath(); c.arc(lcx, ly, 44, 0, 7); c.fillStyle = '#fff'; c.fill(); c.clip();
+      if (logo) { var k = Math.min(84 / logo.width, 84 / logo.height); c.drawImage(logo, lcx - logo.width * k / 2, ly - logo.height * k / 2, logo.width * k, logo.height * k); }
+      else { T((gymName || 'G').charAt(0), lcx, ly + 14, 46, 800, '#0b0f1f', 'c'); }
+      c.restore(); c.beginPath(); c.arc(lcx, ly, 44, 0, 7); c.lineWidth = 4; c.strokeStyle = gold; c.stroke();
+      T(rtl ? gymName : gymName.toUpperCase(), X(M + 108), ly + 4, 40, 800, '#f2c14e', 's', 2, 480);
+      T(rtl ? 'كارنيه العضوية' : 'MEMBER CARD', X(M + 108), ly + 38, 18, 600, '#8f99b8', 's', 6);
+      var vx = rtl ? M : W - M - 130; rr(c, vx, 62, 130, 44, 22); c.fillStyle = 'rgba(242,193,78,.12)'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = 'rgba(242,193,78,.7)'; c.stroke();
+      T(rtl ? 'عضو مميز' : 'VIP', vx + 65, 92, 22, 800, '#f2c14e', 'c', 4);
+      var ln = c.createLinearGradient(M, 0, W - M, 0); ln.addColorStop(0, 'rgba(242,193,78,0)'); ln.addColorStop(.5, 'rgba(242,193,78,.8)'); ln.addColorStop(1, 'rgba(242,193,78,0)'); c.fillStyle = ln; c.fillRect(M, 160, W - 2 * M, 2);
+      // photo
+      var ps = 220, px = X(M, ps), py = 188;
+      rr(c, px - 8, py - 8, ps + 16, ps + 16, 44); c.fillStyle = gold; c.fill();
+      c.save(); rr(c, px, py, ps, ps, 36); c.clip(); c.fillStyle = '#edf1fb'; c.fillRect(px, py, ps, ps);
+      if (photo) { var q = Math.max(ps / photo.width, ps / photo.height); c.drawImage(photo, px + ps / 2 - photo.width * q / 2, py + ps / 2 - photo.height * q / 2, photo.width * q, photo.height * q); }
+      else T((m.name || '?').charAt(0), px + ps / 2, py + ps / 2 + 40, 120, 800, '#f2c14e', 'c');
+      c.restore();
+      // name + code
+      var tx = M + ps + 40, tw = W - M - tx;
+      T(rtl ? 'اسم المشترك' : 'MEMBER', X(tx), 232, 20, 600, '#8f99b8', 's', rtl ? 0 : 5);
+      T(en, X(tx), 300, 56, 800, '#ffffff', 's', 0, tw);
+      var lab = rtl ? 'كود المشترك' : 'MEMBER ID', code = '#' + m.id; c.direction = rtl ? 'rtl' : 'ltr';
+      c.font = '600 20px ' + fam; var lw = c.measureText(lab).width; c.font = '800 36px ' + fam; var cw = lw + c.measureText(code).width + 80;
+      var bx = X(tx, cw); rr(c, bx, 330, cw, 58, 29); c.fillStyle = 'rgba(242,193,78,.14)'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = 'rgba(242,193,78,.7)'; c.stroke();
+      T(lab, X(tx + 24), 367, 20, 600, '#f2c14e', 's', rtl ? 0 : 2); T(code, X(tx + cw - 24), 369, 36, 800, '#f2c14e', 'e');
+      // cells
+      var cells = [[rtl ? 'الباقة' : 'PLAN', pen, 1.5], [rtl ? 'تبدأ' : 'STARTS', fmt(m.start, lang), 1], [rtl ? 'تنتهي' : 'EXPIRES', fmt(m.end, lang), 1]], cg = 14, unit = (W - 2 * M - 2 * cg) / 3.5, cy = 436, off = 0;
+      cells.forEach(function (x) {
+        var cwid = unit * x[2], cx = X(M + off, cwid);
+        rr(c, cx, cy, cwid, 94, 22); c.fillStyle = 'rgba(255,255,255,.07)'; c.fill(); c.lineWidth = 1; c.strokeStyle = 'rgba(255,255,255,.12)'; c.stroke();
+        T(x[0], X(M + off + 20), cy + 32, 17, 600, '#8f99b8', 's', 3);
+        T(x[1], X(M + off + 20), cy + 70, 28, 700, '#ffffff', 's', 0, cwid - 40);
+        off += cwid + cg;
+      });
+      // status
+      var col = st.k === 'ok' ? '#3ecf8e' : st.k === 'bad' ? '#ff6b6b' : '#f2c14e';
+      c.font = '700 24px ' + fam; c.direction = rtl ? 'rtl' : 'ltr'; var sw = c.measureText(st.t).width + 60, sx = X(W - 2 * M - sw + M, sw);
+      sx = rtl ? M : W - M - sw; rr(c, sx, 550, sw, 52, 26); c.fillStyle = col + '26'; c.fill(); c.lineWidth = 2; c.strokeStyle = col; c.stroke();
+      T(st.t, sx + sw / 2, 585, 24, 700, col, 'c');
+      T((rtl ? 'رقم ' : 'ID ') + String(m.id).padStart(5, '0'), rtl ? W - M : M, 586, 20, 600, 'rgba(143,153,184,.85)', 's', 4);
+      var url = cv.toDataURL('image/png'); cardCache = { sig: sig, url: url }; return url;
+    });
+  }
+  function printCardImage(url) {
+    var f = document.createElement('iframe');
+    f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    document.body.appendChild(f);
+    var d = f.contentWindow.document; d.open();
+    d.write('<!doctype html><html><head><meta charset="utf-8"><title>الكارنيه</title><style>@page{size:A4;margin:0}html,body{margin:0;background:#fff}body{display:flex;justify-content:center;padding-top:18mm}img{display:block;width:85.6mm;height:54mm;outline:.2mm dashed #bbb}</style></head><body><img id="c" alt="" src="' + url + '"></body></html>');
+    d.close();
+    var im = d.getElementById('c'), done = false;
+    function go() {
+      if (done) return; done = true;
+      try { f.contentWindow.focus(); f.contentWindow.print(); }
+      catch (e) { var w = window.open(''); if (w) { w.document.write('<img src="' + url + '" style="width:85.6mm;height:54mm"><script>setTimeout(function(){print()},400)<\/script>'); w.document.close(); } }
+      setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 60000);
+    }
+    if (im.complete) setTimeout(go, 150); else im.onload = function () { setTimeout(go, 150); };
+  }
+
+  function curMember() {
+    var id = (($('modalProfileId') || {}).innerText || '').replace('#', '').trim();
+    var list = (typeof membersData !== 'undefined' ? membersData : []);
+    return list.find(function (x) { return String(x.id) === id; }) || null;
+  }
+  function prep() {
+    var m = curMember(); if (!m) return false;
+    var gi = {}; try { gi = (typeof gymIdentity === 'function' ? gymIdentity() : {}) || {}; } catch (e) {}
+    function ls(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+    gymName = String(gi.name || ls('gym_pro_app_name') || (window.__GYM && window.__GYM.name) || 'GYM').trim();
+    gymLogo = gi.logo || ls('gym_pro_logo_image') || '';
+    cardLang = ls('mp_cl') === 'ar' ? 'ar' : 'en';
+    try { slug = new URLSearchParams(String(window.__memberPortalUrl || '').split('?')[1] || '').get('g') || ''; } catch (e) { slug = ''; }
+    me = { member: { id: m.id, name: m.name, plan: m.subtype, start: m.start, end: m.end, gender: m.gender }, photo: m.photo || '' };
+    cardCache = { sig: '', url: '' };
+    return true;
+  }
+  var shown = false;
+  function resetPreview() {
+    shown = false; var b = $('gmCardShowBtn'), box = $('gmCardPreview');
+    if (b) b.textContent = '🪪 إظهار الكارت'; if (box) { box.style.display = 'none'; box.textContent = ''; }
+  }
+  function busy(b, on) { if (b) { b.disabled = on; b.style.opacity = on ? '.6' : ''; } }
+  function showCard() {
+    var b = $('gmCardShowBtn'), box = $('gmCardPreview'); if (!b || !box) return;
+    if (shown) { resetPreview(); return; }
+    if (!prep()) return; busy(b, true);
+    drawCard().then(function (u) {
+      box.textContent = ''; var im = new Image(); im.src = u; im.alt = 'الكارنيه'; im.style.cssText = 'width:100%;max-width:440px;display:block;margin:0 auto;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)';
+      box.appendChild(im); box.style.display = 'block'; shown = true; b.textContent = '🙈 إخفاء الكارت';
+    }).catch(function () { alert('تعذّر رسم الكارت، جرّب تاني.'); }).then(function () { busy(b, false); });
+  }
+  function printCard() {
+    var b = $('gmCardPrintBtn'); if (!prep()) return; busy(b, true);
+    drawCard().then(printCardImage).catch(function () { alert('تعذّر تجهيز الكارت للطباعة.'); }).then(function () { busy(b, false); });
+  }
+  function init() {
+    var a = $('gmCardShowBtn'), p = $('gmCardPrintBtn'); if (!a || !p) return;
+    a.onclick = showCard; p.onclick = printCard;
+    // لما نافذة المشترك تتفتح لمشترك تاني، الكارت القديم يتشال
+    var pid = $('modalProfileId');
+    if (pid && window.MutationObserver) new MutationObserver(resetPreview).observe(pid, { childList: true, characterData: true, subtree: true });
+    var pm = $('profileViewerModal');
+    if (pm && window.MutationObserver) new MutationObserver(function () { if (getComputedStyle(pm).display === 'none') resetPreview(); }).observe(pm, { attributes: true, attributeFilter: ['style'] });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
 </script>
 </body>
