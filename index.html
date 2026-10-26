@@ -1885,7 +1885,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 <a href="#" id="waGymLinksBtn" target="waSendWindow" class="btn-action btn-wa-remind" style="background:var(--success-light); color:var(--success);"><span class="ico" data-i="fa-whatsapp"></span> إرسال روابط الجيم (جروب + فيسبوك)</a>
                 <a href="#" id="waCardBtn" target="waSendWindow" class="btn-action btn-wa-remind" style="background:var(--warning-light); color:var(--warning);"><span class="ico" data-i="fa-whatsapp"></span> إرسال الكارنيه واتساب</a>
                 
-                <button class="btn-action btn-del" onclick="removeMemberPermanently()"><span class="ico" data-i="fa-trash-can"></span> حذف نهائي</button>
+                <button class="btn-action btn-del" id="memberDeleteBtn" onclick="removeMemberPermanently()"><span class="ico" data-i="fa-trash-can"></span> حذف المشترك نهائيًا</button>
             </div>
             <button onclick="closeActiveModal('profileViewerModal')" style="width:100%; margin-top:20px; background:var(--bg-main); padding: 12px; border-radius: 12px; border:none; color:var(--text-main); font-weight:800; cursor:pointer; transition: 0.3s;">إغلاق النافذة</button>
         </div>
@@ -3812,7 +3812,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             document.getElementById('mainContentArea').style.display = 'block';
 
             const isSectionMode = (currentAppMode === 'MEN' || currentAppMode === 'WOMEN' || currentAppMode === 'ALL');
-            const _sg = document.getElementById('wsSaleGenderGroup'); if (_sg) _sg.style.display = currentAppMode === 'ALL' ? '' : 'none';
+            const _sg = document.getElementById('wsSaleGenderGroup'); if (_sg) _sg.style.display = (currentAppMode === 'ALL' || currentAppMode === 'OWNER') ? '' : 'none';
 
             // إخفاء زر الرجوع للوحة الإدارة عن قسمي الرجالي والبنات (يظهر فقط لصاحب الجيم)
             document.getElementById('adminPanelTriggerBtn').style.display = isSectionMode ? 'none' : 'flex';
@@ -3830,8 +3830,9 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             // فيتم إخفاء فورم التسجيل وعرض المؤشرات ومتابعة الاشتراكات فقط
             const regForm = document.getElementById('regFormContainer');
             const mainTabLabel = document.getElementById('tabBtnMainLabel');
-            if (regForm) regForm.style.display = isSectionMode ? 'block' : 'none';
-            if (mainTabLabel) mainTabLabel.innerText = isSectionMode ? 'لوحة التسجيل والمؤشرات' : 'المؤشرات العامة';
+            // صاحب الجيم بقى يقدر يشتغل زي الكابتن بالظبط: تسجيل + تعديل + مبيعات + كل حاجة
+            if (regForm) regForm.style.display = 'block';
+            if (mainTabLabel) mainTabLabel.innerText = 'لوحة التسجيل والمؤشرات';
 
             wipeFormToResetState();
             recalculateMetricsDashboard();
@@ -4930,7 +4931,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         }
 
         function recordWorkspaceSale() {
-            if (currentAppMode !== 'MEN' && currentAppMode !== 'WOMEN' && currentAppMode !== 'ALL') { alert("⛔ برجاء الدخول من قسم رجالي أو بنات لتسجيل عملية بيع."); return; }
+            if (currentAppMode !== 'MEN' && currentAppMode !== 'WOMEN' && currentAppMode !== 'ALL' && currentAppMode !== 'OWNER') { alert("⛔ برجاء الدخول من قسم رجالي أو بنات لتسجيل عملية بيع."); return; }
             const select = document.getElementById('wsSaleProductSelect');
             const product = select.value;
             if (!product) { alert("⚠️ لا يوجد أصناف مسجلة. أضف صنف وسعره أولاً من لوحة الإدارة (تبويب مبيعات)."); return; }
@@ -4938,7 +4939,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             const unitPrice = parseFloat(document.getElementById('wsSaleUnitPrice').value) || 0;
             const date = getFormattedDateString(new Date());
 
-            salesData.push({ id: Date.now(), date, section: (currentAppMode === 'ALL' ? ((document.getElementById('wsSaleGender') || {}).value || 'MEN') : currentAppMode), product, qty, unitPrice });
+            salesData.push({ id: Date.now(), date, section: ((currentAppMode === 'ALL' || currentAppMode === 'OWNER') ? ((document.getElementById('wsSaleGender') || {}).value || 'MEN') : currentAppMode), product, qty, unitPrice });
             commitSalesToStorage();
 
             const total = qty * unitPrice;
@@ -4977,7 +4978,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             tbody.innerHTML = '';
 
             const today = getFormattedDateString(new Date());
-            const sectionSales = salesData.filter(s => (currentAppMode === 'ALL' || s.section === currentAppMode) && s.date === today).reverse();
+            const sectionSales = salesData.filter(s => (currentAppMode === 'ALL' || currentAppMode === 'OWNER' || s.section === currentAppMode) && s.date === today).reverse();
 
             let total = 0;
             sectionSales.forEach(sale => {
@@ -5774,7 +5775,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     let w = document.getElementById('prlWarn');
                     if (!on) { if (w) w.remove(); return; }
                     if (!w) { w = document.createElement('div'); w.id = 'prlWarn'; w.style.cssText = 'font-size:.8rem;font-weight:700;color:var(--danger,#c0392b)'; const acts = document.querySelector('#postRegLinksToast .prl-actions'); acts.parentNode.insertBefore(w, acts); }
-                    w.textContent = '⚠️ تعذر إنشاء اللينك الشخصي (' + (window.__gmLastErr || 'مشكلة اتصال') + ') — هيتبعت اللينك العام.';
+                    w.textContent = (typeof on === 'string') ? on : '⚠️ تعذر إنشاء اللينك الشخصي (' + (window.__gmLastErr || 'مشكلة اتصال') + ') — هيتبعت اللينك العام.';
+                    w.style.color = (typeof on === 'string') ? 'var(--warning,#b7791f)' : 'var(--danger,#c0392b)';
                 };
                 _warn(false);
                 // الزرار يتفتح بعد 11 ثانية بحد أقصى، ولو اللينك الشخصي جه متأخر بيتحدث لوحده
@@ -5783,7 +5785,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     if (pl) { _btn.href = `https://wa.me/${clientCleanPhone}?text=${encodeURIComponent(_mkMsg(pl, true))}`; _warn(false); }
                     _btn.style.pointerEvents = ''; _btn.style.opacity = '';
                 };
-                window.__gmPersonalAsync(memberInfo.phone).then((pl) => { _once(pl); if (!pl && _tok === window.__gmPrlTok) _warn(true); }, () => { _once(null); if (_tok === window.__gmPrlTok) _warn(true); });
+                window.__gmPersonalAsync(memberInfo.phone).then((pl) => { _once(pl); if (!pl && _tok === window.__gmPrlTok) _warn(true); else if (pl && _tok === window.__gmPrlTok && window.__gmLinkIsQueued && window.__gmLinkIsQueued(memberInfo.phone)) _warn('📴 مفيش نت دلوقتي — اللينك الشخصي اتعمل على الجهاز، وهيشتغل عند المشترك أول ما النت يرجع عندك ويتسجل على السيرفر.'); }, () => { _once(null); if (_tok === window.__gmPrlTok) _warn(true); });
                 setTimeout(() => _once(null), 11000);
             }
 
@@ -8270,9 +8272,18 @@ window.__gmShellRun = function () {
     // ---- روابط شخصية لكل مشترك (تفتح مباشرة من غير كود) ----
     (function () {
       var keys = {}, gid0 = row.gyms.id;
+      // ---- دعم الأوفلاين: المفاتيح بتتحفظ على الجهاز، واللينكات اللي اتعملت من غير نت بتستنى في طابور وتتسجل على السيرفر لوحدها لما النت يرجع ----
+      var KEYS_CK = 'sh_link_keys_' + gid0, QUEUE_CK = 'sh_link_q_' + gid0;
+      try { var _ck = cacheGet(KEYS_CK); if (_ck && typeof _ck === 'object') Object.keys(_ck).forEach(function (p) { keys[p] = _ck[p]; }); } catch (e) {}
+      function persistKeys() { try { cacheSet(KEYS_CK, keys); } catch (e) {} }
+      function qGet() { return cacheGet(QUEUE_CK) || {}; }
+      function qSet(q) { cacheSet(QUEUE_CK, q); }
+      window.__gmLinkQueued = window.__gmLinkQueued || {};
+      (function () { var q0 = qGet(); Object.keys(q0).forEach(function (p) { window.__gmLinkQueued[p] = 1; }); })();
+      window.__gmLinkIsQueued = function (phone) { var p = String(phone || '').replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).replace(/\D/g, '').slice(-10); return !!window.__gmLinkQueued[p]; };
       function n10(p) { return String(p || '').replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).replace(/\D/g, '').slice(-10); }
       function rnd() { var a = new Uint8Array(24); (window.crypto || window.msCrypto).getRandomValues(a); return Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }
-      function load() { return rpc('portal_link_keys', { p_gym: gid0 }).then(function (k) { if (k && typeof k === 'object') Object.keys(k).forEach(function (p) { keys[p] = k[p]; (window.__gmKeysConfirmed = window.__gmKeysConfirmed || {})[p] = 1; }); }).catch(function () {}); }
+      function load() { return rpc('portal_link_keys', { p_gym: gid0 }).then(function (k) { if (k && typeof k === 'object') Object.keys(k).forEach(function (p) { keys[p] = k[p]; (window.__gmKeysConfirmed = window.__gmKeysConfirmed || {})[p] = 1; }); persistKeys(); }).catch(function () {}); }
       window.__gmPersonal = function (phone) {
         var p = n10(phone), base = window.__memberPortalUrl;
         if (p.length < 10 || !window.__gmKeysOk) return base;
@@ -8298,12 +8309,38 @@ window.__gmShellRun = function () {
         // المشترك الجديد بيترفع للسيرفر بعد حوالي ثانية، فلو السيرفر قال لسه مش لاقيه (no_member) بنعيد كذا مرة
         var tries = 0;
         var retry = function (e) {
-          if (++tries >= 6) throw e;
+          if (isNetErr(e) || ++tries >= 6) throw e;   // مفيش نت = مفيش فايدة من إعادة المحاولة، نروح على الوضع الأوفلاين فورًا
           return new Promise(function (r) { setTimeout(r, 1400); }).then(attempt).catch(retry);
         };
         return attempt().catch(retry)
-          .catch(function (e) { window.__gmLastErr = (e && e.message) || 'error'; try { console.warn('portal_link_set failed:', window.__gmLastErr); } catch (_) {} return null; });
+          .catch(function (e) {
+            // مفيش نت: نعمل اللينك الشخصي محليًا ونحطه في الطابور، وبيتسجل على السيرفر أول ما النت يرجع
+            if (isNetErr(e)) {
+              keys[p] = k; var q = qGet(); q[p] = k; qSet(q); persistKeys();
+              window.__gmLinkQueued[p] = 1; window.__gmLastErr = '';
+              return base + '#k=' + k;
+            }
+            window.__gmLastErr = (e && e.message) || 'error'; try { console.warn('portal_link_set failed:', window.__gmLastErr); } catch (_) {} return null;
+          });
       };
+      // رفع اللينكات اللي اتعملت أوفلاين
+      var _flushingQ = false;
+      function flushLinkQ() {
+        if (_flushingQ || !navigator.onLine) return;
+        var q = qGet(), ps = Object.keys(q); if (!ps.length) return;
+        _flushingQ = true;
+        ps.reduce(function (chain, p) {
+          return chain.then(function () {
+            return rpc('portal_link_set', { p_gym: gid0, p_phone: p, p_key: q[p], p_rotate: false }).then(function (real) {
+              keys[p] = real || q[p]; (window.__gmKeysConfirmed = window.__gmKeysConfirmed || {})[p] = 1;
+              var qq = qGet(); delete qq[p]; qSet(qq); delete window.__gmLinkQueued[p]; persistKeys();
+            }).catch(function () { /* المشترك لسه ما اترفعش أو النت قطع: يفضل في الطابور ونعيد بعدين */ });
+          });
+        }, Promise.resolve()).then(function () { _flushingQ = false; }, function () { _flushingQ = false; });
+      }
+      window.addEventListener('online', function () { [2000, 6000, 15000, 30000].forEach(function (ms) { setTimeout(flushLinkQ, ms); }); });
+      setInterval(flushLinkQ, 60000);
+      setTimeout(flushLinkQ, 8000);
       load().then(function () { }); 
       rpc('portal_link_keys', { p_gym: gid0 }).then(function () { window.__gmKeysOk = true; }).catch(function () { window.__gmKeysOk = false; });
       setInterval(load, 120000);
@@ -8348,6 +8385,12 @@ window.__gmShellRun = function () {
                 if (pl) {
                   cur.href = waBase + encodeURIComponent(head + tailP(pl));
                   if (w) w.remove();
+                  if (window.__gmLinkIsQueued && window.__gmLinkIsQueued(m.phone) && !$('waCardWarn')) {
+                    var w2 = document.createElement('div'); w2.id = 'waCardWarn';
+                    w2.style.cssText = 'grid-column:span 2;font-size:.8rem;font-weight:700;color:var(--warning,#b7791f);text-align:center';
+                    w2.textContent = '📴 مفيش نت دلوقتي — اللينك الشخصي اتعمل على الجهاز، وهيشتغل عند المشترك أول ما النت يرجع عندك.';
+                    cur.parentNode.insertBefore(w2, cur.nextSibling);
+                  }
                 } else if (final && !w) {
                   w = document.createElement('div'); w.id = 'waCardWarn';
                   w.style.cssText = 'grid-column:span 2;font-size:.8rem;font-weight:700;color:var(--danger,#c0392b);text-align:center';
@@ -10692,6 +10735,23 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>p{display:none
 html body #adminDashboardArea#adminDashboardArea>.brand-container.has-sub>p{display:block!important;flex-basis:100%;margin:0!important;font-size:.9rem}
 html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge{margin:0!important;margin-inline-start:auto!important;font-size:.8rem;padding:6px 14px}
 #adminDashLogoIcon{display:none!important}
+
+/* زرار حذف المشترك: أكبر وأوضح، ياخد العرض كله وفيه فاصل فوقه عشان مايتداسش بالغلط */
+#profileViewerModal .action-grid #memberDeleteBtn{grid-column:1/-1!important;width:100%!important;min-height:58px!important;padding:16px 18px!important;margin-top:12px!important;font-size:1.15rem!important;font-weight:900!important;background:var(--danger)!important;color:#fff!important;border:2px solid var(--danger)!important;border-radius:14px!important;box-shadow:0 6px 16px rgba(220,38,38,.28)!important;letter-spacing:.2px}
+#profileViewerModal .action-grid #memberDeleteBtn .ico{font-size:1.35rem!important;width:auto!important;height:auto!important}
+#profileViewerModal .action-grid #memberDeleteBtn .ico svg{width:1.35rem!important;height:1.35rem!important}
+#profileViewerModal .action-grid #memberDeleteBtn:active{transform:scale(.98)}
+
+/* شاشات الكمبيوتر الكبيرة فقط (1500px فأكتر): البرنامج ياخد عرض الشاشة تقريبًا بدل ما يفضل محدود. الموبايل واللابتوب الصغير مالهمش علاقة */
+@media (min-width:1500px){
+  #mainContentArea#mainContentArea{max-width:min(96vw,1840px)!important;width:100%!important}
+  #adminDashboardArea#adminDashboardArea[style*="block"]{max-width:min(97vw,1900px)!important;width:100%!important}
+  #mainContentArea#mainContentArea .dashboard-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media (min-width:1900px){
+  #mainContentArea#mainContentArea{max-width:min(96vw,2100px)!important}
+  #adminDashboardArea#adminDashboardArea[style*="block"]{max-width:min(97vw,2200px)!important;grid-template-columns:340px minmax(0,1fr)!important}
+}
 </style>
 <script id="gmAdminBrand">
 (function(){
