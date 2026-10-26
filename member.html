@@ -26,7 +26,7 @@ label{display:block;font-size:.82rem;color:var(--mut);margin:0 2px 5px;font-weig
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 /* top bar */
 .bar{display:flex;align-items:center;gap:12px;margin-bottom:18px}
-  .bar .lg{width:44px;height:44px;border-radius:50%;background:#fff center/contain no-repeat;background-origin:content-box;padding:3px border:2px solid var(--gold);flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;color:#0b0f1f}
+  .bar .lg{width:44px;height:44px;border-radius:50%;background:#fff center/contain no-repeat;background-origin:content-box;padding:3px;border:2px solid var(--gold);flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;color:#0b0f1f}
 .bar b{font-size:1.05rem;flex:1}.ib{background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:9px 14px;font:700 .85rem 'Cairo';cursor:pointer}
 /* hero */
 .hero{display:flex;align-items:center;gap:22px;padding:26px;border-radius:26px;background:linear-gradient(135deg,#fff4cf,#ffffff 55%,#dfe9ff);border:1.5px solid #f3d98a;box-shadow:0 10px 30px rgba(200,150,20,.15);margin-bottom:18px;position:relative;overflow:hidden}
@@ -73,6 +73,36 @@ label{display:block;font-size:.82rem;color:var(--mut);margin:0 2px 5px;font-weig
 .tip2{display:flex;gap:14px;align-items:flex-start;padding:16px;border-radius:18px;background:linear-gradient(135deg,rgba(249,210,92,.22),rgba(79,124,255,.1));border:1px solid var(--line)}.tip2 em{font-style:normal;font-size:2rem}.tip2 div{line-height:1.9;font-weight:700}.tip2 small{display:block;color:var(--mut);font-weight:700;font-size:.74rem}
 .ct a.btn{display:block;text-align:center;text-decoration:none;margin-top:10px}
 .cnt{margin:0 0 14px;padding:10px 14px;border-radius:14px;background:var(--panel2);font-weight:800;text-align:center}
+
+/* ===== موبايل أولاً ===== */
+html{-webkit-text-size-adjust:100%}body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain;padding-top:env(safe-area-inset-top,0)}
+button{touch-action:manipulation}.btn,.act,.ib{min-height:46px}
+@media(max-width:600px){
+.wrap{padding:12px 12px calc(36px + env(safe-area-inset-bottom,0))}
+.box{padding:16px;border-radius:20px}
+.grid{gap:12px}
+.bar{margin-bottom:12px}.bar .ib{padding:8px 11px;font-size:.78rem}
+.hero{padding:18px 14px;gap:12px;border-radius:22px;margin-bottom:12px}
+.avatar{width:96px;height:96px;border-radius:26px}
+.hero .nm{font-size:1.4rem;margin-bottom:8px}
+.tools{gap:8px}.tools button{min-width:0;flex:1 1 calc(50% - 8px);padding:12px 8px;font-size:.9rem}
+.ringbox{gap:12px}.ring{width:112px;height:112px}.ring svg{width:112px;height:112px}
+.kv div{font-size:.88rem}.acts{gap:10px}.act{padding:14px 6px;font-size:.88rem}
+.alert{padding:12px 14px;font-size:.9rem}.alert button{width:100%}
+.sheet{padding:18px 14px calc(18px + env(safe-area-inset-bottom,0))}
+h1{font-size:1.15rem}
+}
+/* ===== رسالة الصورة + التنبيه ===== */
+.nudge{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:12px;right:12px;max-width:440px;margin:0 auto;z-index:8;display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:20px;background:#fff;border:1.5px solid var(--gold);box-shadow:0 14px 36px rgba(60,80,140,.22);transform:translateY(-130%);opacity:0;transition:transform .5s cubic-bezier(.2,.9,.3,1.2),opacity .4s}
+.nudge.on{transform:none;opacity:1}
+.nudge .ni{flex:none;width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#fff4cf,#f9d25c);display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.nudge div{flex:1;min-width:0;line-height:1.5}.nudge b{display:block;font-size:.95rem;font-weight:900}.nudge small{display:block;color:var(--mut);font-size:.76rem;font-weight:700}
+.nudge button{flex:none;border:0;border-radius:12px;padding:9px 14px;background:linear-gradient(180deg,#f9d25c,var(--gold2));color:#2a1c00;font:900 .85rem 'Cairo',sans-serif;cursor:pointer}
+.nudge u{flex:none;text-decoration:none;color:var(--mut);font-size:1.3rem;line-height:1;padding:4px 2px;cursor:pointer}
+.avatar.pulse{animation:pl 1.8s ease-out infinite}@keyframes pl{0%{box-shadow:0 0 0 0 rgba(240,180,41,.55)}100%{box-shadow:0 0 0 18px rgba(240,180,41,0)}}
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:99998;background:#1b2240;color:#fff;padding:11px 20px;border-radius:30px;font:800 .9rem 'Cairo',sans-serif;opacity:0;transition:.35s;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(prefers-reduced-motion:reduce){.avatar.pulse{animation:none}.nudge{transition:opacity .2s}}
 </style>
 </head>
 <body>
@@ -107,6 +137,23 @@ label{display:block;font-size:.82rem;color:var(--mut);margin:0 2px 5px;font-weig
   var PAY = { NEW_REGISTRATION: 'اشتراك جديد', RENEWAL_EXTENSION: 'تجديد اشتراك', DEBT_CLEARANCE: 'سداد متبقي', DAILY_SESSION: 'حصة يومية', UPDATE_MODIFICATION: 'تعديل اشتراك' };
   var TIPS = ['اشرب مية قبل وأثناء وبعد التمرين، مش بس وإنت عطشان.', 'سخّن 5 إلى 10 دقايق قبل أي تمرين، وده بيحميك من الإصابات.', 'النوم 7 إلى 8 ساعات هو وقت بناء العضلات الحقيقي.', 'البروتين في كل وجبة بيساعدك تحافظ على العضلات وتخس دهون.', 'الانتظام أهم من الشدة: 3 حصص ثابتة أحسن من حصة واحدة عنيفة.', 'خد يوم راحة في الأسبوع، العضلة بتكبر وإنت بتستريح.', 'ركّز على الفورم الصح قبل ما تزوّد الأوزان.', 'اعمل تمارين إطالة بعد التمرين عشان تقلل الشد في اليوم التالي.'];
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var savingPhoto = false, nudged = false;
+  function toast(t) { var d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); requestAnimationFrame(function () { requestAnimationFrame(function () { d.classList.add('on'); }); }); setTimeout(function () { d.classList.remove('on'); setTimeout(function () { d.remove(); }, 400); }, 2600); }
+  function nudge() {
+    var av = document.getElementById('chg'); if (av && me && !me.photo) av.classList.add('pulse');
+    if (nudged || !me || me.photo) return; nudged = true;
+    setTimeout(function () {
+      if (!me || me.photo || document.querySelector('.ov')) return;
+      var n = document.createElement('div'); n.className = 'nudge'; n.setAttribute('role', 'status');
+      n.innerHTML = '<span class="ni">📸</span><div><b>ضيف صورتك للكارنيه</b><small>هتظهر على كارنيهك وعلى أيقونة التطبيق لما تثبّته</small></div><button type="button">إضافة</button><u aria-label="إغلاق">×</u>';
+      document.body.appendChild(n);
+      function close() { n.classList.remove('on'); setTimeout(function () { n.remove(); }, 500); }
+      n.querySelector('button').onclick = function () { close(); pickPhoto(); };
+      n.querySelector('u').onclick = close;
+      requestAnimationFrame(function () { requestAnimationFrame(function () { n.classList.add('on'); }); });
+      setTimeout(close, 9000);
+    }, 700);
+  }
   function rpc(n, a) { return fetch(URL_ + '/rest/v1/rpc/' + n, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(a || {}) }).then(function (r) { return r.json(); }).catch(function () { return { error: 'net' }; }); }
   function err(r) { return ERR[r.error] || (r.error === 'net' ? 'مفيش اتصال بالإنترنت.' : 'حصلت مشكلة، حاول تاني.'); }
   function digits(s) { return String(s || '').replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).replace(/\D/g, ''); }
@@ -160,10 +207,11 @@ label{display:block;font-size:.82rem;color:var(--mut);margin:0 2px 5px;font-weig
     go.onclick = submit; document.getElementById('pn').onkeydown = function (e) { if (e.key === 'Enter') submit(); };
   }
   function load() {
+    if (savingPhoto) return;
     rpc('portal_me', { p_token: token }).then(function (r) {
       if (r.error) { var kicked = r.error === 'unauthorized' && me; localStorage.removeItem(TK); token = null; me = null; authView(kicked ? 'تم تسجيل الدخول بنفس الحساب من جهاز تاني، فاتسجّل خروجك من هنا.' : ''); return; }
       me = r;
-      try { window.__mpInfo = window.__mpInfo || {}; window.__mpInfo.name = String((r.member && r.member.name) || '').trim(); window.dispatchEvent(new Event('mpinfo')); } catch (e) {}
+      try { window.__mpInfo = window.__mpInfo || {}; window.__mpInfo.name = String((r.member && r.member.name) || '').trim(); window.__mpInfo.photo = r.photo || ''; window.dispatchEvent(new Event('mpinfo')); } catch (e) {}
       home();
     });
   }
@@ -287,12 +335,13 @@ label{display:block;font-size:.82rem;color:var(--mut);margin:0 2px 5px;font-weig
     if (document.getElementById('en')) document.getElementById('en').onclick = function () { var v = prompt('اكتب اسمك بالإنجليزي زي ما عايزه على الكارنيه:', enName(m)); if (v && v.trim()) { try { localStorage.setItem('mp_en_' + slug + '_' + m.id, v.trim().slice(0, 40)); } catch (e) {} home(); } };
     [].forEach.call(document.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { sheet(b.getAttribute('data-k')); }; });
     drawCard().then(function (u) { var im = document.getElementById('cardImg'); if (im && im.getAttribute('src') !== u) im.src = u; });
+    nudge();
   }
 
   // ---------- تغيير الصورة مع تكبير وتحريك ----------
   function pickPhoto() {
     var f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*';
-    f.onchange = function () { if (!f.files[0]) return; compress(f.files[0], 1400, .9).then(cropper, function () { alert('مشكلة في الصورة، جرّب صورة تانية.'); }); };
+    f.onchange = function () { if (!f.files[0]) return; compress(f.files[0], 900, .85).then(cropper, function () { alert('مشكلة في الصورة، جرّب صورة تانية.'); }); };
     f.click();
   }
   function cropper(src) {
@@ -321,9 +370,15 @@ label{display:block;font-size:.82rem;color:var(--mut);margin:0 2px 5px;font-weig
     var sv = ov.querySelector('#sv'), m = ov.querySelector('#m');
     sv.onclick = function () {
       sv.disabled = true; m.textContent = '';
-      var c = document.createElement('canvas'); c.width = c.height = 360;
-      c.getContext('2d').drawImage(img, -st.x / st.k, -st.y / st.k, V / st.k, V / st.k, 0, 0, 360, 360);
-      rpc('portal_photo', { p_token: token, p_photo: c.toDataURL('image/jpeg', .82) }).then(function (r) { if (r.error) { sv.disabled = false; m.textContent = err(r); } else { ov.remove(); load(); } });
+      var c = document.createElement('canvas'); c.width = c.height = 320;
+      c.getContext('2d').drawImage(img, -st.x / st.k, -st.y / st.k, V / st.k, V / st.k, 0, 0, 320, 320);
+      var data = c.toDataURL('image/jpeg', .8), prev = me.photo;
+      savingPhoto = true; me.photo = data; ov.remove(); home(); toast('تم تحديث صورتك ✅');
+      try { window.__mpInfo.photo = data; window.dispatchEvent(new Event('mpinfo')); } catch (e) {}
+      rpc('portal_photo', { p_token: token, p_photo: data }).then(function (r) {
+        savingPhoto = false;
+        if (r && r.error) { me.photo = prev; try { window.__mpInfo.photo = prev || ''; window.dispatchEvent(new Event('mpinfo')); } catch (e) {} home(); toast(err(r)); }
+      });
     };
   }
 
@@ -504,7 +559,7 @@ label{display:block;font-size:.82rem;color:var(--mut);margin:0 2px 5px;font-weig
 
   function build() {
     if (building) return;
-    var src = mpLogo(), name = mpName();
+    var photo = mpInfo().photo || '', src = photo || mpLogo(), name = mpName();
     var key = src.length + ':' + src.slice(-40) + '|' + name;
     if (key === lastKey) return;
     lastKey = key; building = true;
@@ -520,6 +575,11 @@ label{display:block;font-size:.82rem;color:var(--mut);margin:0 2px 5px;font-weig
         var a = analyze(img), dom = a.dom, theme = hex(dom[0], dom[1], dom[2]), bg;
         if (a.edge) bg = hex(a.edge[0], a.edge[1], a.edge[2]);          // نفس خلفية اللوجو
         else bg = lum(dom[0], dom[1], dom[2]) > 150 ? '#14161c' : '#ffffff'; // تباين مع لون اللوجو
+        if (photo) {
+          bg = theme;
+          publish(name, { i192: drawIcon(img, 192, bg, 1), i512: drawIcon(img, 512, bg, 1), m512: drawIcon(img, 512, bg, .78), a180: drawIcon(img, 180, bg, 1) }, theme, bg);
+          building = false; return;
+        }
         var themeBar = a.edge ? bg : theme;
         publish(name, {
           i192: drawIcon(img, 192, bg, .82), i512: drawIcon(img, 512, bg, .82),
