@@ -115,6 +115,10 @@ h1{font-size:1.15rem}
   var URL_ = 'https://wvekeoemprxbxjklbaig.supabase.co', KEY = 'sb_publishable_irn-GODoQ0YCFNOku8nZlQ_RQY9Z1xV';
   var slug = new URLSearchParams(location.search).get('g') || '', TK = 'mp_tok_' + slug;
   var app = document.getElementById('app'), gymName = '', gymLogo = '', token = null, me = null, cardCache = { sig: '', url: '' };
+  var _mem = {};
+  function sget(k) { try { var v = localStorage.getItem(k); return v == null ? (_mem[k] || null) : v; } catch (e) { return _mem[k] || null; } }
+  function sset(k, v) { _mem[k] = v; try { localStorage.setItem(k, v); } catch (e) {} }
+  function sdel(k) { delete _mem[k]; try { localStorage.removeItem(k); } catch (e) {} }
   var cardLang = 'en'; try { cardLang = localStorage.getItem('mp_cl') === 'ar' ? 'ar' : 'en'; } catch (e) {}
   var NAMES = { 'محمد': 'Mohamed', 'احمد': 'Ahmed', 'أحمد': 'Ahmed', 'محمود': 'Mahmoud', 'خالد': 'Khaled', 'علي': 'Ali', 'حسن': 'Hassan', 'حسين': 'Hussein', 'ابراهيم': 'Ibrahim', 'إبراهيم': 'Ibrahim', 'اسماعيل': 'Ismail', 'إسماعيل': 'Ismail', 'مصطفى': 'Mostafa', 'عمر': 'Omar', 'عثمان': 'Othman', 'يوسف': 'Youssef', 'كريم': 'Karim', 'طارق': 'Tarek', 'ياسر': 'Yasser', 'هاني': 'Hany', 'سعيد': 'Said', 'سيد': 'Sayed', 'رضا': 'Reda', 'صلاح': 'Salah', 'عادل': 'Adel', 'ماجد': 'Maged', 'نور': 'Nour', 'ايمن': 'Ayman', 'أيمن': 'Ayman', 'اسلام': 'Islam', 'إسلام': 'Islam', 'هشام': 'Hesham', 'وائل': 'Wael', 'حسام': 'Hossam', 'عماد': 'Emad', 'سامي': 'Sami', 'سمير': 'Samir', 'عصام': 'Essam', 'شريف': 'Sherif', 'عبده': 'Abdo', 'ايهاب': 'Ihab', 'ابو': 'Abou', 'أبو': 'Abou', 'فاطمة': 'Fatma', 'مريم': 'Mariam', 'سارة': 'Sara', 'منى': 'Mona', 'نهى': 'Noha', 'ايمان': 'Eman', 'إيمان': 'Eman', 'هبة': 'Heba', 'دعاء': 'Doaa', 'رنا': 'Rana', 'ياسمين': 'Yasmin', 'نورا': 'Nora', 'اسماء': 'Asmaa', 'أسماء': 'Asmaa', 'شيماء': 'Shaimaa', 'اية': 'Aya', 'آية': 'Aya', 'ملك': 'Malak', 'جنى': 'Jana', 'هدى': 'Hoda', 'امل': 'Amal', 'أمل': 'Amal', 'ريم': 'Reem', 'داليا': 'Dalia', 'ندى': 'Nada', 'سلمى': 'Salma', 'حبيبة': 'Habiba', 'زينب': 'Zeinab', 'النبي': 'Nabi', 'الله': 'Allah', 'الرحمن': 'Rahman', 'العزيز': 'Aziz', 'الحميد': 'Hamid', 'المنعم': 'Monem', 'الفتاح': 'Fattah', 'الرحيم': 'Rahim', 'الكريم': 'Karim', 'السيد': 'El Sayed', 'الشيخ': 'El Sheikh' };
   var LET = { 'ا': 'a', 'أ': 'a', 'إ': 'e', 'آ': 'aa', 'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'g', 'ح': 'h', 'خ': 'kh', 'د': 'd', 'ذ': 'z', 'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'd', 'ط': 't', 'ظ': 'z', 'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'k', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h', 'و': 'o', 'ي': 'y', 'ى': 'a', 'ة': 'a', 'ء': '', 'ئ': 'e', 'ؤ': 'o' };
@@ -159,7 +163,7 @@ h1{font-size:1.15rem}
   }
   function rpc(n, a, tries) {
     tries = tries == null ? ((n === 'portal_gym' || n === 'portal_me') ? 2 : 1) : tries;
-    var ac = window.AbortController ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, 12000);
+    var ac = window.AbortController ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, 10000);
     return fetch(URL_ + '/rest/v1/rpc/' + n, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(a || {}), signal: ac ? ac.signal : undefined })
       .then(function (r) { clearTimeout(to); return r.json(); })
       .catch(function () { clearTimeout(to); return tries > 1 ? rpc(n, a, tries - 1) : { error: 'net' }; });
@@ -212,18 +216,19 @@ h1{font-size:1.15rem}
     var go = document.getElementById('go'), m = document.getElementById('m'); if (note) m.textContent = note;
     function submit() {
       go.disabled = true; m.textContent = '';
-      rpc('portal_login', { p_slug: slug, p_phone: digits(document.getElementById('ph').value), p_pin: digits(document.getElementById('pn').value) }).then(function (r) { go.disabled = false; if (r.token) { token = r.token; localStorage.setItem(TK, token); load(); } else m.textContent = err(r); });
+      rpc('portal_login', { p_slug: slug, p_phone: digits(document.getElementById('ph').value), p_pin: digits(document.getElementById('pn').value) }).then(function (r) { go.disabled = false; if (r.token) { token = r.token; sset(TK, token); load(); } else m.textContent = err(r); });
     }
     go.onclick = submit; document.getElementById('pn').onkeydown = function (e) { if (e.key === 'Enter') submit(); };
   }
   function load() {
     if (savingPhoto) return;
     rpc('portal_me', { p_token: token }).then(function (r) {
-      if (r.error) { var kicked = r.error === 'unauthorized' && me; localStorage.removeItem(TK); token = null; me = null; authView(kicked ? 'تم تسجيل الدخول بنفس الحساب من جهاز تاني، فاتسجّل خروجك من هنا.' : ''); return; }
+      if (r && r.error === 'net') { if (!me) retryView(); return; }
+      if (r.error) { var kicked = r.error === 'unauthorized' && me; sdel(TK); token = null; me = null; authView(kicked ? 'تم تسجيل الدخول بنفس الحساب من جهاز تاني، فاتسجّل خروجك من هنا.' : ''); return; }
       me = r;
       try { window.__mpInfo = window.__mpInfo || {}; window.__mpInfo.name = String((r.member && r.member.name) || '').trim(); window.__mpInfo.photo = r.photo || ''; window.dispatchEvent(new Event('mpinfo')); } catch (e) {}
       home();
-    });
+    }).catch(function () { if (!me) retryView(); });
   }
 
   // ---------- الكارنيه (بيترسم كصورة PNG) ----------
@@ -339,7 +344,7 @@ h1{font-size:1.15rem}
       (pays.length ? '<div class="box s6"><h2>سجل مدفوعاتك</h2>' + pays.map(function (p) { return '<div class="hist"><span>' + (PAY[p.t] || 'دفعة') + '<small class="num">' + esc(p.d || '') + '</small></span><b class="num">' + esc(p.a) + ' ج</b></div>'; }).join('') + '</div>' : '') + '<div class="box s6"><h2>آخر طلباتك</h2>' + (me.requests.length ? me.requests.map(function (q) { return '<div class="hist"><span>' + (KIND[q.kind] || q.kind) + '<small>' + fmt(q.at, 'ar') + '</small></span><span class="pill ' + q.status + '">' + (ST[q.status] || q.status) + '</span></div>'; }).join('') : '<p class="sub" style="margin:0">لسه ما قدمتش أي طلب. أي تجديد أو تجميد أو شكوى هتلاقيها هنا.</p>') + '</div>' +
       ((inf.promo || inf.wa || inf.fb || inf.hours || ph || waA) ? '<div class="box s6 ct"><h2>من الجيم</h2>' + (inf.hours ? '<p class="sub" style="color:var(--txt)">🕒 ' + esc(inf.hours) + '</p>' : '') + (ph ? '<p class="sub" style="color:var(--txt)">📞 <a href="tel:' + esc(ph) + '" dir="ltr" style="color:inherit;font-weight:800">' + esc(ph) + '</a></p>' : '') + (waA ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(waA) + '">💬 كلّم الكابتن على واتساب</a>' : '') + '' + (inf.promo ? '<div class="rnw" style="margin:12px 0">🎁 ' + esc(inf.promo) + '</div>' : '') + '<div class="tools" style="margin-top:0">' + (inf.wa ? '<a class="btn" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="' + esc(inf.wa) + '">💬 جروب الواتساب</a>' : '') + (inf.fb ? '<a class="btn ghost" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="' + esc(inf.fb) + '">صفحة الفيسبوك</a>' : '') + '</div></div>' : '') + '<div class="box s6"><h2>إنجازاتك</h2>' + (mdays != null ? '<div class="cnt">🗓️ عضو معانا من ' + mdays + ' يوم</div>' : '') + '<div class="bdg">' + BD.map(function (b) { return '<div class="bd' + (b[2] ? '' : ' off') + '"><span>' + b[0] + '</span>' + b[1] + '<small>' + b[3] + '</small></div>'; }).join('') + '</div></div><div class="box s6"><h2>نصيحة النهارده</h2><div class="tip2"><em>💡</em><div>' + tip + '<small>' + new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' }) + '</small></div></div></div>' +
       '<p class="sub s12" style="text-align:center;margin:4px 0 0">🔒 رابط بوابتك خاص بيك وبيفتح كارنيهك وبياناتك، متشاركوش مع حد.</p></div>';
-    document.getElementById('lo').onclick = function () { localStorage.removeItem(TK); token = null; authView(); };
+    document.getElementById('lo').onclick = function () { sdel(TK); token = null; authView(); };
     document.getElementById('rf').onclick = load; document.getElementById('chg').onclick = document.getElementById('chg2').onclick = pickPhoto; document.getElementById('dl').onclick = downloadCard; document.getElementById('shr').onclick = shareCard;
     [].forEach.call(document.querySelectorAll('[data-l]'), function (b) { b.onclick = function () { cardLang = b.getAttribute('data-l'); try { localStorage.setItem('mp_cl', cardLang); } catch (e) {} home(); }; });
     if (document.getElementById('en')) document.getElementById('en').onclick = function () { var v = prompt('اكتب اسمك بالإنجليزي زي ما عايزه على الكارنيه:', enName(m)); if (v && v.trim()) { try { localStorage.setItem('mp_en_' + slug + '_' + m.id, v.trim().slice(0, 40)); } catch (e) {} home(); } };
@@ -417,25 +422,25 @@ h1{font-size:1.15rem}
 
   setInterval(function () { if (token && me && !document.hidden && !document.querySelector('.ov')) load(); }, 20000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden && token && me && !document.querySelector('.ov')) load(); });
-  setTimeout(function () { if (app.querySelector('.spin')) retryView('التحميل واخد وقت'); }, 15000);
+  setTimeout(function () { if (app.querySelector('.spin')) retryView('التحميل واخد وقت'); }, 25000);
   if (!slug) { app.innerHTML = '<h1>الرابط ناقص</h1><p class="sub">اطلب من الجيم رابط البوابة الصحيح.</p>'; return; }
   rpc('portal_gym', { p_slug: slug }).then(function (g) {
     if (g.error === 'net') { retryView(); return; }
     if (g.error) { app.innerHTML = '<h1>الجيم غير متاح</h1><p class="sub">' + esc(err(g)) + '</p>'; return; }
-    gymName = g.name; gymLogo = g.logo || ''; token = localStorage.getItem(TK);
+    gymName = g.name; gymLogo = g.logo || ''; token = sget(TK);
     window.__mpInfo = { gym: gymName, logo: gymLogo, name: '' }; try { window.dispatchEvent(new Event('mpinfo')); } catch (e) {}
     var km = (location.hash || '').match(/[#&]k=([0-9a-f]{32,64})/i);
     if (km) {
       try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
       rpc('portal_magic', { p_slug: slug, p_key: km[1].toLowerCase() }).then(function (r) {
-        if (r.token) { token = r.token; localStorage.setItem(TK, token); load(); }
+        if (r.token) { token = r.token; sset(TK, token); load(); }
         else if (token) load();
         else authView('اللينك ده مش شغال أو اتجدد. ادخل برقم موبايلك وكودك، أو اطلب لينك جديد من الجيم.');
       });
       return;
     }
     if (token) load(); else authView();
-  });
+  }).catch(function () { retryView(); });
 })();
 </script>
 <script>
