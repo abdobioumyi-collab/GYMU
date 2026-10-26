@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f4f7ff">
 <title>بوابة المشترك</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://wvekeoemprxbxjklbaig.supabase.co" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{--bg:#f4f7ff;--panel:#ffffff;--panel2:#f6f8fe;--line:#e2e8f5;--gold:#f0b429;--gold2:#d99a0b;--goldt:#a86a00;--txt:#1b2240;--mut:#6a7597;--ok:#10a36a;--bad:#e5484d;--blue:#4f7cff}
 *{box-sizing:border-box}html,body{margin:0}
@@ -154,7 +157,14 @@ h1{font-size:1.15rem}
       setTimeout(close, 9000);
     }, 700);
   }
-  function rpc(n, a) { return fetch(URL_ + '/rest/v1/rpc/' + n, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(a || {}) }).then(function (r) { return r.json(); }).catch(function () { return { error: 'net' }; }); }
+  function rpc(n, a, tries) {
+    tries = tries == null ? ((n === 'portal_gym' || n === 'portal_me') ? 2 : 1) : tries;
+    var ac = window.AbortController ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, 12000);
+    return fetch(URL_ + '/rest/v1/rpc/' + n, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(a || {}), signal: ac ? ac.signal : undefined })
+      .then(function (r) { clearTimeout(to); return r.json(); })
+      .catch(function () { clearTimeout(to); return tries > 1 ? rpc(n, a, tries - 1) : { error: 'net' }; });
+  }
+  function retryView(msg) { app.className = 'wrap narrow'; app.innerHTML = '<h1>' + esc(msg || 'النت بطيء شوية') + '</h1><p class="sub">مقدرناش نوصل للجيم. اتأكد من الإنترنت وجرّب تاني.</p><button class="btn" id="rt">🔄 إعادة المحاولة</button>'; document.getElementById('rt').onclick = function () { location.reload(); }; }
   function err(r) { return ERR[r.error] || (r.error === 'net' ? 'مفيش اتصال بالإنترنت.' : 'حصلت مشكلة، حاول تاني.'); }
   function digits(s) { return String(s || '').replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).replace(/\D/g, ''); }
   function compress(file, max, q) {
@@ -407,8 +417,10 @@ h1{font-size:1.15rem}
 
   setInterval(function () { if (token && me && !document.hidden && !document.querySelector('.ov')) load(); }, 20000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden && token && me && !document.querySelector('.ov')) load(); });
+  setTimeout(function () { if (app.querySelector('.spin')) retryView('التحميل واخد وقت'); }, 15000);
   if (!slug) { app.innerHTML = '<h1>الرابط ناقص</h1><p class="sub">اطلب من الجيم رابط البوابة الصحيح.</p>'; return; }
   rpc('portal_gym', { p_slug: slug }).then(function (g) {
+    if (g.error === 'net') { retryView(); return; }
     if (g.error) { app.innerHTML = '<h1>الجيم غير متاح</h1><p class="sub">' + esc(err(g)) + '</p>'; return; }
     gymName = g.name; gymLogo = g.logo || ''; token = localStorage.getItem(TK);
     window.__mpInfo = { gym: gymName, logo: gymLogo, name: '' }; try { window.dispatchEvent(new Event('mpinfo')); } catch (e) {}
