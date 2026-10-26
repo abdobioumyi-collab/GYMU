@@ -43,6 +43,12 @@ label{display:block;font-size:.82rem;color:var(--mut);margin:0 2px 5px;font-weig
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}.s12{grid-column:span 12}.s7{grid-column:span 7}.s5{grid-column:span 5}.s6{grid-column:span 6}.s4{grid-column:span 4}
 @media(max-width:820px){.s7,.s5,.s6,.s4{grid-column:span 12}.hero{flex-direction:column;text-align:center;padding:22px 16px}.chips{justify-content:center}.hero .nm{font-size:1.55rem}}
 .cardimg{display:block;width:100%;height:auto;border-radius:22px;box-shadow:0 14px 34px rgba(30,40,90,.28);max-width:460px;margin:0 auto;background:#edf1fb;aspect-ratio:1012/638}
+.flip{perspective:1400px;max-width:460px;margin:0 auto;aspect-ratio:1012/638;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fi{position:relative;width:100%;height:100%;transition:transform .7s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d}
+.flip.on .fi{transform:rotateY(180deg)}
+.flip .face{position:absolute;inset:0;max-width:none;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.flip .bk{transform:rotateY(180deg)}
+@media(prefers-reduced-motion:reduce){.fi{transition:none}}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.tools button{flex:1;min-width:120px}
 .seg{display:inline-flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden}.seg button{background:transparent;border:0;color:var(--mut);padding:9px 16px;font:800 .85rem 'Cairo';cursor:pointer}.seg button.on{background:var(--gold);color:#2a1c00}
 .ringbox{display:flex;align-items:center;gap:18px}.ring{width:132px;height:132px;flex:none;position:relative}.ring svg{transform:rotate(-90deg)}
@@ -109,12 +115,81 @@ h1{font-size:1.15rem}
 </style>
 </head>
 <body>
+<script>
+/* مولّد QR صغير (Byte mode, تصحيح M, إصدارات 1-3) */
+window.gmQR = function (text) {
+  var d = unescape(encodeURIComponent(String(text))).split('').map(function (c) { return c.charCodeAt(0); });
+  var T = [[16, 10], [28, 16], [44, 26]], v = -1, i, j, k;
+  for (i = 0; i < 3; i++) if (d.length <= T[i][0] - 2) { v = i; break; }
+  if (v < 0) return null;
+  var nd = T[v][0], ne = T[v][1], n = 21 + 4 * v, bits = [];
+  function put(x, len) { for (var b = len - 1; b >= 0; b--) bits.push((x >>> b) & 1); }
+  put(4, 4); put(d.length, 8); d.forEach(function (b) { put(b, 8); });
+  put(0, Math.min(4, nd * 8 - bits.length)); while (bits.length % 8) bits.push(0);
+  var cw = []; for (i = 0; i < bits.length; i += 8) { var o = 0; for (j = 0; j < 8; j++) o = o * 2 + bits[i + j]; cw.push(o); }
+  for (i = 0; cw.length < nd; i++) cw.push(i % 2 ? 0x11 : 0xEC);
+  function mul(x, y) { var z = 0; for (var b = 7; b >= 0; b--) { z = (z << 1) ^ ((z >>> 7) * 0x11D); z ^= ((y >>> b) & 1) * x; } return z; }
+  var g = []; for (i = 0; i < ne - 1; i++) g.push(0); g.push(1);
+  for (i = 0, k = 1; i < ne; i++) { for (j = 0; j < ne; j++) { g[j] = mul(g[j], k); if (j + 1 < ne) g[j] ^= g[j + 1]; } k = mul(k, 2); }
+  var r = []; for (i = 0; i < ne; i++) r.push(0);
+  cw.forEach(function (b) { var f = b ^ r.shift(); r.push(0); for (var t = 0; t < ne; t++) r[t] ^= mul(g[t], f); });
+  var all = cw.concat(r);
+  var M = [], F = [];
+  for (i = 0; i < n; i++) { M.push(new Array(n).fill(false)); F.push(new Array(n).fill(false)); }
+  function sf(x, y, val) { if (x >= 0 && y >= 0 && x < n && y < n) { M[y][x] = val; F[y][x] = true; } }
+  for (i = 0; i < n; i++) { sf(6, i, i % 2 === 0); sf(i, 6, i % 2 === 0); }
+  [[3, 3], [n - 4, 3], [3, n - 4]].forEach(function (c) { for (var dy = -4; dy <= 4; dy++) for (var dx = -4; dx <= 4; dx++) { var q = Math.max(Math.abs(dx), Math.abs(dy)); sf(c[0] + dx, c[1] + dy, q !== 2 && q !== 4); } });
+  if (v > 0) for (var ay = -2; ay <= 2; ay++) for (var ax = -2; ax <= 2; ax++) sf(n - 7 + ax, n - 7 + ay, Math.max(Math.abs(ax), Math.abs(ay)) !== 1);
+  function fmt(mask) {
+    var dt = mask, rem = dt; for (var b = 0; b < 10; b++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+    var f = ((dt << 10) | rem) ^ 0x5412, bt = function (x) { return ((f >>> x) & 1) === 1; };
+    for (var a = 0; a <= 5; a++) sf(8, a, bt(a)); sf(8, 7, bt(6)); sf(8, 8, bt(7)); sf(7, 8, bt(8));
+    for (a = 9; a < 15; a++) sf(14 - a, 8, bt(a));
+    for (a = 0; a < 8; a++) sf(n - 1 - a, 8, bt(a));
+    for (a = 8; a < 15; a++) sf(8, n - 15 + a, bt(a));
+    sf(8, n - 8, true);
+  }
+  fmt(0);
+  var p = 0;
+  for (var right = n - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;
+    for (var vert = 0; vert < n; vert++) for (j = 0; j < 2; j++) {
+      var x = right - j, y = ((right + 1) & 2) === 0 ? n - 1 - vert : vert;
+      if (!F[y][x] && p < all.length * 8) { M[y][x] = ((all[p >>> 3] >>> (7 - (p & 7))) & 1) === 1; p++; }
+    }
+  }
+  var MK = [function (x, y) { return (x + y) % 2 === 0; }, function (x, y) { return y % 2 === 0; }, function (x, y) { return x % 3 === 0; }, function (x, y) { return (x + y) % 3 === 0; },
+    function (x, y) { return (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; }, function (x, y) { return x * y % 2 + x * y % 3 === 0; },
+    function (x, y) { return (x * y % 2 + x * y % 3) % 2 === 0; }, function (x, y) { return ((x + y) % 2 + x * y % 3) % 2 === 0; }];
+  function pen(m) {
+    var s = 0, dark = 0, rows = [], cols = [], y, x, run, ln;
+    for (y = 0; y < n; y++) { rows.push(m[y].map(Number).join('')); }
+    for (x = 0; x < n; x++) { ln = ''; for (y = 0; y < n; y++) ln += +m[y][x]; cols.push(ln); }
+    rows.concat(cols).forEach(function (L) {
+      (L.match(/0{5,}|1{5,}/g) || []).forEach(function (q) { s += q.length - 2; });
+      s += 40 * ((L.match(/(?=10111010000|00001011101)/g) || []).length);
+    });
+    for (y = 0; y < n; y++) for (x = 0; x < n; x++) {
+      if (m[y][x]) dark++;
+      if (x < n - 1 && y < n - 1 && m[y][x] === m[y][x + 1] && m[y][x] === m[y + 1][x] && m[y][x] === m[y + 1][x + 1]) s += 3;
+    }
+    return s + 10 * Math.floor(Math.abs(dark * 100 / (n * n) - 50) / 5);
+  }
+  var best = null, bs = 1e9;
+  for (var mk = 0; mk < 8; mk++) {
+    var C = M.map(function (row, yy) { return row.map(function (c, xx) { return !F[yy][xx] && MK[mk](xx, yy) ? !c : c; }); }), sc = pen(C);
+    if (sc < bs) { bs = sc; best = { c: C, m: mk }; }
+  }
+  M = best.c; fmt(best.m);
+  return M;
+};
+</script>
 <div class="wrap" id="app"><div class="spin"></div></div>
 <script>
 (function () {
   var URL_ = 'https://wvekeoemprxbxjklbaig.supabase.co', KEY = 'sb_publishable_irn-GODoQ0YCFNOku8nZlQ_RQY9Z1xV';
   var slug = new URLSearchParams(location.search).get('g') || '', TK = 'mp_tok_' + slug;
-  var app = document.getElementById('app'), gymName = '', gymLogo = '', token = null, me = null, cardCache = { sig: '', url: '' };
+  var app = document.getElementById('app'), gymName = '', gymLogo = '', token = null, me = null, cardCache = { sig: '', url: '' }, cardFlip = false;
   var _mem = {};
   function sget(k) { try { var v = localStorage.getItem(k); return v == null ? (_mem[k] || null) : v; } catch (e) { return _mem[k] || null; } }
   function sset(k, v) { _mem[k] = v; try { localStorage.setItem(k, v); } catch (e) {} }
@@ -199,9 +274,9 @@ h1{font-size:1.15rem}
     return lp ? parseFloat(lp.a) : null;
   }
   function shareCard() {
-    drawCard().then(function (u) { return fetch(u).then(function (r) { return r.blob(); }); }).then(function (b) {
-      var f = new File([b], 'card.png', { type: b.type || 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [f] })) return navigator.share({ files: [f], title: gymName, text: 'كارنيهي في ' + gymName });
+    Promise.all([drawCard(), drawCard('b')]).then(function (us) { return Promise.all(us.map(function (u) { return fetch(u).then(function (r) { return r.blob(); }); })); }).then(function (bs) {
+      var fs = [new File([bs[0]], 'card-front.png', { type: 'image/png' }), new File([bs[1]], 'card-back.png', { type: 'image/png' })];
+      if (navigator.canShare && navigator.canShare({ files: fs })) return navigator.share({ files: fs, title: gymName, text: 'كارنيهي في ' + gymName });
       if (navigator.share) return navigator.share({ title: gymName, text: 'انضم لينا في ' + gymName });
       downloadCard();
     }).catch(function (e) { if (e && e.name !== 'AbortError') downloadCard(); });
@@ -235,7 +310,7 @@ h1{font-size:1.15rem}
   function loadImg(src) { return new Promise(function (res) { if (!src) return res(null); var i = new Image(); i.onload = function () { res(i); }; i.onerror = function () { res(null); }; i.src = src; }); }
   function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
   function fl(f) { return document.fonts && document.fonts.load ? document.fonts.load(f, f.indexOf('Cairo') > -1 ? 'أبجد' : 'ABC123') : 0; }
-  function drawCard() {
+  function drawFront() {
     var m = me.member, W = 1012, H = 638, M = 60, lang = cardLang, rtl = lang === 'ar', st = status(m, lang);
     var en = rtl ? String(m.name || '') : enName(m), pen = rtl ? (m.plan || '—') : planEn(m.plan), sig = [lang, gymName, m.id, en, pen, m.start, m.end, st.t, (me.photo || '').length, gymLogo.length].join('|');
     if (cardCache.sig === sig && cardCache.url) return Promise.resolve(cardCache.url);
@@ -304,24 +379,78 @@ h1{font-size:1.15rem}
     });
   }
 
-  function printCardImage(url) {
+  var backCache = { sig: '', url: '' };
+  function drawBack() {
+    var m = me.member, W = 1012, H = 638, lang = cardLang, rtl = lang === 'ar';
+    var sig = ['b', lang, gymName, m.id, gymLogo.length].join('|');
+    if (backCache.sig === sig && backCache.url) return Promise.resolve(backCache.url);
+    var fam = rtl ? 'Cairo,Montserrat,sans-serif' : 'Montserrat,Cairo,sans-serif';
+    return Promise.all([fl('800 40px Montserrat'), fl('500 22px Montserrat'), fl('800 40px Cairo'), fl('600 22px Cairo'), loadImg(gymLogo)]).then(function (r) {
+      var logo = r[4], cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      var c = cv.getContext('2d');
+      function T(t, x, y, size, wt, col, al, ls, maxW) {
+        t = String(t == null ? '' : t); var s = size; c.direction = rtl ? 'rtl' : 'ltr';
+        if ('letterSpacing' in c) c.letterSpacing = (rtl ? 0 : ls || 0) + 'px';
+        do { c.font = wt + ' ' + s + 'px ' + fam; s -= 2; } while (maxW && c.measureText(t).width > maxW && s > 14);
+        c.fillStyle = col; c.textAlign = al === 'c' ? 'center' : al === 'e' ? (rtl ? 'left' : 'right') : (rtl ? 'right' : 'left'); c.fillText(t, x, y);
+        if ('letterSpacing' in c) c.letterSpacing = '0px';
+      }
+      var gold = c.createLinearGradient(0, 0, W, 0); gold.addColorStop(0, '#f9d25c'); gold.addColorStop(.5, '#c8921a'); gold.addColorStop(1, '#f9d25c');
+      rr(c, 0, 0, W, H, 40); c.save(); c.clip();
+      var g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1d2750'); g.addColorStop(.55, '#0b0f1f'); g.addColorStop(1, '#2b2008'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+      var rg = c.createRadialGradient(W * .85, -40, 10, W * .85, -40, 520); rg.addColorStop(0, 'rgba(242,193,78,.32)'); rg.addColorStop(1, 'rgba(242,193,78,0)'); c.fillStyle = rg; c.fillRect(0, 0, W, H);
+      c.strokeStyle = 'rgba(255,255,255,.03)'; c.lineWidth = 2; for (var i = -H; i < W; i += 26) { c.beginPath(); c.moveTo(i, H); c.lineTo(i + H, 0); c.stroke(); }
+      c.restore();
+      rr(c, 3, 3, W - 6, H - 6, 38); c.lineWidth = 4; c.strokeStyle = gold; c.stroke();
+      rr(c, 14, 14, W - 28, H - 28, 30); c.lineWidth = 1; c.strokeStyle = 'rgba(242,193,78,.25)'; c.stroke();
+      var nm = rtl ? gymName : gymName.toUpperCase();
+      c.direction = rtl ? 'rtl' : 'ltr'; c.font = '800 34px ' + fam; var nw = Math.min(c.measureText(nm).width, 560);
+      var tot = 72 + 20 + nw, sx0 = (W - tot) / 2, lcx = sx0 + 36, ly = 84;
+      c.save(); c.beginPath(); c.arc(lcx, ly, 36, 0, 7); c.fillStyle = '#fff'; c.fill(); c.clip();
+      if (logo) { var k = Math.min(68 / logo.width, 68 / logo.height); c.drawImage(logo, lcx - logo.width * k / 2, ly - logo.height * k / 2, logo.width * k, logo.height * k); }
+      else { T((gymName || 'G').charAt(0), lcx, ly + 12, 38, 800, '#0b0f1f', 'c'); }
+      c.restore(); c.beginPath(); c.arc(lcx, ly, 36, 0, 7); c.lineWidth = 3; c.strokeStyle = gold; c.stroke();
+      T(nm, sx0 + 92 + nw / 2, ly + 12, 34, 800, '#f2c14e', 'c', rtl ? 0 : 2, 560);
+      var qy = 140, qb = 0;
+      try {
+        var qm = window.gmQR && window.gmQR(String(m.id));
+        if (qm) {
+          var qn = qm.length, md = Math.floor(320 / (qn + 8)); qb = (qn + 8) * md; var qx = (W - qb) / 2;
+          rr(c, qx - 12, qy - 12, qb + 24, qb + 24, 34); c.lineWidth = 3; c.strokeStyle = gold; c.stroke();
+          rr(c, qx, qy, qb, qb, 24); c.fillStyle = '#fff'; c.fill(); c.fillStyle = '#000';
+          for (var a_ = 0; a_ < qn; a_++) for (var b_ = 0; b_ < qn; b_++) if (qm[a_][b_]) c.fillRect(qx + (b_ + 4) * md, qy + (a_ + 4) * md, md, md);
+        }
+      } catch (e) {}
+      var ty = qy + (qb || 320) + 62;
+      T(rtl ? 'امسح لتسجيل الحضور' : 'SCAN TO CHECK IN', W / 2, ty, 28, 700, '#ffffff', 'c', rtl ? 0 : 3, 700);
+      T((rtl ? 'رقم ' : 'ID ') + String(m.id).padStart(5, '0'), W / 2, ty + 42, 22, 600, 'rgba(143,153,184,.9)', 'c', 4);
+      var url = cv.toDataURL('image/png'); backCache = { sig: sig, url: url }; return url;
+    });
+  }
+  function drawCard(side) { return side === 'b' ? drawBack() : drawFront(); }
+  function printCardImage(urls) {
+    urls = [].concat(urls);
     var f = document.createElement('iframe');
     f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
     document.body.appendChild(f);
     var d = f.contentWindow.document; d.open();
-    d.write('<!doctype html><html><head><meta charset="utf-8"><title>الكارنيه</title><style>@page{size:A4;margin:0}html,body{margin:0;background:#fff}body{display:flex;justify-content:center;padding-top:18mm}img{display:block;width:85.6mm;height:54mm;outline:.2mm dashed #bbb}</style></head><body><img id="c" alt="" src="' + url + '"></body></html>');
+    d.write('<!doctype html><html><head><meta charset="utf-8"><title>الكارنيه</title><style>@page{size:A4;margin:0}html,body{margin:0;background:#fff}body{display:flex;justify-content:center;gap:6mm;padding-top:18mm;direction:ltr}img{display:block;width:85.6mm;height:54mm;outline:.2mm dashed #bbb}</style></head><body>' + urls.map(function (u) { return '<img class="c" alt="" src="' + u + '">'; }).join('') + '</body></html>');
     d.close();
-    var im = d.getElementById('c'), done = false;
+    var ims = [].slice.call(d.querySelectorAll('img.c')), done = false, left = ims.length;
     function go() {
       if (done) return; done = true;
       try { f.contentWindow.focus(); f.contentWindow.print(); }
-      catch (e) { var w = window.open(''); if (w) { w.document.write('<img src="' + url + '" style="width:85.6mm;height:54mm"><script>setTimeout(function(){print()},400)<\/script>'); w.document.close(); } }
+      catch (e) { var w = window.open(''); if (w) { w.document.write('<div style="display:flex;gap:6mm">' + urls.map(function (u) { return '<img src="' + u + '" style="width:85.6mm;height:54mm">'; }).join('') + '</div><script>setTimeout(function(){print()},400)<\/script>'); w.document.close(); } }
       setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 60000);
     }
-    if (im.complete) setTimeout(go, 150); else im.onload = function () { setTimeout(go, 150); };
+    function one() { if (--left <= 0) setTimeout(go, 150); }
+    ims.forEach(function (im) { if (im.complete) one(); else { im.onload = one; im.onerror = one; } });
   }
   function downloadCard() {
-    drawCard().then(function (url) {
+    Promise.all([drawCard(), drawCard('b')]).then(function (us) { return Promise.all(us.map(loadImg)); }).then(function (im) {
+      var cv = document.createElement('canvas'); cv.width = 1052; cv.height = 638 * 2 + 60; var x = cv.getContext('2d');
+      x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height); x.drawImage(im[0], 20, 20); x.drawImage(im[1], 20, 638 + 40);
+      var url = cv.toDataURL('image/png');
       var a = document.createElement('a'); a.href = url; a.download = 'card-' + me.member.id + '.png'; document.body.appendChild(a); a.click(); a.remove();
       if (/iPad|iPhone|iPod/.test(navigator.userAgent)) { var w = window.open(); if (w) w.document.write('<img src="' + url + '" style="width:100%"><p style="text-align:center;font:16px sans-serif">اضغط مطوّلاً على الصورة واختار "حفظ"</p>'); }
     });
@@ -329,12 +458,26 @@ h1{font-size:1.15rem}
 
   // ---------- الصفحة الرئيسية ----------
   function kv(rows) { return '<div class="kv">' + rows.filter(Boolean).map(function (r) { return '<div><span>' + r[0] + '</span><b class="num">' + r[1] + '</b></div>'; }).join('') + '</div>'; }
+  function autoSess(m, lim) {
+    var s = pd(m.start), e = pd(m.end); if (!lim || !s || !e) return 0;
+    var S = new Date(s).setHours(0, 0, 0, 0), E = new Date(e).setHours(0, 0, 0, 0), t = today();
+    if (t > E) return lim;
+    var total = Math.round((E - S) / 864e5) + 1, d = Math.round((t - S) / 864e5);
+    return total > 0 && d > 0 ? Math.min(lim, Math.floor(d / total * lim)) : 0;
+  }
+  function attBox() {
+    var v = me && me.visits; if (!v || typeof v !== 'object') return '';
+    var days = Array.isArray(v.days) ? v.days : [], n = new Date(), y = n.getFullYear(), ym = y + '-' + ('0' + (n.getMonth() + 1)).slice(-2), dim = new Date(y, n.getMonth() + 1, 0).getDate(), cells = '', i, k;
+    for (i = 1; i <= dim; i++) { k = ym + '-' + ('0' + i).slice(-2); cells += '<i class="' + (days.indexOf(k) > -1 ? 'd' : '') + '"></i>'; }
+    var cut = today() - 29 * 864e5, in30 = days.filter(function (d) { var x = pd(d); return x && x.getTime() >= cut; }).length, last = v.last ? fmt(v.last, 'ar') : '—';
+    return '<div class="box s12"><h2>حضورك 🏋️</h2><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div class="stat"><b class="num">' + (+v.month || 0) + '</b><small>مرة الشهر ده</small></div><div class="stat"><b class="num">' + in30 + '</b><small>آخر 30 يوم</small></div><div class="stat"><b class="num" style="font-size:1.05rem;line-height:1.9">' + last + '</b><small>آخر زيارة</small></div></div><div class="pbar">' + cells + '</div><div class="plbl"><span>' + ((+v.total || 0) ? 'أيام حضورك الشهر ده (الدهبي = حضرت) · إجمالي زياراتك ' + (+v.total) : 'هيظهر حضورك هنا أول ما تمسح كارنيهك عند الكابتن') + '</span></div></div>';
+  }
   function home() {
     app.className = 'wrap';
     var m = me.member, st = status(m, 'ar'), s = pd(m.start), e = pd(m.end);
     var total = s && e ? Math.max(1, Math.round((e - s) / 864e5)) : null, left = st.left, used = total != null && left != null ? Math.min(total, Math.max(0, total - Math.max(0, left))) : null;
     var frac = total && left != null ? Math.max(0, Math.min(1, left / total)) : 0, C = 2 * Math.PI * 52, col = st.k === 'ok' ? '#10a36a' : st.k === 'bad' ? '#e5484d' : '#e0a100';
-    var lim = limitOf(m.plan), done = parseInt(m.sessions) || 0, expired = left != null && left < 0, hr = new Date().getHours();
+    var lim = limitOf(m.plan), done = Math.max(parseInt(m.sessions) || 0, autoSess(m, lim)), expired = left != null && left < 0, hr = new Date().getHours();
     var first = String(m.name || '').split(' ')[0], tip = TIPS[Math.floor(Date.now() / 864e5) % TIPS.length], debt = parseFloat(m.debt) || 0;
     var inf = me.info || {}, pays = me.payments || [], joined = pd(me.joined);
     var price = planPrice(inf, m, pays), endTxt = fmt(m.end, 'ar'), priceTxt = price ? ' · تكلفة التجديد ' + price + ' ج' : '';
@@ -352,21 +495,32 @@ h1{font-size:1.15rem}
       '<div class="hero"><button class="avatar" id="chg" ' + av + ' aria-label="تغيير الصورة">' + (me.photo ? '' : esc((m.name || '?').charAt(0))) + '<i>📷</i></button><div><div class="hi">' + (hr < 12 ? 'صباح الخير' : hr < 18 ? 'أهلاً بيك' : 'مساء الخير') + ' يا ' + esc(first) + ' 👋</div><div class="nm">' + esc(m.name) + '</div><div class="mot">' + mot + '</div><div class="chips"><span class="chip ' + st.k + '">' + esc(st.t) + '</span><span class="chip num">كود #' + esc(m.id) + '</span>' + (m.plan ? '<span class="chip">' + esc(m.plan) + '</span>' : '') + '</div></div></div>' +
       (inf.notice ? '<div class="alert warn"><span>📢 ' + esc(inf.notice) + '</span></div>' : '') + (st.k !== 'ok' && left != null ? '<div class="alert ' + st.k + '"><span>' + (left < 0 ? 'اشتراكك خلص يوم ' + endTxt + '. جدّد دلوقتي وكمّل تمرينك' + priceTxt + '.' : (left === 0 ? 'النهارده آخر يوم في اشتراكك' : 'اشتراكك بينتهي يوم ' + endTxt + ' (باقي ' + left + ' يوم)') + '. جدّد قبل ما يفوتك يوم' + priceTxt + '.') + '</span><button class="btn" data-k="renewal">جدّد اشتراكك</button></div>' : '') +
       '<div class="grid">' +
-      '<div class="box s7"><img class="cardimg" id="cardImg" alt="الكارنيه"' + (cardCache.url ? ' src="' + cardCache.url + '"' : '') + '><div class="tools"><button class="btn" id="dl">⬇️ تحميل الكارنيه</button><button class="btn ghost" id="prt">🖨️ طباعة الكارنيه</button><button class="btn ghost" id="chg2">📷 غيّر صورتي</button><button class="btn ghost" id="shr">📤 شارك الكارنيه</button></div><div style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap"><span class="sub" style="margin:0">لغة الكارنيه</span><span class="seg"><button data-l="en" class="' + (cardLang === 'en' ? 'on' : '') + '">English</button><button data-l="ar" class="' + (cardLang === 'ar' ? 'on' : '') + '">عربي</button></span></div><div style="text-align:center">' + (cardLang === 'en' ? '<button class="link" id="en">✏️ تعديل الاسم اللي على الكارنيه (' + esc(enName(m)) + ')</button>' : '') + '</div></div>' +
+      '<div class="box s7"><div class="flip' + (cardFlip ? ' on' : '') + '" id="flip" role="button" tabindex="0" aria-label="اقلب الكارنيه"><div class="fi"><img class="cardimg face" id="cardImg" alt="وش الكارنيه"' + (cardCache.url ? ' src="' + cardCache.url + '"' : '') + '><img class="cardimg face bk" id="cardBack" alt="ضهر الكارنيه وعليه الكيو آر"' + (backCache.url ? ' src="' + backCache.url + '"' : '') + '></div></div><button class="link" id="flb" style="display:block;margin:12px auto 0">' + (cardFlip ? '↩️ ارجع لوش الكارنيه' : '🔄 اقلب الكارنيه عشان تظهر الكيو آر') + '</button><div class="tools"><button class="btn" id="dl">⬇️ تحميل الكارنيه</button><button class="btn ghost" id="prt">🖨️ طباعة الكارنيه</button><button class="btn ghost" id="chg2">📷 غيّر صورتي</button><button class="btn ghost" id="shr">📤 شارك الكارنيه</button></div><div style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap"><span class="sub" style="margin:0">لغة الكارنيه</span><span class="seg"><button data-l="en" class="' + (cardLang === 'en' ? 'on' : '') + '">English</button><button data-l="ar" class="' + (cardLang === 'ar' ? 'on' : '') + '">عربي</button></span></div><div style="text-align:center">' + (cardLang === 'en' ? '<button class="link" id="en">✏️ تعديل الاسم اللي على الكارنيه (' + esc(enName(m)) + ')</button>' : '') + '</div></div>' +
       '<div class="box s5"><h2>اشتراكك الحالي</h2><div class="ringbox"><div class="ring"><svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="52" fill="none" stroke="#e8edf9" stroke-width="12"/><circle cx="66" cy="66" r="52" fill="none" stroke="' + col + '" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - frac)).toFixed(1) + '"/></svg><div><b class="num" style="color:' + col + '">' + (left == null ? '—' : Math.max(0, left)) + '</b><small>يوم متبقي</small></div></div><div style="flex:1">' + kv([['من', fmt(m.start, 'ar')], ['إلى', fmt(m.end, 'ar')], total ? ['مدة الاشتراك', total + ' يوم'] : null, used != null ? ['اللي عدّى', used + ' يوم'] : null]) + '</div></div></div>' +
       (lim ? '<div class="box s6"><h2>حصصك</h2><div class="num" style="font-size:2rem;font-weight:800;color:var(--goldt)">' + done + ' <small style="font-size:1rem;color:var(--mut)">/ ' + lim + ' حصة</small></div><div class="bartrack"><i style="width:' + Math.min(100, done / lim * 100) + '%"></i></div><div class="sub" style="margin:0">' + (expired ? 'الاشتراك انتهى، وباقي الحصص اتلغى. جدّد عشان تكمّل.' : done >= lim ? 'خلصت كل حصص الباقة.' : 'فاضل لك <b class="num">' + (lim - done) + '</b> حصة لحد ' + fmt(m.end, 'ar') + '.') + '</div></div>' : '') +
       (total ? '<div class="box s12"><h2>تقدّم اشتراكك</h2><div class="plbl"><span>اليوم <b class="num">' + Math.min(left < 0 ? total : used + 1, total) + '</b> من <b class="num">' + total + '</b></span><span><b class="num">' + prog + '%</b></span><span>' + (left < 0 ? 'منتهي' : left === 0 ? 'آخر يوم' : 'باقي <b class="num">' + left + '</b> يوم') + '</span></div>' + (cells ? '<div class="pbar">' + cells + '</div>' : '<div class="bartrack"><i style="width:' + prog + '%"></i></div>') + '<div class="plbl"><span>' + fmt(m.start, 'ar') + '</span><span>' + endTxt + '</span></div><div class="rnw">🔄 ' + (left < 0 ? 'التجديد متاح دلوقتي' : 'موعد التجديد: ' + endTxt) + (price ? ' · المبلغ ' + price + ' ج' : '') + '</div></div>' : '') +
-      '<div class="box ' + (lim ? 's6' : 's12') + '"><h2>بياناتك</h2>' + kv([['الاسم', esc(m.name)], ['كود المشترك', '#' + esc(m.id)], m.gender ? ['النوع', esc(m.gender)] : null, m.plan ? ['الباقة', esc(m.plan)] : null, m.paid != null && m.paid !== '' ? ['المدفوع', esc(m.paid) + ' ج'] : null, joined ? ['سجّلت على البوابة', fmt(me.joined, 'ar')] : null, ['المتبقي عليك', debt > 0 ? '<span style="color:var(--goldt)">' + esc(m.debt) + ' ج</span>' : 'مفيش ✅']]) + '</div>' +
+      attBox() + '<div class="box ' + (lim ? 's6' : 's12') + '"><h2>بياناتك</h2>' + kv([['الاسم', esc(m.name)], ['كود المشترك', '#' + esc(m.id)], m.gender ? ['النوع', esc(m.gender)] : null, m.plan ? ['الباقة', esc(m.plan)] : null, m.paid != null && m.paid !== '' ? ['المدفوع', esc(m.paid) + ' ج'] : null, joined ? ['سجّلت على البوابة', fmt(me.joined, 'ar')] : null, ['المتبقي عليك', debt > 0 ? '<span style="color:var(--goldt)">' + esc(m.debt) + ' ج</span>' : 'مفيش ✅']]) + '</div>' +
       '<div class="box s12"><h2>عايز تعمل إيه؟</h2><div class="acts"><button class="act" data-k="renewal"><span>💳</span>تجديد الاشتراك</button><button class="act" data-k="freeze"><span>❄️</span>تجميد الاشتراك</button><button class="act" data-k="complaint"><span>📝</span>شكوى أو اقتراح</button></div></div>' +
       (pays.length ? '<div class="box s6"><h2>سجل مدفوعاتك</h2>' + pays.map(function (p) { return '<div class="hist"><span>' + (PAY[p.t] || 'دفعة') + '<small class="num">' + esc(p.d || '') + '</small></span><b class="num">' + esc(p.a) + ' ج</b></div>'; }).join('') + '</div>' : '') + '<div class="box s6"><h2>آخر طلباتك</h2>' + (me.requests.length ? me.requests.map(function (q) { return '<div class="hist"><span>' + (KIND[q.kind] || q.kind) + '<small>' + fmt(q.at, 'ar') + '</small></span><span class="pill ' + q.status + '">' + (ST[q.status] || q.status) + '</span></div>'; }).join('') : '<p class="sub" style="margin:0">لسه ما قدمتش أي طلب. أي تجديد أو تجميد أو شكوى هتلاقيها هنا.</p>') + '</div>' +
       ((inf.promo || inf.wa || inf.fb || inf.hours || ph || waA) ? '<div class="box s6 ct"><h2>من الجيم</h2>' + (inf.hours ? '<p class="sub" style="color:var(--txt)">🕒 ' + esc(inf.hours) + '</p>' : '') + (ph ? '<p class="sub" style="color:var(--txt)">📞 <a href="tel:' + esc(ph) + '" dir="ltr" style="color:inherit;font-weight:800">' + esc(ph) + '</a></p>' : '') + (waA ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(waA) + '">💬 كلّم الكابتن على واتساب</a>' : '') + '' + (inf.promo ? '<div class="rnw" style="margin:12px 0">🎁 ' + esc(inf.promo) + '</div>' : '') + '<div class="tools" style="margin-top:0">' + (inf.wa ? '<a class="btn" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="' + esc(inf.wa) + '">💬 جروب الواتساب</a>' : '') + (inf.fb ? '<a class="btn ghost" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="' + esc(inf.fb) + '">صفحة الفيسبوك</a>' : '') + '</div></div>' : '') + '<div class="box s6"><h2>إنجازاتك</h2>' + (mdays != null ? '<div class="cnt">🗓️ عضو معانا من ' + mdays + ' يوم</div>' : '') + '<div class="bdg">' + BD.map(function (b) { return '<div class="bd' + (b[2] ? '' : ' off') + '"><span>' + b[0] + '</span>' + b[1] + '<small>' + b[3] + '</small></div>'; }).join('') + '</div></div><div class="box s6"><h2>نصيحة النهارده</h2><div class="tip2"><em>💡</em><div>' + tip + '<small>' + new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' }) + '</small></div></div></div>' +
       '<p class="sub s12" style="text-align:center;margin:4px 0 0">🔒 رابط بوابتك خاص بيك وبيفتح كارنيهك وبياناتك، متشاركوش مع حد.</p></div>';
     document.getElementById('lo').onclick = function () { sdel(TK); token = null; authView(); };
-    document.getElementById('rf').onclick = load; document.getElementById('chg').onclick = document.getElementById('chg2').onclick = pickPhoto; document.getElementById('dl').onclick = downloadCard; document.getElementById('prt').onclick = function () { drawCard().then(printCardImage); }; document.getElementById('shr').onclick = shareCard;
+    document.getElementById('rf').onclick = load; document.getElementById('chg').onclick = document.getElementById('chg2').onclick = pickPhoto; document.getElementById('dl').onclick = downloadCard; document.getElementById('prt').onclick = function () { Promise.all([drawCard(), drawCard('b')]).then(printCardImage); }; document.getElementById('shr').onclick = shareCard;
     [].forEach.call(document.querySelectorAll('[data-l]'), function (b) { b.onclick = function () { cardLang = b.getAttribute('data-l'); try { localStorage.setItem('mp_cl', cardLang); } catch (e) {} home(); }; });
     if (document.getElementById('en')) document.getElementById('en').onclick = function () { var v = prompt('اكتب اسمك بالإنجليزي زي ما عايزه على الكارنيه:', enName(m)); if (v && v.trim()) { try { localStorage.setItem('mp_en_' + slug + '_' + m.id, v.trim().slice(0, 40)); } catch (e) {} home(); } };
     [].forEach.call(document.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { sheet(b.getAttribute('data-k')); }; });
     drawCard().then(function (u) { var im = document.getElementById('cardImg'); if (im && im.getAttribute('src') !== u) im.src = u; });
+    drawCard('b').then(function (u) { var im = document.getElementById('cardBack'); if (im && im.getAttribute('src') !== u) im.src = u; });
+    (function () {
+      var fe = document.getElementById('flip'), fb = document.getElementById('flb'), wl = null;
+      function flip() {
+        cardFlip = !cardFlip; fe.classList.toggle('on', cardFlip);
+        fb.textContent = cardFlip ? '↩️ ارجع لوش الكارنيه' : '🔄 اقلب الكارنيه عشان تظهر الكيو آر';
+        try { if (cardFlip && navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { wl = l; }).catch(function () {}); else if (wl) { wl.release(); wl = null; } } catch (e) {}
+      }
+      fe.onclick = fb.onclick = flip;
+      fe.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } };
+    })();
     nudge();
   }
 

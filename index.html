@@ -1629,6 +1629,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 <button class="tab-btn active" id="tabBtnMain" onclick="switchView('main')"><span class="ico" data-i="fa-user-plus"></span> <span id="tabBtnMainLabel">لوحة التسجيل والمؤشرات</span></button>
                 <button class="tab-btn" id="tabBtnTracker" onclick="switchView('tracker')"><span class="ico" data-i="fa-star"></span> متابعة الاشتراكات بالحصص (أسبوعي، 12، 30)</button>
                 <button class="tab-btn" id="tabBtnDaily" onclick="switchView('daily')"><span class="ico" data-i="fa-person-walking"></span> الحصص اليومية (زوار اليوم)</button>
+                <button class="tab-btn" id="tabBtnCheckin" onclick="switchView('checkin')">🔳 تسجيل حضور (QR)</button>
                 <button class="tab-btn" id="tabBtnSales" onclick="switchView('sales')"><span class="ico" data-i="fa-cart-shopping"></span> قسم المبيعات</button>
             </div>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -1793,6 +1794,24 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     <p style="color:var(--text-muted); font-size:1rem; margin-top:5px; font-weight: 600;">سجل حضور الحصص الفوري لكباتن العروض بمجرد الدخول إلى صالة الجيم</p>
                 </div>
                 <div class="tracker-grid" id="trackerGridArea"></div>
+            </div>
+        </div>
+
+        <div id="viewModuleCheckin" class="view-panel">
+            <div class="sessions-tracker-container">
+                <div class="tracker-header">
+                    <h2 style="color:var(--primary); font-weight: 800;">🔳 تسجيل الحضور بالـQR</h2>
+                    <p style="color:var(--text-muted); font-size:1rem; margin-top:5px; font-weight: 600;">امسح كارنيه المشترك بالسكانر (الخانة بتستقبل المسح لوحدها)، أو بكاميرا الموبايل/اللابتوب، أو اكتب الكود ثم Enter. بتتحسب حصة واحدة بس في اليوم.</p>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+                    <input id="ckInput" class="form-control" autocomplete="off" placeholder="امسح الكارنيه أو اكتب الكود ثم Enter" style="flex:1; min-width:220px; font-size:1.3rem; font-weight:800; text-align:center;">
+                    <button class="menu-btn" type="button" onclick="gmCkSubmit()">تسجيل</button>
+                    <button class="menu-btn" type="button" id="ckCamBtn" onclick="gmCkCam()">📷 تشغيل الكاميرا</button>
+                </div>
+                <div id="ckCamBox" style="display:none; margin-bottom:14px; text-align:center;"><video id="ckVideo" playsinline muted style="width:100%; max-width:420px; border-radius:16px; background:#000;"></video></div>
+                <div id="ckResult"></div>
+                <h3 style="margin:10px 0 4px; font-weight:800;">حضروا النهارده (<span id="ckCount">0</span>)</h3>
+                <div id="ckList"></div>
             </div>
         </div>
 
@@ -5435,7 +5454,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                      return;
                 }
 
-                membersData[underlyingIndex] = { photo: window.__gmPhoto || '', id: inputId, name: inputName, phone: inputPhone, gender: inputGender, subtype: inputSubtype, paid: inputPaid, debt: inputDebt, start: inputStart, end: inputEnd, sessionsCount: preExistingSessionsCount, ...(preExistingHidden ? { hiddenFromCaptain: true } : {}) };
+                membersData[underlyingIndex] = { photo: window.__gmPhoto || '', id: inputId, name: inputName, phone: inputPhone, gender: inputGender, subtype: inputSubtype, paid: inputPaid, debt: inputDebt, start: inputStart, end: inputEnd, sessionsCount: preExistingSessionsCount, ...(membersData[underlyingIndex].visits ? { visits: membersData[underlyingIndex].visits, lastVisit: membersData[underlyingIndex].lastVisit } : {}), ...(preExistingHidden ? { hiddenFromCaptain: true } : {}) };
 
                 // تسجيل حركة مالية جديدة فقط لو المبلغ المدفوع اتغير فعلاً عن قبل التعديل
                 // (تعديل الاسم أو الرقم أو التاريخ بس من غير تغيير الفلوس، متسجلش فلوس جديدة تاني في الخزينة)
@@ -5694,6 +5713,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         }
 
         function switchView(viewName) {
+            try { if (viewName !== 'checkin' && window.gmCkStopCam) gmCkStopCam(); } catch (e) {}
             document.querySelectorAll('.view-panel').forEach(panel => panel.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             
@@ -5703,6 +5723,10 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             } else if (viewName === 'tracker') {
                 document.getElementById('viewModuleTracker').classList.add('active');
                 document.getElementById('tabBtnTracker').classList.add('active');
+            } else if (viewName === 'checkin') {
+                document.getElementById('viewModuleCheckin').classList.add('active');
+                document.getElementById('tabBtnCheckin').classList.add('active');
+                renderCheckinView();
             } else if (viewName === 'daily') {
                 document.getElementById('viewModuleDaily').classList.add('active');
                 document.getElementById('tabBtnDaily').classList.add('active');
@@ -6061,7 +6085,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
 
             targetedBundleDataset.forEach(m => {
                 const maxSessionsLimitValue = getMaxLimitForSubtype(m.subtype);
-                const attendedSessionsCounterValue = parseInt(m.sessionsCount) || 0;
+                const attendedSessionsCounterValue = Math.max(parseInt(m.sessionsCount) || 0, (typeof gmAutoSessions === 'function' ? gmAutoSessions(m) : 0));
                 const incrementalPercentageRatio = Math.min((attendedSessionsCounterValue / maxSessionsLimitValue) * 100, 100);
 
                 const cardBoxElement = document.createElement('div');
@@ -6100,7 +6124,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             if (targetedSlotIndex === -1) return;
 
             let count = parseInt(membersData[targetedSlotIndex].sessionsCount) || 0;
-            if (count >= maxLimit) {
+            if (Math.max(count, (typeof gmAutoSessions === 'function' ? gmAutoSessions(membersData[targetedSlotIndex]) : 0)) >= maxLimit) {
                 alert(`⚠️ تنبيه: الكابتن استهلك بالفعل الحد الأقصى لباقته وهو ${maxLimit} حصة! يرجى تجديد الاشتراك.`);
                 return;
             }
@@ -11044,7 +11068,7 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
   function loadImg(src) { return new Promise(function (res) { if (!src) return res(null); var i = new Image(); i.onload = function () { res(i); }; i.onerror = function () { res(null); }; i.src = src; }); }
   function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
   function fl(f) { return document.fonts && document.fonts.load ? document.fonts.load(f, f.indexOf('Cairo') > -1 ? 'أبجد' : 'ABC123') : 0; }
-  function drawCard() {
+  function drawFront() {
     var m = me.member, W = 1012, H = 638, M = 60, lang = cardLang, rtl = lang === 'ar', st = status(m, lang);
     var en = rtl ? String(m.name || '') : enName(m), pen = rtl ? (m.plan || '—') : planEn(m.plan), sig = [lang, gymName, m.id, en, pen, m.start, m.end, st.t, (me.photo || '').length, gymLogo.length].join('|');
     if (cardCache.sig === sig && cardCache.url) return Promise.resolve(cardCache.url);
@@ -11112,21 +11136,72 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
       var url = cv.toDataURL('image/png'); cardCache = { sig: sig, url: url }; return url;
     });
   }
-  function printCardImage(url) {
+  var backCache = { sig: '', url: '' };
+  function drawBack() {
+    var m = me.member, W = 1012, H = 638, lang = cardLang, rtl = lang === 'ar';
+    var sig = ['b', lang, gymName, m.id, gymLogo.length].join('|');
+    if (backCache.sig === sig && backCache.url) return Promise.resolve(backCache.url);
+    var fam = rtl ? 'Cairo,Montserrat,sans-serif' : 'Montserrat,Cairo,sans-serif';
+    return Promise.all([fl('800 40px Montserrat'), fl('500 22px Montserrat'), fl('800 40px Cairo'), fl('600 22px Cairo'), loadImg(gymLogo)]).then(function (r) {
+      var logo = r[4], cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      var c = cv.getContext('2d');
+      function T(t, x, y, size, wt, col, al, ls, maxW) {
+        t = String(t == null ? '' : t); var s = size; c.direction = rtl ? 'rtl' : 'ltr';
+        if ('letterSpacing' in c) c.letterSpacing = (rtl ? 0 : ls || 0) + 'px';
+        do { c.font = wt + ' ' + s + 'px ' + fam; s -= 2; } while (maxW && c.measureText(t).width > maxW && s > 14);
+        c.fillStyle = col; c.textAlign = al === 'c' ? 'center' : al === 'e' ? (rtl ? 'left' : 'right') : (rtl ? 'right' : 'left'); c.fillText(t, x, y);
+        if ('letterSpacing' in c) c.letterSpacing = '0px';
+      }
+      var gold = c.createLinearGradient(0, 0, W, 0); gold.addColorStop(0, '#f9d25c'); gold.addColorStop(.5, '#c8921a'); gold.addColorStop(1, '#f9d25c');
+      rr(c, 0, 0, W, H, 40); c.save(); c.clip();
+      var g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1d2750'); g.addColorStop(.55, '#0b0f1f'); g.addColorStop(1, '#2b2008'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+      var rg = c.createRadialGradient(W * .85, -40, 10, W * .85, -40, 520); rg.addColorStop(0, 'rgba(242,193,78,.32)'); rg.addColorStop(1, 'rgba(242,193,78,0)'); c.fillStyle = rg; c.fillRect(0, 0, W, H);
+      c.strokeStyle = 'rgba(255,255,255,.03)'; c.lineWidth = 2; for (var i = -H; i < W; i += 26) { c.beginPath(); c.moveTo(i, H); c.lineTo(i + H, 0); c.stroke(); }
+      c.restore();
+      rr(c, 3, 3, W - 6, H - 6, 38); c.lineWidth = 4; c.strokeStyle = gold; c.stroke();
+      rr(c, 14, 14, W - 28, H - 28, 30); c.lineWidth = 1; c.strokeStyle = 'rgba(242,193,78,.25)'; c.stroke();
+      var nm = rtl ? gymName : gymName.toUpperCase();
+      c.direction = rtl ? 'rtl' : 'ltr'; c.font = '800 34px ' + fam; var nw = Math.min(c.measureText(nm).width, 560);
+      var tot = 72 + 20 + nw, sx0 = (W - tot) / 2, lcx = sx0 + 36, ly = 84;
+      c.save(); c.beginPath(); c.arc(lcx, ly, 36, 0, 7); c.fillStyle = '#fff'; c.fill(); c.clip();
+      if (logo) { var k = Math.min(68 / logo.width, 68 / logo.height); c.drawImage(logo, lcx - logo.width * k / 2, ly - logo.height * k / 2, logo.width * k, logo.height * k); }
+      else { T((gymName || 'G').charAt(0), lcx, ly + 12, 38, 800, '#0b0f1f', 'c'); }
+      c.restore(); c.beginPath(); c.arc(lcx, ly, 36, 0, 7); c.lineWidth = 3; c.strokeStyle = gold; c.stroke();
+      T(nm, sx0 + 92 + nw / 2, ly + 12, 34, 800, '#f2c14e', 'c', rtl ? 0 : 2, 560);
+      var qy = 140, qb = 0;
+      try {
+        var qm = window.gmQR && window.gmQR(String(m.id));
+        if (qm) {
+          var qn = qm.length, md = Math.floor(320 / (qn + 8)); qb = (qn + 8) * md; var qx = (W - qb) / 2;
+          rr(c, qx - 12, qy - 12, qb + 24, qb + 24, 34); c.lineWidth = 3; c.strokeStyle = gold; c.stroke();
+          rr(c, qx, qy, qb, qb, 24); c.fillStyle = '#fff'; c.fill(); c.fillStyle = '#000';
+          for (var a_ = 0; a_ < qn; a_++) for (var b_ = 0; b_ < qn; b_++) if (qm[a_][b_]) c.fillRect(qx + (b_ + 4) * md, qy + (a_ + 4) * md, md, md);
+        }
+      } catch (e) {}
+      var ty = qy + (qb || 320) + 62;
+      T(rtl ? 'امسح لتسجيل الحضور' : 'SCAN TO CHECK IN', W / 2, ty, 28, 700, '#ffffff', 'c', rtl ? 0 : 3, 700);
+      T((rtl ? 'رقم ' : 'ID ') + String(m.id).padStart(5, '0'), W / 2, ty + 42, 22, 600, 'rgba(143,153,184,.9)', 'c', 4);
+      var url = cv.toDataURL('image/png'); backCache = { sig: sig, url: url }; return url;
+    });
+  }
+  function drawCard(side) { return side === 'b' ? drawBack() : drawFront(); }
+  function printCardImage(urls) {
+    urls = [].concat(urls);
     var f = document.createElement('iframe');
     f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
     document.body.appendChild(f);
     var d = f.contentWindow.document; d.open();
-    d.write('<!doctype html><html><head><meta charset="utf-8"><title>الكارنيه</title><style>@page{size:A4;margin:0}html,body{margin:0;background:#fff}body{display:flex;justify-content:center;padding-top:18mm}img{display:block;width:85.6mm;height:54mm;outline:.2mm dashed #bbb}</style></head><body><img id="c" alt="" src="' + url + '"></body></html>');
+    d.write('<!doctype html><html><head><meta charset="utf-8"><title>الكارنيه</title><style>@page{size:A4;margin:0}html,body{margin:0;background:#fff}body{display:flex;justify-content:center;gap:6mm;padding-top:18mm;direction:ltr}img{display:block;width:85.6mm;height:54mm;outline:.2mm dashed #bbb}</style></head><body>' + urls.map(function (u) { return '<img class="c" alt="" src="' + u + '">'; }).join('') + '</body></html>');
     d.close();
-    var im = d.getElementById('c'), done = false;
+    var ims = [].slice.call(d.querySelectorAll('img.c')), done = false, left = ims.length;
     function go() {
       if (done) return; done = true;
       try { f.contentWindow.focus(); f.contentWindow.print(); }
-      catch (e) { var w = window.open(''); if (w) { w.document.write('<img src="' + url + '" style="width:85.6mm;height:54mm"><script>setTimeout(function(){print()},400)<\/script>'); w.document.close(); } }
+      catch (e) { var w = window.open(''); if (w) { w.document.write('<div style="display:flex;gap:6mm">' + urls.map(function (u) { return '<img src="' + u + '" style="width:85.6mm;height:54mm">'; }).join('') + '</div><script>setTimeout(function(){print()},400)<\/script>'); w.document.close(); } }
       setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 60000);
     }
-    if (im.complete) setTimeout(go, 150); else im.onload = function () { setTimeout(go, 150); };
+    function one() { if (--left <= 0) setTimeout(go, 150); }
+    ims.forEach(function (im) { if (im.complete) one(); else { im.onload = one; im.onerror = one; } });
   }
 
   function curMember() {
@@ -11156,14 +11231,15 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
     var b = $('gmCardShowBtn'), box = $('gmCardPreview'); if (!b || !box) return;
     if (shown) { resetPreview(); return; }
     if (!prep()) return; busy(b, true);
-    drawCard().then(function (u) {
-      box.textContent = ''; var im = new Image(); im.src = u; im.alt = 'الكارنيه'; im.style.cssText = 'width:100%;max-width:440px;display:block;margin:0 auto;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)';
-      box.appendChild(im); box.style.display = 'block'; shown = true; b.textContent = '🙈 إخفاء الكارت';
+    Promise.all([drawCard(), drawCard('b')]).then(function (us) {
+      box.textContent = '';
+      us.forEach(function (u, i) { var im = new Image(); im.src = u; im.alt = i ? 'ضهر الكارنيه' : 'وش الكارنيه'; im.style.cssText = 'width:100%;max-width:440px;display:block;margin:' + (i ? '14px' : '0') + ' auto 0;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)'; box.appendChild(im); });
+      box.style.display = 'block'; shown = true; b.textContent = '🙈 إخفاء الكارت';
     }).catch(function () { alert('تعذّر رسم الكارت، جرّب تاني.'); }).then(function () { busy(b, false); });
   }
   function printCard() {
     var b = $('gmCardPrintBtn'); if (!prep()) return; busy(b, true);
-    drawCard().then(printCardImage).catch(function () { alert('تعذّر تجهيز الكارت للطباعة.'); }).then(function () { busy(b, false); });
+    Promise.all([drawCard(), drawCard('b')]).then(printCardImage).catch(function () { alert('تعذّر تجهيز الكارت للطباعة.'); }).then(function () { busy(b, false); });
   }
   function init() {
     var a = $('gmCardShowBtn'), p = $('gmCardPrintBtn'); if (!a || !p) return;
@@ -11175,6 +11251,172 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
     if (pm && window.MutationObserver) new MutationObserver(function () { if (getComputedStyle(pm).display === 'none') resetPreview(); }).observe(pm, { attributes: true, attributeFilter: ['style'] });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+<script>
+/* مولّد QR صغير (Byte mode, تصحيح M, إصدارات 1-3) */
+window.gmQR = function (text) {
+  var d = unescape(encodeURIComponent(String(text))).split('').map(function (c) { return c.charCodeAt(0); });
+  var T = [[16, 10], [28, 16], [44, 26]], v = -1, i, j, k;
+  for (i = 0; i < 3; i++) if (d.length <= T[i][0] - 2) { v = i; break; }
+  if (v < 0) return null;
+  var nd = T[v][0], ne = T[v][1], n = 21 + 4 * v, bits = [];
+  function put(x, len) { for (var b = len - 1; b >= 0; b--) bits.push((x >>> b) & 1); }
+  put(4, 4); put(d.length, 8); d.forEach(function (b) { put(b, 8); });
+  put(0, Math.min(4, nd * 8 - bits.length)); while (bits.length % 8) bits.push(0);
+  var cw = []; for (i = 0; i < bits.length; i += 8) { var o = 0; for (j = 0; j < 8; j++) o = o * 2 + bits[i + j]; cw.push(o); }
+  for (i = 0; cw.length < nd; i++) cw.push(i % 2 ? 0x11 : 0xEC);
+  function mul(x, y) { var z = 0; for (var b = 7; b >= 0; b--) { z = (z << 1) ^ ((z >>> 7) * 0x11D); z ^= ((y >>> b) & 1) * x; } return z; }
+  var g = []; for (i = 0; i < ne - 1; i++) g.push(0); g.push(1);
+  for (i = 0, k = 1; i < ne; i++) { for (j = 0; j < ne; j++) { g[j] = mul(g[j], k); if (j + 1 < ne) g[j] ^= g[j + 1]; } k = mul(k, 2); }
+  var r = []; for (i = 0; i < ne; i++) r.push(0);
+  cw.forEach(function (b) { var f = b ^ r.shift(); r.push(0); for (var t = 0; t < ne; t++) r[t] ^= mul(g[t], f); });
+  var all = cw.concat(r);
+  var M = [], F = [];
+  for (i = 0; i < n; i++) { M.push(new Array(n).fill(false)); F.push(new Array(n).fill(false)); }
+  function sf(x, y, val) { if (x >= 0 && y >= 0 && x < n && y < n) { M[y][x] = val; F[y][x] = true; } }
+  for (i = 0; i < n; i++) { sf(6, i, i % 2 === 0); sf(i, 6, i % 2 === 0); }
+  [[3, 3], [n - 4, 3], [3, n - 4]].forEach(function (c) { for (var dy = -4; dy <= 4; dy++) for (var dx = -4; dx <= 4; dx++) { var q = Math.max(Math.abs(dx), Math.abs(dy)); sf(c[0] + dx, c[1] + dy, q !== 2 && q !== 4); } });
+  if (v > 0) for (var ay = -2; ay <= 2; ay++) for (var ax = -2; ax <= 2; ax++) sf(n - 7 + ax, n - 7 + ay, Math.max(Math.abs(ax), Math.abs(ay)) !== 1);
+  function fmt(mask) {
+    var dt = mask, rem = dt; for (var b = 0; b < 10; b++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+    var f = ((dt << 10) | rem) ^ 0x5412, bt = function (x) { return ((f >>> x) & 1) === 1; };
+    for (var a = 0; a <= 5; a++) sf(8, a, bt(a)); sf(8, 7, bt(6)); sf(8, 8, bt(7)); sf(7, 8, bt(8));
+    for (a = 9; a < 15; a++) sf(14 - a, 8, bt(a));
+    for (a = 0; a < 8; a++) sf(n - 1 - a, 8, bt(a));
+    for (a = 8; a < 15; a++) sf(8, n - 15 + a, bt(a));
+    sf(8, n - 8, true);
+  }
+  fmt(0);
+  var p = 0;
+  for (var right = n - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;
+    for (var vert = 0; vert < n; vert++) for (j = 0; j < 2; j++) {
+      var x = right - j, y = ((right + 1) & 2) === 0 ? n - 1 - vert : vert;
+      if (!F[y][x] && p < all.length * 8) { M[y][x] = ((all[p >>> 3] >>> (7 - (p & 7))) & 1) === 1; p++; }
+    }
+  }
+  var MK = [function (x, y) { return (x + y) % 2 === 0; }, function (x, y) { return y % 2 === 0; }, function (x, y) { return x % 3 === 0; }, function (x, y) { return (x + y) % 3 === 0; },
+    function (x, y) { return (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; }, function (x, y) { return x * y % 2 + x * y % 3 === 0; },
+    function (x, y) { return (x * y % 2 + x * y % 3) % 2 === 0; }, function (x, y) { return ((x + y) % 2 + x * y % 3) % 2 === 0; }];
+  function pen(m) {
+    var s = 0, dark = 0, rows = [], cols = [], y, x, run, ln;
+    for (y = 0; y < n; y++) { rows.push(m[y].map(Number).join('')); }
+    for (x = 0; x < n; x++) { ln = ''; for (y = 0; y < n; y++) ln += +m[y][x]; cols.push(ln); }
+    rows.concat(cols).forEach(function (L) {
+      (L.match(/0{5,}|1{5,}/g) || []).forEach(function (q) { s += q.length - 2; });
+      s += 40 * ((L.match(/(?=10111010000|00001011101)/g) || []).length);
+    });
+    for (y = 0; y < n; y++) for (x = 0; x < n; x++) {
+      if (m[y][x]) dark++;
+      if (x < n - 1 && y < n - 1 && m[y][x] === m[y][x + 1] && m[y][x] === m[y + 1][x] && m[y][x] === m[y + 1][x + 1]) s += 3;
+    }
+    return s + 10 * Math.floor(Math.abs(dark * 100 / (n * n) - 50) / 5);
+  }
+  var best = null, bs = 1e9;
+  for (var mk = 0; mk < 8; mk++) {
+    var C = M.map(function (row, yy) { return row.map(function (c, xx) { return !F[yy][xx] && MK[mk](xx, yy) ? !c : c; }); }), sc = pen(C);
+    if (sc < bs) { bs = sc; best = { c: C, m: mk }; }
+  }
+  M = best.c; fmt(best.m);
+  return M;
+};
+</script>
+<script>
+/* ===== تسجيل الحضور بالـQR: سكانر الكمبيوتر (كيبورد) + كاميرا الموبايل/اللابتوب ===== */
+(function () {
+  var $ = function (id) { return document.getElementById(id); }, cam = { s: null, t: null, det: null, last: '', at: 0 }, ac = null, clr = null;
+  function beep(k) { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); (k === 'ok' ? [880] : k === 'warn' ? [660, 660] : [220]).forEach(function (f, i) { var o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = f; o.connect(g); g.connect(ac.destination); g.gain.value = .15; var t = ac.currentTime + i * .18; o.start(t); o.stop(t + (k === 'bad' ? .5 : .12)); }); } catch (e) {} }
+  // مزامنة الحضور مع السيرفر (visit_checkin): لو النت قاطع بيتحفظ في طابور ويتبعت لوحده بعدين
+  var QK = 'gm_visit_queue_v1', flushing = false;
+  function qGet() { try { var a = JSON.parse(localStorage.getItem(QK)); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function qSet(a) { try { localStorage.setItem(QK, JSON.stringify(a.slice(-500))); } catch (e) {} }
+  function flush() {
+    var sb = window.__gmSb, g = window.__gmGymId, q = qGet();
+    if (flushing || !q.length || !sb || sb.__stub || !g || !navigator.onLine) return; flushing = true;
+    (function next() {
+      var it = qGet()[0]; if (!it) { flushing = false; return; }
+      sb.rpc('visit_checkin', { p_gym: g, p_member: String(it.c), p_date: it.d }).then(function (r) {
+        if (r && !r.error && r.data && r.data.ok) { qSet(qGet().slice(1)); next(); } else flushing = false;
+      }, function () { flushing = false; });
+    })();
+  }
+  function syncVisit(code, day) { var q = qGet(); q.push({ c: code, d: day }); qSet(q); flush(); }
+  setInterval(flush, 30000); window.addEventListener('online', flush); setTimeout(flush, 4000);
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function out(k, m, title, lines, forceId) {
+    var col = { ok: '#10a36a', warn: '#e0a100', bad: '#e5484d' }[k], box = $('ckResult'); if (!box) return; beep(k);
+    var ph = m && m.photo ? '<img src="' + esc(m.photo) + '" alt="" style="width:84px;height:84px;border-radius:22px;object-fit:cover;flex:none">' : '';
+    box.innerHTML = '<div style="display:flex;gap:16px;align-items:center;padding:18px 20px;border-radius:20px;border:3px solid ' + col + ';background:' + col + '1f;margin-bottom:18px">' + ph +
+      '<div style="flex:1;min-width:0"><div style="font-size:1.5rem;font-weight:900;color:' + col + '">' + esc(title) + '</div>' +
+      (m ? '<div style="font-size:1.25rem;font-weight:800;margin:4px 0">' + esc(m.name) + ' <small style="opacity:.6">#' + esc(m.id) + '</small></div>' : '') +
+      lines.map(function (l) { return '<div style="font-weight:700;line-height:1.8">' + l + '</div>'; }).join('') +
+      (forceId != null ? '<button class="menu-btn" style="margin-top:8px" onclick="gmCkProcess(\'' + forceId + '\',true)">سجّل حضوره برضه</button>' : '') + '</div></div>';
+    clearTimeout(clr); if (forceId == null) clr = setTimeout(function () { if ($('ckResult')) $('ckResult').innerHTML = ''; }, 9000);
+  }
+  // الحصص بتتقسّم على أيام الاشتراك وبتروح بمرور الوقت حتى لو المشترك ماحضرش (باقي المدة = ينتهي في تاريخ الانتهاء)
+  window.gmAutoSessions = function (m) {
+    var lim = getMaxLimitForSubtype(m.subtype); if (!lim || !m.start || !m.end) return 0;
+    var D = function (x) { return new Date(String(x).slice(0, 10) + 'T00:00:00').getTime(); }, S = D(m.start), E = D(m.end), t = D(getFormattedDateString(new Date()));
+    if (isNaN(S) || isNaN(E)) return 0; if (t > E) return lim;
+    var total = Math.round((E - S) / 864e5) + 1, d = Math.round((t - S) / 864e5);
+    return total > 0 && d > 0 ? Math.min(lim, Math.floor(d / total * lim)) : 0;
+  };
+  window.gmCkProcess = function (raw, force) {
+    var s = String(raw || '').replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }), x = /(\d{1,12})\s*$/.exec(s);
+    if (!x) return out('bad', null, 'كود مش مفهوم', ['امسح الكارنيه تاني أو اكتب كود المشترك.']);
+    var m = membersData.find(function (r) { return String(r.id) === String(+x[1]); });
+    if (!m) return out('bad', null, 'الكود ده مش مسجّل', ['كود: ' + esc(x[1])]);
+    if (getVisibleMembersDataset().indexOf(m) < 0) return out('bad', m, 'المشترك ده مش من قسمك', []);
+    var now = new Date(), day = attDayKey(now), today = getFormattedDateString(now), vs = Array.isArray(m.visits) ? m.visits : [];
+    var lim = getMaxLimitForSubtype(m.subtype), stored = parseInt(m.sessionsCount) || 0, auto = gmAutoSessions(m), used = Math.max(stored, auto), expired = !!m.end && m.end < today, over = lim > 0 && used >= lim, debt = parseFloat(m.debt) || 0;
+    if (vs.indexOf(day) > -1) return out('warn', m, 'اتسجّل حضوره النهارده', ['الساعة ' + attTimeLabel(m.lastVisit || now.getTime()) + ' — مش هتتحسب حصة تانية.']);
+    if ((expired || over) && !force) return out('bad', m, expired ? 'الاشتراك منتهي' : 'خلّص كل حصصه', [expired ? 'انتهى يوم ' + esc(m.end) : used + ' / ' + lim + ' حصة', 'الباقة: ' + esc(m.subtype || '—')], m.id);
+    m.visits = vs.concat(day).slice(-120); m.lastVisit = now.getTime();
+    if (lim > 0 && stored < lim) m.sessionsCount = stored + 1;
+    commitSystemStateToStorage(); syncVisit(m.id, day);
+    logActivity('تسجيل حضور بالـQR: "' + m.name + '" (كود ' + m.id + ')' + (lim > 0 ? ' - المستهلك ' + Math.max(m.sessionsCount || 0, auto) + ' من ' + lim : ''), 'fa-star');
+    ['renderMembersList', 'renderSpecialPackageTrackerGrid', 'recalculateMetricsDashboard'].forEach(function (f) { try { window[f] && window[f](); } catch (e) {} });
+    var ls = ['الباقة: ' + esc(m.subtype || '—')], warn = false;
+    if (lim > 0) { var rem = lim - Math.max(m.sessionsCount || 0, auto); ls.push('المتبقي: <b>' + rem + '</b> من ' + lim + ' حصة' + (auto > (m.sessionsCount || 0) ? ' <small style="opacity:.65">(الحصص بتتحسب تلقائي بمرور الأيام)</small>' : '')); if (rem <= 1) warn = true; }
+    if (m.end) { var left = Math.round((new Date(m.end + 'T00:00:00') - new Date(today + 'T00:00:00')) / 864e5); ls.push('ينتهي: ' + esc(m.end) + (left >= 0 ? ' (باقي ' + left + ' يوم)' : '')); if (left <= 3) warn = true; }
+    if (debt > 0) { ls.push('<span style="color:#e5484d">⚠️ عليه مديونية ' + debt + ' ج</span>'); warn = true; }
+    out(warn ? 'warn' : 'ok', m, 'تم تسجيل الحضور ✅', ls); renderList();
+  };
+  function renderList() {
+    var l = $('ckList'); if (!l) return; var day = attDayKey(new Date()), vis = getVisibleMembersDataset();
+    var r = vis.filter(function (m) { return Array.isArray(m.visits) && m.visits.indexOf(day) > -1; }).sort(function (a, b) { return (b.lastVisit || 0) - (a.lastVisit || 0); });
+    $('ckCount').textContent = r.length;
+    l.innerHTML = r.length ? r.map(function (m) { return '<div style="display:flex;justify-content:space-between;gap:10px;padding:10px 4px;border-bottom:1px dashed var(--border-color);font-weight:700"><span>' + esc(m.name) + ' <small style="opacity:.6">#' + esc(m.id) + '</small></span><span>' + attTimeLabel(m.lastVisit || Date.now()) + '</span></div>'; }).join('') : '<div style="padding:14px;opacity:.6;font-weight:700">لسه محدش سجّل حضوره النهارده.</div>';
+  }
+  window.renderCheckinView = function () { renderList(); var i = $('ckInput'); if (i) setTimeout(function () { i.focus(); }, 60); };
+  window.gmCkSubmit = function () { var i = $('ckInput'); if (!i || !i.value.trim()) return; var v = i.value; i.value = ''; gmCkProcess(v); i.focus(); };
+  function stop() { clearInterval(cam.t); if (cam.s) cam.s.getTracks().forEach(function (t) { t.stop(); }); cam.s = null; if ($('ckCamBox')) $('ckCamBox').style.display = 'none'; if ($('ckCamBtn')) $('ckCamBtn').textContent = '📷 تشغيل الكاميرا'; }
+  window.gmCkStopCam = stop;
+  function onCode(t) { var n = Date.now(); if (t === cam.last && n - cam.at < 4000) return; cam.last = t; cam.at = n; gmCkProcess(t); }
+  function tick() {
+    var v = $('ckVideo'); if (!v || v.readyState < 2) return;
+    if (cam.det) { cam.det.detect(v).then(function (r) { if (r[0]) onCode(r[0].rawValue); }).catch(function () {}); return; }
+    if (!window.jsQR) return;
+    var w = Math.min(640, v.videoWidth), h = Math.round(w * v.videoHeight / v.videoWidth), c = cam.c || (cam.c = document.createElement('canvas')); c.width = w; c.height = h;
+    var cx = c.getContext('2d', { willReadFrequently: true }); cx.drawImage(v, 0, 0, w, h); var q = window.jsQR(cx.getImageData(0, 0, w, h).data, w, h); if (q && q.data) onCode(q.data);
+  }
+  window.gmCkCam = function () {
+    if (cam.s) return stop();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return out('bad', null, 'الكاميرا مش متاحة', ['افتح البرنامج من رابط https، أو استخدم السكانر.']);
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } }).then(function (s) {
+      cam.s = s; var v = $('ckVideo'); v.srcObject = s; v.play(); $('ckCamBox').style.display = 'block'; $('ckCamBtn').textContent = '⏹ إيقاف الكاميرا';
+      try { if ('BarcodeDetector' in window) cam.det = new BarcodeDetector({ formats: ['qr_code'] }); } catch (e) { cam.det = null; }
+      if (!cam.det && !window.jsQR) { var sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'; document.head.appendChild(sc); }
+      cam.t = setInterval(tick, 250);
+    }, function () { out('bad', null, 'مقدرناش نفتح الكاميرا', ['اسمح للمتصفح باستخدام الكاميرا (ولازم الموقع يكون https).']); });
+  };
+  document.addEventListener('keydown', function (e) {   // السكانر بيكتب كأنه كيبورد: نوجّه الكتابة لخانة الكود تلقائياً
+    var p = $('viewModuleCheckin'); if (!p || !p.classList.contains('active') || e.ctrlKey || e.metaKey || e.altKey) return;
+    var a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(a.tagName)) return;
+    if (e.key.length === 1 || e.key === 'Enter') { var i = $('ckInput'); if (i) i.focus(); }
+  });
+  document.addEventListener('keydown', function (e) { if (e.target && e.target.id === 'ckInput' && e.key === 'Enter') { e.preventDefault(); gmCkSubmit(); } });
 })();
 </script>
 </body>
