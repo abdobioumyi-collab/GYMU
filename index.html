@@ -7169,9 +7169,13 @@ window.__gmShellRun = function () {
   }
   function reachable() {
     if (!navigator.onLine) return Promise.resolve(false);
-    var c = new AbortController(), t = setTimeout(function () { c.abort(); }, 2500);
-    return fetch(CFG.url + '/auth/v1/health', { headers: { apikey: CFG.key }, signal: c.signal, cache: 'no-store' })
-      .then(function () { clearTimeout(t); return true; }, function () { clearTimeout(t); return false; });
+    // أي رد من السيرفر معناه إن فيه اتصال فعلي. no-cors بيلغي طلب التحقق المسبق (OPTIONS) فنوفر رحلة كاملة على النت البطيء
+    function once(ms) {
+      var c = new AbortController(), t = setTimeout(function () { c.abort(); }, ms);
+      return fetch(CFG.url + '/auth/v1/health', { mode: 'no-cors', signal: c.signal, cache: 'no-store' })
+        .then(function () { clearTimeout(t); return true; }, function () { clearTimeout(t); return false; });
+    }
+    return once(8000).then(function (ok) { return ok ? true : once(8000); });
   }
   var realSb = null, offlineMode = false, sb;
   if (window.supabase && window.supabase.createClient) {
@@ -8633,12 +8637,12 @@ var mix = g.layout_mode === 'mixed';
       var gsP = offlineMode ? null : sb.auth.getSession();
       var up;
       if (offlineMode || !navigator.onLine) up = false;
-      else if (haveCache) up = await tmo(upP, 1500);   // عندنا بيانات محلية: لو السيرفر ما ردّش في ثانية ونص نشتغل محلياً فوراً
+      else if (haveCache) up = await tmo(upP, 7000);   // عندنا بيانات محلية: نستنى لحد 7 ثواني (النت البطيء مش معناه مفيش نت)
       else up = await upP;                              // أول مرة على الجهاز: لازم نت
       window.__gmStage = 'boot:reachable=' + up;
       var res = null;
       if (up) {
-        res = await tmo(gsP || sb.auth.getSession(), haveCache ? 5000 : 15000);
+        res = await tmo(gsP || sb.auth.getSession(), haveCache ? 12000 : 20000);
         if (!res && haveCache) up = false;               // الجلسة اتأخرت: نكمل أوفلاين
       }
       if (!up && haveCache) {
