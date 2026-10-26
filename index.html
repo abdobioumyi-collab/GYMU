@@ -11093,11 +11093,12 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
       rr(c, 3, 3, W - 6, H - 6, 38); c.lineWidth = 4; c.strokeStyle = gold; c.stroke();
       rr(c, 14, 14, W - 28, H - 28, 30); c.lineWidth = 1; c.strokeStyle = 'rgba(242,193,78,.25)'; c.stroke();
       // header
-      var lcx = X(M + 44), ly = 90;
-      c.save(); c.beginPath(); c.arc(lcx, ly, 44, 0, 7); c.fillStyle = '#fff'; c.fill(); c.clip();
-      if (logo) { var k = Math.min(84 / logo.width, 84 / logo.height); c.drawImage(logo, lcx - logo.width * k / 2, ly - logo.height * k / 2, logo.width * k, logo.height * k); }
-      else { T((gymName || 'G').charAt(0), lcx, ly + 14, 46, 800, '#0b0f1f', 'c'); }
-      c.restore(); c.beginPath(); c.arc(lcx, ly, 44, 0, 7); c.lineWidth = 4; c.strokeStyle = gold; c.stroke();
+      var ls_ = 88, lx = X(M, ls_), lt = 46;
+      c.save(); rr(c, lx, lt, ls_, ls_, 20); c.fillStyle = '#fff'; c.fill(); c.clip();
+      if (logo) { var k = Math.min(ls_ / logo.width, ls_ / logo.height); c.drawImage(logo, lx + ls_ / 2 - logo.width * k / 2, lt + ls_ / 2 - logo.height * k / 2, logo.width * k, logo.height * k); }
+      else { T((gymName || 'G').charAt(0), lx + ls_ / 2, lt + ls_ / 2 + 16, 46, 800, '#0b0f1f', 'c'); }
+      c.restore(); rr(c, lx, lt, ls_, ls_, 20); c.lineWidth = 4; c.strokeStyle = gold; c.stroke();
+      var ly = 90;
       T(rtl ? gymName : gymName.toUpperCase(), X(M + 108), ly + 4, 40, 800, '#f2c14e', 's', 2, 480);
       T(rtl ? 'كارنيه العضوية' : 'MEMBER CARD', X(M + 108), ly + 38, 18, 600, '#8f99b8', 's', 6);
       var vx = rtl ? M : W - M - 130; rr(c, vx, 62, 130, 44, 22); c.fillStyle = 'rgba(242,193,78,.12)'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = 'rgba(242,193,78,.7)'; c.stroke();
@@ -11160,14 +11161,8 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
       c.restore();
       rr(c, 3, 3, W - 6, H - 6, 38); c.lineWidth = 4; c.strokeStyle = gold; c.stroke();
       rr(c, 14, 14, W - 28, H - 28, 30); c.lineWidth = 1; c.strokeStyle = 'rgba(242,193,78,.25)'; c.stroke();
-      var nm = rtl ? gymName : gymName.toUpperCase();
-      c.direction = rtl ? 'rtl' : 'ltr'; c.font = '800 34px ' + fam; var nw = Math.min(c.measureText(nm).width, 560);
-      var tot = 72 + 20 + nw, sx0 = (W - tot) / 2, lcx = sx0 + 36, ly = 84;
-      c.save(); c.beginPath(); c.arc(lcx, ly, 36, 0, 7); c.fillStyle = '#fff'; c.fill(); c.clip();
-      if (logo) { var k = Math.min(68 / logo.width, 68 / logo.height); c.drawImage(logo, lcx - logo.width * k / 2, ly - logo.height * k / 2, logo.width * k, logo.height * k); }
-      else { T((gymName || 'G').charAt(0), lcx, ly + 12, 38, 800, '#0b0f1f', 'c'); }
-      c.restore(); c.beginPath(); c.arc(lcx, ly, 36, 0, 7); c.lineWidth = 3; c.strokeStyle = gold; c.stroke();
-      T(nm, sx0 + 92 + nw / 2, ly + 12, 34, 800, '#f2c14e', 'c', rtl ? 0 : 2, 560);
+      T(rtl ? gymName : gymName.toUpperCase(), W / 2, 86, 40, 800, '#f2c14e', 'c', rtl ? 0 : 4, 720);
+      var ul = c.createLinearGradient(W / 2 - 130, 0, W / 2 + 130, 0); ul.addColorStop(0, 'rgba(242,193,78,0)'); ul.addColorStop(.5, 'rgba(242,193,78,.9)'); ul.addColorStop(1, 'rgba(242,193,78,0)'); c.fillStyle = ul; c.fillRect(W / 2 - 130, 106, 260, 2);
       var qy = 140, qb = 0;
       try {
         var qm = window.gmQR && window.gmQR(String(m.id));
