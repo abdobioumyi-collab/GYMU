@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl" data-theme="default">
 <head>
     <meta charset="UTF-8">
+    <script>(function(){var si=window.setInterval;window.setInterval=function(f,ms){var a=[].slice.call(arguments);if(typeof f==="function"&&ms<5000){a[0]=function(){if(document.hidden)return;return f.apply(this,arguments)}}return si.apply(window,a)}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GYM U</title>
     <meta name="theme-color" content="#2a1585">
@@ -1601,7 +1602,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             <button onclick="toggleSidebar()" style="background:none; border:none; color:var(--text-main); font-size:1.6rem; cursor:pointer;">&times;</button>
         </div>
         <div class="search-box">
-            <input type="text" class="search-input" id="searchInput" placeholder="بحث بالاسم أو رقم الموبايل أو كود الـ ID..." oninput="renderMembersList()">
+            <input type="text" class="search-input" id="searchInput" placeholder="بحث بالاسم أو رقم الموبايل أو كود الـ ID..." oninput="gmDebouncedMembers()">
         </div>
         <div class="members-list" id="membersList"></div>
     </div>
@@ -1924,6 +1925,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 <button class="tab-btn" data-tab="settings" onclick="switchAdminView('settings')"><span class="ico" data-i="fa-palette"></span> المظهر والألوان</button>
                 <button class="tab-btn" data-tab="contact" onclick="switchAdminView('contact')"><span class="ico" data-i="fa-whatsapp"></span> التواصل وبوابة المشتركين</button>
                 <button class="tab-btn" data-tab="account" onclick="switchAdminView('account')"><span class="ico" data-i="fa-gear"></span> الجيم والحساب</button>
+                <button class="tab-btn" data-tab="cloud" onclick="switchAdminView('cloud');gmCloudOpen()"><span class="ico" data-i="fa-database"></span> حالة السحابة <span class="gmc-dot" id="gmcDot" data-state="idle"></span></button>
                 <button class="tab-btn" data-tab="backup" onclick="switchAdminView('backup')"><span class="ico" data-i="fa-database"></span> النسخ الاحتياطي</button>
             </div>
             <button class="menu-btn btn-logout-section" onclick="exitToGateScreen()"><span class="ico" data-i="fa-right-from-bracket"></span> خروج</button>
@@ -2262,6 +2264,27 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     <tbody></tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- ===== حالة السحابة ===== -->
+        <div id="adminViewCloud" class="admin-view-panel">
+            <div class="panel-head"><span class="ph-ico"><span class="ico" data-i="fa-database"></span></span><div><h2>حالة السحابة</h2><p>اعرف في ثانية: بياناتك اترفعت على Supabase ولا لسه؟</p></div></div>
+            <div class="gmc-card" id="gmcCard" data-state="idle">
+                <div class="gmc-top">
+                    <div class="gmc-orb" id="gmcOrb">☁️</div>
+                    <div class="gmc-txt"><div class="gmc-title" id="gmcTitle">جاري التحقق…</div><div class="gmc-sub" id="gmcSub"></div></div>
+                </div>
+                <div class="gmc-stats">
+                    <div class="gmc-stat"><span>آخر رفع ناجح</span><b id="gmcLast">—</b></div>
+                    <div class="gmc-stat"><span>تعديلات مستنية الرفع</span><b id="gmcPend">0</b></div>
+                    <div class="gmc-stat"><span>الاتصال</span><b id="gmcNet">—</b></div>
+                </div>
+                <button class="gmc-btn" id="gmcBtn" onclick="gmCloudCheck()">تحقق وارفع الآن</button>
+                <div class="gmc-msg" id="gmcMsg"></div>
+            </div>
+            <h3 class="admin-section-title" style="margin-top:26px;">آخر الأحداث</h3>
+            <div id="gmcLog" class="gmc-log"></div>
+            <p class="hint-note" style="margin-top:14px;">💡 لو النت قطع، شغلك بيتحفظ على الجهاز عادي. أول ما النت يرجع البرنامج بيرفع كل اللي اتسجل أوفلاين لوحده، وهيظهر لك تنبيه هنا أول ما الرفع يخلص.</p>
         </div>
 
         <!-- ===== النسخ الاحتياطي ===== -->
@@ -2927,7 +2950,9 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 try { if (typeof window[fnName] === 'function') window[fnName](); }
                 catch (e) { console.warn('safeCall failed for', fnName, e); }
             }
-            function refreshUiAfterRemoteChange() {
+            let _gmRefT = 0;
+            function refreshUiAfterRemoteChange() { clearTimeout(_gmRefT); _gmRefT = setTimeout(refreshUiAfterRemoteChangeNow, 400); }
+            function refreshUiAfterRemoteChangeNow() {
                 try {
                     if (typeof membersData !== 'undefined') membersData = JSON.parse(localStorage.getItem('gym_pro_members_v3')) || [];
                     if (typeof financialsLog !== 'undefined') financialsLog = JSON.parse(localStorage.getItem('gym_pro_financials_v3')) || [];
@@ -5557,7 +5582,9 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 return;
             }
 
-            operationalFilteredDataset.forEach(m => {
+            const gmToken = (window.__gmMlTok = (window.__gmMlTok || 0) + 1);
+            const gmFrag = document.createDocumentFragment();
+            const gmRenderOne = (m) => {
                 const targetEndMs = new Date(m.end).getTime();
                 const deltaDaysLeft = Math.ceil((targetEndMs - timeNowMs) / oneDayInMs);
                 
@@ -5584,9 +5611,19 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     </div>
                     <div style="color:var(--primary); font-weight:900; font-size:1.1rem;">#${m.id}</div>
                 `;
-                scrollContainer.appendChild(itemRowElement);
-            });
+                gmFrag.appendChild(itemRowElement);
+            };
+            const gmChunk = (from) => {
+                if (gmToken !== window.__gmMlTok) return;
+                const to = Math.min(from + 50, operationalFilteredDataset.length);
+                for (let i = from; i < to; i++) gmRenderOne(operationalFilteredDataset[i]);
+                scrollContainer.appendChild(gmFrag);
+                if (to < operationalFilteredDataset.length) (window.requestAnimationFrame || setTimeout)(() => gmChunk(to));
+            };
+            gmChunk(0);
         }
+        let _gmMlT = 0;
+        window.gmDebouncedMembers = function () { clearTimeout(_gmMlT); _gmMlT = setTimeout(renderMembersList, 160); };
 
         function applySidebarFilter(filterConstraintTag, genderTag = null) {
             activeSidebarFilterState = filterConstraintTag;
@@ -5689,18 +5726,27 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             const _fd = function (d) { var p = String(d || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : (d || ''); };
             const _gym = (localStorage.getItem('gym_pro_app_name') || (window.__GYM && window.__GYM.name) || 'الجيم').trim();
             let gymLinksMessage = promoMsg;
-            if (portalUrl) {
-                const _link = window.__gmKeysOk ? window.__gmPersonal(memberInfo.phone) : portalUrl;
+            const _mkMsg = function (_link, _personal) {
                 const _lines = [];
                 _lines.push('أهلاً ' + (memberInfo.name || '') + ' 👋 نورتنا في ' + _gym + ' 💪');
                 _lines.push('');
-                _lines.push('🔗 ده لينك البروفايل بتاعك على صفحة الجيم:');
-                _lines.push(_link);
-                _lines.push(window.__gmKeysOk ? '(خاص بيك، متشاركوش مع حد 🔒)' : 'ادخل برقم موبايلك ' + memberInfo.phone + ' وكلمة السر هي كودك ' + memberInfo.id);
+                if (_personal) {
+                    _lines.push('🔐 ده لينك بروفايلك الخاص — اضغط عليه هيفتح لك على طول على كارنيهك واشتراكك من غير ما تكتب أي كود:');
+                    _lines.push(_link);
+                    _lines.push('(خاص بيك، متشاركوش مع حد 🔒)');
+                } else {
+                    _lines.push('🔗 ده لينك البروفايل بتاعك على صفحة الجيم:');
+                    _lines.push(_link);
+                    _lines.push('ادخل برقم موبايلك ' + memberInfo.phone + ' وكلمة السر هي كودك ' + memberInfo.id);
+                }
                 _lines.push('');
                 _lines.push('🆔 كودك: ' + memberInfo.id + (memberInfo.plan ? ' • 🏷️ ' + memberInfo.plan : '') + (memberInfo.end ? ' • ⏳ ينتهي ' + _fd(memberInfo.end) : ''));
                 _lines.push('🎫 كارنيهك وجروب الجيم وصفحاتنا كلها هتلاقيهم في اللينك.');
-                gymLinksMessage = _lines.join('\n');
+                return _lines.join('\n');
+            };
+            if (portalUrl) {
+                const _ok = !!window.__gmKeysOk;
+                gymLinksMessage = _mkMsg(_ok ? window.__gmPersonal(memberInfo.phone) : portalUrl, _ok);
             }
             if (!portalUrl) {
                 if (relevantWaGroupLink) gymLinksMessage += `\n\n📱 جروب الواتساب:\n${relevantWaGroupLink}`;
@@ -5711,6 +5757,28 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
 
             document.getElementById('prlMemberName').innerText = memberInfo.name || '';
             document.getElementById('prlSendBtn').href = `https://wa.me/${clientCleanPhone}?text=${encodeURIComponent(gymLinksMessage)}`;
+            // نضمن اللينك الشخصي قبل الإرسال: الزرار يستنى لحظات لحد ما اللينك يتأكد على السيرفر (بحد أقصى 3.5 ثانية)
+            if (portalUrl && typeof window.__gmPersonalAsync === 'function') {
+                const _btn = document.getElementById('prlSendBtn');
+                const _tok = (window.__gmPrlTok = (window.__gmPrlTok || 0) + 1);
+                let _fin = false;
+                _btn.style.pointerEvents = 'none'; _btn.style.opacity = '.55';
+                const _warn = (on) => {
+                    let w = document.getElementById('prlWarn');
+                    if (!on) { if (w) w.remove(); return; }
+                    if (!w) { w = document.createElement('div'); w.id = 'prlWarn'; w.style.cssText = 'font-size:.8rem;font-weight:700;color:var(--danger,#c0392b)'; const acts = document.querySelector('#postRegLinksToast .prl-actions'); acts.parentNode.insertBefore(w, acts); }
+                    w.textContent = '⚠️ تعذر إنشاء اللينك الشخصي (' + (window.__gmLastErr || 'مشكلة اتصال') + ') — هيتبعت اللينك العام.';
+                };
+                _warn(false);
+                // الزرار يتفتح بعد 11 ثانية بحد أقصى، ولو اللينك الشخصي جه متأخر بيتحدث لوحده
+                const _once = (pl) => {
+                    if (_tok !== window.__gmPrlTok) return;
+                    if (pl) { _btn.href = `https://wa.me/${clientCleanPhone}?text=${encodeURIComponent(_mkMsg(pl, true))}`; _warn(false); }
+                    _btn.style.pointerEvents = ''; _btn.style.opacity = '';
+                };
+                window.__gmPersonalAsync(memberInfo.phone).then((pl) => { _once(pl); if (!pl && _tok === window.__gmPrlTok) _warn(true); }, () => { _once(null); if (_tok === window.__gmPrlTok) _warn(true); });
+                setTimeout(() => _once(null), 11000);
+            }
 
             const toast = document.getElementById('postRegLinksToast');
             toast.style.display = 'flex';
@@ -7204,17 +7272,27 @@ window.__gmShellRun = function () {
     }
     var NSK = 'g' + String(gymId).replace(/-/g, '').slice(0, 16) + '__';
     var PK = 'sh_pending_' + gymId, flushing = false;
+    var LOK = 'sh_last_ok_' + gymId;
+    var CS = { inflight: 0, lastOk: +(RawLS.get.call(localStorage, LOK) || 0), lastErr: '' };
+    function cloudEmit() { try { window.dispatchEvent(new CustomEvent('gm-cloud')); } catch (e) {} }
     var pending = cacheGet(PK) || {};
-    function savePending() { if (Object.keys(pending).length) cacheSet(PK, pending); else { try { RawLS.rem.call(localStorage, PK); } catch (e) {} } }
+    function savePending() { if (Object.keys(pending).length) cacheSet(PK, pending); else { try { RawLS.rem.call(localStorage, PK); } catch (e) {} } cloudEmit(); }
     function markPending(rows) { rows.forEach(function (x) { pending[x.key] = 1; }); savePending(); }
     function upsert(rows) {
+      CS.inflight++; cloudEmit();
       return sb.from('gym_kv').upsert(rows, { onConflict: 'gym_id,key' }).then(function (r) {
+        CS.inflight--;
         if (r.error) {
           if (isNetErr(r.error)) markPending(rows);
           if (r.error.code === '42501') r.error.message = 'الاشتراك منتهي أو مفيش صلاحية كتابة — البيانات معروضة للاطلاع فقط.';
+          CS.lastErr = String(r.error.message || r.error.code || r.error); cloudEmit();
           throw r.error;
         }
-      }, function (e) { markPending(rows); throw e; });
+        CS.lastErr = ''; CS.lastOk = Date.now();
+        try { RawLS.set.call(localStorage, LOK, String(CS.lastOk)); } catch (e) {}
+        var had = false; rows.forEach(function (x) { if (pending[x.key]) { delete pending[x.key]; had = true; } });
+        if (had) savePending(); else cloudEmit();
+      }, function (e) { CS.inflight--; markPending(rows); CS.lastErr = String((e && e.message) || e); cloudEmit(); throw e; });
     }
     // رفع أي بيانات اتسجلت أوفلاين (بنقرا آخر نسخة من الجهاز وقت الرفع)
     function flushPending() {
@@ -7228,9 +7306,29 @@ window.__gmShellRun = function () {
       pending = {}; savePending();
       if (!rows.length) return;
       flushing = true;
-      upsert(rows).then(function () { flushing = false; }, function () { flushing = false; });
+      upsert(rows).then(function () {
+        flushing = false;
+        try { window.dispatchEvent(new CustomEvent('gm-cloud-recovered', { detail: { count: rows.length } })); } catch (e) {}
+      }, function () { flushing = false; });
     }
-    window.addEventListener('online', function () { setTimeout(flushPending, 1500); });
+    // رجوع النت: نحاول الرفع أكتر من مرة (لحد ما الاتصال الفعلي يثبت)
+    window.addEventListener('online', function () { [1500, 4000, 9000, 20000].forEach(function (ms) { setTimeout(flushPending, ms); }); cloudEmit(); });
+    window.addEventListener('offline', cloudEmit);
+    window.__gmCloud = {
+      state: CS, gymId: gymId,
+      pendingCount: function () { return Object.keys(pending).length; },
+      flush: function () { return flushPending(); },
+      goOnline: function () { try { goOnline(); } catch (e) {} },
+      isStub: function () { return !!(sb && sb.__stub); },
+      check: function () {
+        return reachable().then(function (ok) {
+          if (!ok) return { ok: false, msg: navigator.onLine ? 'النت موصّل بس مفيش وصول فعلي للسيرفر دلوقتي' : 'الجهاز أوفلاين' };
+          return sb.from('gym_kv').select('key').eq('gym_id', gymId).limit(1).then(
+            function (r) { return r.error ? { ok: false, msg: String(r.error.message || r.error.code) } : { ok: true }; },
+            function (e) { return { ok: false, msg: String((e && e.message) || e) }; });
+        });
+      }
+    };
     setInterval(flushPending, 20000);
     setTimeout(flushPending, 4000);
     function fetchAll() {
@@ -7264,9 +7362,10 @@ window.__gmShellRun = function () {
         var args = Array.prototype.slice.call(arguments);
         if (args[0] && typeof args[0] === 'object') args.shift();
         var cb = args[0], errcb = args[1] || function () {};
-        var cache = {};
+        var cache = {}, lastLoadAt = 0;
         function emit(changes) { cb(mkSnap(Object.keys(cache).map(function (k) { return cache[k]; }), changes)); }
         function load(initial) {
+          lastLoadAt = Date.now();
           fetchAll().then(function (docs) {
             var changes = [];
             docs.forEach(function (d) {
@@ -7290,7 +7389,7 @@ window.__gmShellRun = function () {
             emit([{ type: old ? 'modified' : 'added', doc: d }]);
           }).subscribe(function (status) { if (status === 'CHANNEL_ERROR') errcb(new Error('realtime error')); });
         window.addEventListener('online', function () { load(false); });
-        document.addEventListener('visibilitychange', function () { if (!document.hidden) load(false); });
+        document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - lastLoadAt > 15000) load(false); });
         return function () {};
       }
     };
@@ -7667,7 +7766,7 @@ window.__gmShellRun = function () {
         box.appendChild(grid);
       } finally { busy = false; }
     }
-    setInterval(function () { if (adminVisible()) refresh(); }, 2500);
+    setInterval(function () { if (adminVisible()) refresh(); }, 6000);
     refresh();
   }
   function patchRoleGate(row) {
@@ -8155,7 +8254,7 @@ window.__gmShellRun = function () {
       var keys = {}, gid0 = row.gyms.id;
       function n10(p) { return String(p || '').replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).replace(/\D/g, '').slice(-10); }
       function rnd() { var a = new Uint8Array(24); (window.crypto || window.msCrypto).getRandomValues(a); return Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }
-      function load() { return rpc('portal_link_keys', { p_gym: gid0 }).then(function (k) { if (k && typeof k === 'object') Object.keys(k).forEach(function (p) { keys[p] = k[p]; }); }).catch(function () {}); }
+      function load() { return rpc('portal_link_keys', { p_gym: gid0 }).then(function (k) { if (k && typeof k === 'object') Object.keys(k).forEach(function (p) { keys[p] = k[p]; (window.__gmKeysConfirmed = window.__gmKeysConfirmed || {})[p] = 1; }); }).catch(function () {}); }
       window.__gmPersonal = function (phone) {
         var p = n10(phone), base = window.__memberPortalUrl;
         if (p.length < 10 || !window.__gmKeysOk) return base;
@@ -8165,6 +8264,27 @@ window.__gmShellRun = function () {
       window.__gmRotateKey = function (phone) {
         var p = n10(phone), k = rnd();
         return rpc('portal_link_set', { p_gym: gid0, p_phone: p, p_key: k, p_rotate: true }).then(function (real) { keys[p] = real || k; return window.__gmPersonal(phone); });
+      };
+      window.__gmPersonalAsync = function (phone) {
+        var p = n10(phone), base = window.__memberPortalUrl;
+        if (p.length < 10) return Promise.resolve(null);
+        if (keys[p] && window.__gmKeysConfirmed && window.__gmKeysConfirmed[p]) return Promise.resolve(base + '#k=' + keys[p]);
+        var k = keys[p] || rnd();
+        var attempt = function () {
+          return rpc('portal_link_set', { p_gym: gid0, p_phone: p, p_key: k, p_rotate: false }).then(function (real) {
+            keys[p] = real || k; (window.__gmKeysConfirmed = window.__gmKeysConfirmed || {})[p] = 1;
+            window.__gmKeysOk = true; window.__gmLastErr = '';
+            return base + '#k=' + keys[p];
+          });
+        };
+        // المشترك الجديد بيترفع للسيرفر بعد حوالي ثانية، فلو السيرفر قال لسه مش لاقيه (no_member) بنعيد كذا مرة
+        var tries = 0;
+        var retry = function (e) {
+          if (++tries >= 6) throw e;
+          return new Promise(function (r) { setTimeout(r, 1400); }).then(attempt).catch(retry);
+        };
+        return attempt().catch(retry)
+          .catch(function (e) { window.__gmLastErr = (e && e.message) || 'error'; try { console.warn('portal_link_set failed:', window.__gmLastErr); } catch (_) {} return null; });
       };
       load().then(function () { }); 
       rpc('portal_link_keys', { p_gym: gid0 }).then(function () { window.__gmKeysOk = true; }).catch(function () { window.__gmKeysOk = false; });
@@ -8192,8 +8312,35 @@ window.__gmShellRun = function () {
         try {
           var m = (typeof membersData !== 'undefined' ? membersData : []).find(function (x) { return x.id === id; }), a = $('waCardBtn');
           if (m && a) {
-            var msg = 'أهلاً ' + m.name + ' 👋\nكارنيه اشتراكك في ' + row.gyms.name + ' جاهز 🎫\n\nكود المشترك: ' + m.id + '\nالباقة: ' + (m.subtype || '—') + '\nيبدأ: ' + m.start + '\nينتهي: ' + m.end + '' + (window.__gmKeysOk ? '\n\n🔐 افتح بوابتك من الرابط ده، هيفتح لك على طول من غير ما تكتب كود:\n' + window.__gmPersonal(m.phone) + '\n\n⚠️ الرابط ده خاص بيك وبيفتح كارنيهك وبياناتك، متشاركوش مع حد.' : '\n\nادخل بوابتك من هنا بالرقم ده وكود المشترك ككلمة سر:\n' + link());
-            a.href = 'https://wa.me/' + waNum(m.phone) + '?text=' + encodeURIComponent(msg);
+            var head = 'أهلاً ' + m.name + ' 👋\nكارنيه اشتراكك في ' + row.gyms.name + ' جاهز 🎫\n\nكود المشترك: ' + m.id + '\nالباقة: ' + (m.subtype || '—') + '\nيبدأ: ' + m.start + '\nينتهي: ' + m.end;
+            var tailP = function (pl) { return '\n\n🔐 افتح بوابتك من الرابط ده، هيفتح لك على طول من غير ما تكتب كود:\n' + pl + '\n\n⚠️ الرابط ده خاص بيك وبيفتح كارنيهك وبياناتك، متشاركوش مع حد.'; };
+            var msgGeneric = head + '\n\nادخل بوابتك من هنا بالرقم ده وكود المشترك ككلمة سر:\n' + link();
+            var waBase = 'https://wa.me/' + waNum(m.phone) + '?text=';
+            window.__gmCardFor = m.id;
+            var oldWarn = $('waCardWarn'); if (oldWarn) oldWarn.remove();
+            a.style.pointerEvents = ''; a.style.opacity = '';
+            a.href = waBase + encodeURIComponent(msgGeneric);
+            if (m.phone && window.__gmPersonalAsync) {
+              // الزرار بيستنى لحظات لحد ما اللينك الشخصي يتأكد، عشان مايتبعتش اللينك العام بالغلط
+              a.style.pointerEvents = 'none'; a.style.opacity = '.55';
+              var cardFin = function (pl, final) {
+                if (window.__gmCardFor !== m.id) return;
+                var cur = $('waCardBtn'); if (!cur) return;
+                var w = $('waCardWarn');
+                if (pl) {
+                  cur.href = waBase + encodeURIComponent(head + tailP(pl));
+                  if (w) w.remove();
+                } else if (final && !w) {
+                  w = document.createElement('div'); w.id = 'waCardWarn';
+                  w.style.cssText = 'grid-column:span 2;font-size:.8rem;font-weight:700;color:var(--danger,#c0392b);text-align:center';
+                  w.textContent = '⚠️ تعذر إنشاء اللينك الشخصي (' + (window.__gmLastErr || 'مشكلة اتصال') + ') — هيتبعت اللينك العام. جرب تفتح البروفايل تاني.';
+                  cur.parentNode.insertBefore(w, cur.nextSibling);
+                }
+                cur.style.pointerEvents = ''; cur.style.opacity = '';
+              };
+              window.__gmPersonalAsync(m.phone).then(function (pl) { cardFin(pl, true); }, function () { cardFin(null, true); });
+              setTimeout(function () { cardFin(null, false); }, 11000);
+            }
             if (window.__gmKeysOk && !$('waRotBtn') && m.phone) {
               var rb = document.createElement('a'); rb.href = '#'; rb.id = 'waRotBtn'; rb.className = a.className; rb.style.cssText = 'background:var(--danger-light,#fde8e8);color:var(--danger,#c0392b)';
               rb.textContent = '🔄 إلغاء رابط المشترك وإصدار رابط جديد';
@@ -8644,7 +8791,7 @@ var mix = g.layout_mode === 'mixed';
   setInterval(function(){
     var g=document.getElementById('gateScreen');
     btn.style.display=(window.__memberPortalLink&&g&&g.style.display==='none'&&!document.querySelector('.sh-screen:not([hidden])'))?'':'none';
-  },1000);
+  },3000);
 })();
 </script>
 <script>
@@ -9060,7 +9207,7 @@ html.lg-tone.lg-custom .prof-brand img{background:transparent;border-radius:0}
   window.__lgTone=run;
   var o=window.applyStoredLogo;
   if(typeof o==='function'){window.applyStoredLogo=function(){var r=o.apply(this,arguments);run();return r;};}
-  run();document.addEventListener('DOMContentLoaded',run);window.addEventListener('load',run);setInterval(run,1200);
+  run();document.addEventListener('DOMContentLoaded',run);window.addEventListener('load',run);setInterval(run,5000);
 })();
 </script>
 <style id="brand-flat">
@@ -9112,6 +9259,7 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
   'use strict';
   var LS_LOGO = 'gym_pro_logo_image', LS_NAME = 'gym_pro_app_name', LS_DISMISS = 'gm_pwa_dismiss';
   var deferred = null, lastKey = '', manifestURL = null, building = false;
+  var guMark = '', curSig = 'default', curName = 'GYM U', LS_SIG = 'gm_pwa_sig', LS_RB = 'gm_pwa_rebrand';
 
   function ls(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function isStandalone() {
@@ -9207,7 +9355,7 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
   function publish(name, icons, theme, bg) {
     var base = location.origin + location.pathname.replace(/[^\/]*$/, '');
     var manifest = {
-      id: base, name: name, short_name: name.length > 14 ? name.slice(0, 14) : name,
+      id: base + (curSig === 'default' ? '' : '?app=' + sigHash(curSig)), name: name, short_name: name.length > 14 ? name.slice(0, 14) : name,
       description: 'برنامج إدارة الجيم والاشتراكات',
       start_url: location.origin + location.pathname, scope: base,
       display: 'standalone', orientation: 'any', dir: 'rtl', lang: 'ar',
@@ -9233,12 +9381,36 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
     paintCard();
   }
 
+  /* هوية التطبيق: لحد ما الجيم يرفع لوجو أو يسمّي نفسه = «GYM U» بلوجو GYM U. بعدها = اسمه ولوجوه */
+  function sigHash(t) { var h = 5381, i; for (i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) >>> 0; return h.toString(36); }
+  function brandInfo() {
+    var logo = ls(LS_LOGO), nm = ls(LS_NAME).trim(), gym = (window.__GYM && window.__GYM.name) || '';
+    var custom = !!logo || (nm && !/^gym\s*u$/i.test(nm));
+    var name = custom ? (nm || gym || 'GYM U') : 'GYM U';
+    var g = document.querySelector('img.gm-gate');
+    if (!custom && !guMark) { try { var mv = getComputedStyle(document.documentElement).getPropertyValue('--gu-mark'), mm = mv.match(/url\(["']?(data:[^"')]+)["']?\)/); if (mm) guMark = mm[1]; } catch (e) {} }
+    return { custom: custom, name: name, logo: logo || (custom ? '' : (guMark || (g && g.src) || '')), sig: custom ? ('c|' + name + '|' + (logo ? 1 : 0)) : 'default' };
+  }
+  /* الهوية اتغيرت من GYM U لاسم/لوجو الجيم (أو الاسم اتغيّر): نصفّر حالة التثبيت ونسأله يثبّته تاني بالشكل الجديد */
+  function onBrand(B) {
+    curSig = B.sig; curName = B.name;
+    var old = ls(LS_SIG); if (old === B.sig) return;
+    setLS(LS_SIG, B.sig);
+    if (!old || B.sig === 'default') return;
+    var was = ls(LS_INST) === '1' || !!ls(LS_N);
+    try { localStorage.removeItem(LS_INST); localStorage.removeItem(LS_NEXT); localStorage.removeItem(LS_N); } catch (e) {}
+    if (was) setLS(LS_RB, '1');
+    shown = false;
+    setTimeout(tryShow, 1500);
+  }
+
   function build() {
     if (building) return;
-    var src = ls(LS_LOGO), name = ls(LS_NAME) || 'GYM U';
-    var key = src.length + ':' + src.slice(-40) + '|' + name;
+    var B = brandInfo(), src = B.logo, name = B.name;
+    var key = src.length + ':' + src.slice(-40) + '|' + name + '|' + B.sig;
     if (key === lastKey) return;
     lastKey = key; building = true;
+    onBrand(B);
     if (!src) { window.__gmBrand = 0;                    // مفيش لوجو → أيقونة بحرف الاسم وبلون الثيم
       var pc = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#0066ff';
       var L = (name.trim().charAt(0) || 'G').toUpperCase();
@@ -9252,10 +9424,12 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
         if (a.edge) bg = hex(a.edge[0], a.edge[1], a.edge[2]);          // نفس خلفية اللوجو
         else bg = lum(dom[0], dom[1], dom[2]) > 150 ? '#14161c' : '#ffffff'; // تباين مع لون اللوجو
         var themeBar = a.edge ? bg : theme;
-        applyBrand(bg);
+        /* GYM U الافتراضي: علامة GU في نص أيقونة بيضاء */
+        if (!B.custom) { bg = '#ffffff'; themeBar = '#ece3ff'; } else applyBrand(bg);
+        var k1 = B.custom ? .82 : .70, k2 = B.custom ? .60 : .50;
         publish(name, {
-          i192: drawIcon(img, 192, bg, .82), i512: drawIcon(img, 512, bg, .82),
-          m512: drawIcon(img, 512, bg, .60), a180: drawIcon(img, 180, bg, .82)
+          i192: drawIcon(img, 192, bg, k1), i512: drawIcon(img, 512, bg, k1),
+          m512: drawIcon(img, 512, bg, k2), a180: drawIcon(img, 180, bg, k1)
         }, themeBar, bg);
       } catch (e) { console.warn('pwa icon failed', e); }
       building = false;
@@ -9278,7 +9452,7 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
     setLS(LS_N, n);
     setLS(LS_NEXT, Date.now() + DELAYS[Math.min(n - 1, DELAYS.length - 1)] * 864e5);
   }
-  function markInstalled() { setLS(LS_INST, '1'); deferred = null; closeCard(true); }
+  function markInstalled() { setLS(LS_INST, '1'); try { localStorage.removeItem(LS_RB); } catch (e) {} deferred = null; closeCard(true); }
 
   function card() {
     var o = document.getElementById('gmPwaCard'); if (o) return o;
@@ -9323,9 +9497,12 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
     o.style.setProperty('--pwa-c', theme);
     o.style.setProperty('--pwa-fg', lum(r, g, b) > 165 ? '#12151f' : '#fff');
     var ic = document.querySelector('link[rel="icon"]'); if (ic) o.querySelector('.ic').src = ic.href;
-    o.querySelector('.nm').textContent = ls(LS_NAME) || 'GYM U';
+    o.querySelector('.nm').textContent = curName;
     o.querySelector('#gmPwaSub').textContent = isIOS() ? 'أضفه للشاشة الرئيسية وافتحه زي أي تطبيق'
       : (/Mobi|Android/i.test(navigator.userAgent) ? 'هيتحط على موبايلك وتفتحه بضغطة واحدة' : 'هيتحط على سطح المكتب وتفتحه بضغطة واحدة');
+    var rb = ls(LS_RB) === '1';
+    o.querySelector('h3').textContent = rb ? 'جيمك بقى له هويته الخاصة 🎉' : 'ثبّت البرنامج على جهازك';
+    if (rb) o.querySelector('#gmPwaSub').textContent = 'ضيفه على الشاشة الرئيسية تاني بالاسم واللوجو الجديد، وامسح أيقونة «GYM U» القديمة.';
   }
   function showCard() {
     var o = card(); paintCard(); shown = true;
@@ -9358,7 +9535,7 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
   if (typeof o === 'function') window.applyStoredLogo = function () { var r = o.apply(this, arguments); setTimeout(build, 50); return r; };
   var o2 = window.applyBrandTextSettings;
   if (typeof o2 === 'function') window.applyBrandTextSettings = function () { var r = o2.apply(this, arguments); setTimeout(build, 50); return r; };
-  setInterval(build, 2000);
+  setInterval(build, 6000);
 })();
 
 </script>
@@ -9442,7 +9619,7 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
   }
   loadSeen();
   setInterval(check, 4000);
-  setInterval(maybeShow, 500);
+  setInterval(maybeShow, 2000);
   document.addEventListener('visibilitychange', check);
 })();
 </script>
@@ -9533,7 +9710,7 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
   var inp=document.getElementById('gatePinInput'),ov=document.getElementById('gatePinStars');if(!inp||!ov)return;
   var STAR='<span class="st"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/></svg></span>',k='';
   function paint(){var m=inp.type==='password',v=inp.value,key=(m?'m':'r')+v;inp.classList.toggle('masked',m&&v.length>0);if(key===k)return;k=key;ov.innerHTML=(m&&v)?new Array(v.length+1).join(STAR):'';}
-  setInterval(paint,100);inp.addEventListener('input',paint);
+  setInterval(paint,300);inp.addEventListener('input',paint);
 })();
 </script>
 <style id="gate-logo-hero">
@@ -10012,7 +10189,7 @@ body:not(.custom-brand) #adminDashboardArea#adminDashboardArea>.brand-container>
     document.querySelectorAll('.sh-screen').forEach(function(e){o.observe(e,opt)});
     o.observe(document.documentElement,opt); o.observe(document.body,opt);
     var m=document.querySelector('meta[name="theme-color"]'); if(m) o.observe(m,{attributes:true,attributeFilter:['content']});
-    document.addEventListener('visibilitychange',sync); setInterval(sync,1500); sync();
+    document.addEventListener('visibilitychange',sync); setInterval(sync,4000); sync();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
@@ -10211,7 +10388,7 @@ body:not(.custom-brand) #adminDashboardArea#adminDashboardArea>.brand-container>
   ['applyStoredLogo','applyBrandTextSettings'].forEach(function(k){
     var f=window[k]; if(typeof f==='function')window[k]=function(){var r=f.apply(this,arguments);sync();return r;};
   });
-  setInterval(sync,600);document.addEventListener('DOMContentLoaded',sync);window.addEventListener('load',sync);
+  setInterval(sync,3000);document.addEventListener('DOMContentLoaded',sync);window.addEventListener('load',sync);
 })();
 </script>
 <style id="gm-perf">
@@ -10229,5 +10406,265 @@ html.gm-switching *,html.gm-switching *::before,html.gm-switching *::after{trans
 /* الشاشات المخفية ما تتحسبش في التخطيط */
 .sh-screen[hidden]{display:none!important}
 </style>
+<style id="gmCloudCss">
+#adminTabsBar .tab-btn .gmc-dot{margin-inline-start:auto;width:10px;height:10px;border-radius:50%;flex:none;background:var(--c,#64748b);box-shadow:0 0 0 3px color-mix(in srgb,var(--c,#64748b) 25%,transparent)}
+#adminTabsBar .tab-btn.active .gmc-dot{box-shadow:0 0 0 2px #fff}
+.gmc-dot[data-state=synced],.gmc-card[data-state=synced]{--c:#16a34a}
+.gmc-dot[data-state=syncing],.gmc-card[data-state=syncing]{--c:#2563eb}
+.gmc-dot[data-state=waiting],.gmc-card[data-state=waiting]{--c:#d97706}
+.gmc-dot[data-state=offline],.gmc-card[data-state=offline]{--c:#f59e0b}
+.gmc-dot[data-state=error],.gmc-card[data-state=error]{--c:#dc2626}
+.gmc-dot[data-state=idle],.gmc-card[data-state=idle]{--c:#64748b}
+.gmc-dot[data-state=syncing],.gmc-dot[data-state=offline],.gmc-dot[data-state=waiting],.gmc-dot.flash{animation:gmcPulse 1.3s ease-in-out infinite}
+@keyframes gmcPulse{50%{transform:scale(1.5);opacity:.6}}
+@keyframes gmcSpin{to{transform:rotate(360deg)}}
+.gmc-card{background:var(--bg-main);border:1.5px solid color-mix(in srgb,var(--c) 45%,var(--border-color));border-radius:22px;padding:22px;box-shadow:0 8px 28px color-mix(in srgb,var(--c) 14%,transparent);transition:.3s}
+.gmc-top{display:flex;align-items:center;gap:16px}
+.gmc-orb{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-size:1.9rem;flex:none;background:color-mix(in srgb,var(--c) 15%,transparent);border:2px solid color-mix(in srgb,var(--c) 50%,transparent)}
+.gmc-card[data-state=syncing] .gmc-orb{animation:gmcSpin 1.2s linear infinite}
+.gmc-title{font-size:1.2rem;font-weight:900;color:var(--c)}
+.gmc-sub{font-size:.92rem;font-weight:700;color:var(--text-muted);margin-top:4px;line-height:1.6}
+.gmc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0 16px}
+.gmc-stat{background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:12px 8px;text-align:center}
+.gmc-stat span{display:block;font-size:.74rem;font-weight:800;color:var(--text-muted)}
+.gmc-stat b{display:block;margin-top:5px;font-size:1rem;font-weight:900;color:var(--text-main)}
+.gmc-btn{width:100%;padding:14px;border:0;border-radius:14px;font:inherit;font-weight:900;font-size:1rem;cursor:pointer;color:#fff;background:var(--c);transition:.2s}
+.gmc-btn:disabled{opacity:.6;cursor:wait}
+.gmc-msg{min-height:1.2em;margin-top:10px;text-align:center;font-size:.9rem;font-weight:800;color:var(--text-muted)}
+.gmc-log{display:flex;flex-direction:column;gap:8px}
+.gmc-log .it{display:flex;gap:10px;align-items:flex-start;background:var(--bg-main);border:1px solid var(--border-color);border-radius:12px;padding:10px 14px;font-weight:700;font-size:.9rem}
+.gmc-log .it time{margin-inline-start:auto;flex:none;color:var(--text-muted);font-size:.78rem;font-weight:800}
+.gmc-log .empty{color:var(--text-muted);font-weight:700;text-align:center;padding:14px}
+#gmcToast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,30px);opacity:0;pointer-events:none;z-index:9500;max-width:min(92vw,460px);padding:14px 20px;border-radius:16px;background:#16a34a;color:#fff;font-weight:900;font-size:.98rem;line-height:1.6;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.28);transition:.4s}
+#gmcToast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:560px){.gmc-stats{grid-template-columns:1fr}.gmc-top{align-items:flex-start}}
+</style>
+<div id="gmcToast" role="status" aria-live="polite"></div>
+<script id="gmCloudUI">
+(function () {
+  var $ = function (i) { return document.getElementById(i); };
+  var LOGK = 'gm_cloud_log', unseenRecovered = 0, lastNet = null, netMsg = '', lastKey = '';
+  function cloud() { return window.__gmCloud || null; }
+  function adminOpen() { var a = $('adminDashboardArea'); return !!a && getComputedStyle(a).display !== 'none'; }
+  function loadLog() { try { return JSON.parse(localStorage.getItem(LOGK)) || []; } catch (e) { return []; } }
+  function addLog(ico, text) {
+    var l = loadLog(); l.unshift({ i: ico, t: text, d: Date.now() }); l = l.slice(0, 12);
+    try { localStorage.setItem(LOGK, JSON.stringify(l)); } catch (e) {}
+    renderLog();
+  }
+  function fmtTime(ms) { try { return new Date(ms).toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
+  function rel(ms) {
+    if (!ms) return 'لسه مفيش';
+    var d = Date.now() - ms, m = Math.floor(d / 60000);
+    if (d < 45000) return 'من لحظات';
+    if (m < 60) return 'من ' + m + ' دقيقة';
+    if (m < 1440) return 'الساعة ' + fmtTime(ms);
+    try { return new Date(ms).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' }) + ' ' + fmtTime(ms); } catch (e) { return ''; }
+  }
+  function compute() {
+    var c = cloud(); if (!c) return { k: 'idle' };
+    var p = c.pendingCount(), s = c.state;
+    if (!navigator.onLine) return { k: 'offline', p: p, s: s };
+    if (s.inflight > 0) return { k: 'syncing', p: p, s: s };
+    if (s.lastErr) return { k: 'error', p: p, s: s };
+    if (p > 0) return { k: 'waiting', p: p, s: s };
+    return { k: 'synced', p: p, s: s };
+  }
+  var T = {
+    idle: ['☁️', 'السحابة لسه مش جاهزة', function () { return 'افتح الجيم الأول وبعدها هتشتغل المزامنة.'; }],
+    synced: ['✅', 'كل بياناتك مرفوعة على السحابة', function (x) { return x.s.lastOk ? 'آخر رفع ناجح ' + rel(x.s.lastOk) + '. مفيش حاجة مستنية.' : 'مفيش تعديلات جديدة محتاجة رفع.'; }],
+    syncing: ['🔄', 'جاري الرفع دلوقتي…', function () { return 'استنى ثواني لحد ما يخلص.'; }],
+    waiting: ['⏳', 'فيه تعديلات لسه ما اترفعتش', function (x) { return x.p + ' تعديل مستني الرفع — هيترفعوا تلقائيًا، أو دوس «تحقق وارفع الآن».'; }],
+    offline: ['📴', 'أنت أوفلاين دلوقتي', function (x) { return 'بياناتك محفوظة على الجهاز بأمان' + (x.p ? ' (' + x.p + ' تعديل مستني الرفع)' : '') + '. أول ما النت يرجع هترفع لوحدها وهيظهر لك تنبيه.'; }],
+    error: ['⚠️', 'فشل آخر رفع على السحابة', function (x) { return (x.s.lastErr || '') + ' — البيانات محفوظة على الجهاز، دوس «تحقق وارفع الآن» تاني.'; }]
+  };
+  function render() {
+    var x = compute(), t = T[x.k];
+    var card = $('gmcCard'), dot = $('gmcDot');
+    if (dot) dot.setAttribute('data-state', x.k);
+    if (!card) return;
+    card.setAttribute('data-state', x.k);
+    $('gmcOrb').textContent = t[0];
+    $('gmcTitle').textContent = t[1];
+    $('gmcSub').textContent = t[2](x);
+    $('gmcLast').textContent = x.s ? rel(x.s.lastOk) : '—';
+    $('gmcPend').textContent = String(x.p || 0);
+    $('gmcNet').textContent = navigator.onLine ? (netMsg || 'متصل') : 'أوفلاين';
+    if (x.k !== lastKey) {
+      if (lastKey === 'offline' && x.k !== 'offline') addLog('🌐', 'رجع النت');
+      if (x.k === 'offline' && lastKey) addLog('📴', 'النت قطع — الشغل بيتحفظ على الجهاز');
+      lastKey = x.k;
+    }
+  }
+  function renderLog() {
+    var box = $('gmcLog'); if (!box) return;
+    var l = loadLog(); box.textContent = '';
+    if (!l.length) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = 'مفيش أحداث لسه'; box.appendChild(e); return; }
+    l.forEach(function (it) {
+      var d = document.createElement('div'); d.className = 'it';
+      var a = document.createElement('span'); a.textContent = it.i;
+      var b = document.createElement('span'); b.textContent = it.t;
+      var c = document.createElement('time'); c.textContent = rel(it.d);
+      d.appendChild(a); d.appendChild(b); d.appendChild(c); box.appendChild(d);
+    });
+  }
+  var toastT;
+  function toast(msg) {
+    var el = $('gmcToast'); if (!el) return;
+    el.textContent = msg; el.classList.add('show');
+    var dot = $('gmcDot'); if (dot) { dot.classList.add('flash'); setTimeout(function () { dot.classList.remove('flash'); }, 6000); }
+    clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 7000);
+  }
+  function showRecovered(n) {
+    toast('✅ تمام! رجع النت وكل التعديلات اللي اتسجلت أوفلاين' + (n ? ' (' + n + ')' : '') + ' اترفعت على السحابة');
+  }
+  window.addEventListener('gm-cloud', render);
+  window.addEventListener('online', function () { render(); if (adminOpen()) toast('🌐 رجع النت — جاري رفع بياناتك على السحابة…'); });
+  window.addEventListener('offline', function () { netMsg = ''; render(); });
+  window.addEventListener('gm-cloud-recovered', function (ev) {
+    var n = (ev.detail && ev.detail.count) || 0;
+    addLog('✅', 'تم رفع التعديلات اللي اتسجلت أوفلاين على السحابة' + (n ? ' (' + n + ' عنصر)' : ''));
+    if (adminOpen()) showRecovered(n); else unseenRecovered = n || 1;
+    render();
+  });
+  window.gmCloudOpen = function () {
+    render(); renderLog();
+    var c = cloud(); if (!c) return;
+    c.check().then(function (r) { netMsg = r.ok ? 'متصل فعليًا ✅' : 'مفيش اتصال فعلي'; render(); });
+    if (unseenRecovered) { showRecovered(unseenRecovered); unseenRecovered = 0; }
+  };
+  window.gmCloudCheck = function () {
+    var c = cloud(), b = $('gmcBtn'), m = $('gmcMsg');
+    if (!c) { m.textContent = 'السحابة لسه مش جاهزة.'; return; }
+    b.disabled = true; b.textContent = 'جاري الفحص…'; m.textContent = '';
+    c.check().then(function (r) {
+      netMsg = r.ok ? 'متصل فعليًا ✅' : 'مفيش اتصال فعلي';
+      if (!r.ok) { m.textContent = '⚠️ ' + r.msg; addLog('⚠️', 'الفحص فشل: ' + r.msg); return; }
+      c.state.lastErr = ''; c.goOnline(); c.flush();
+      m.textContent = '✅ الاتصال بالسحابة شغال — بنرفع أي تعديل مستني…';
+      return new Promise(function (res) { setTimeout(res, 2500); }).then(function () {
+        m.textContent = c.pendingCount() ? '⏳ لسه فيه ' + c.pendingCount() + ' تعديل، هيتحاول تاني تلقائيًا.' : '✅ تمام — مفيش حاجة مستنية الرفع.';
+      });
+    }).then(function () { b.disabled = false; b.textContent = 'تحقق وارفع الآن'; render(); },
+            function () { b.disabled = false; b.textContent = 'تحقق وارفع الآن'; render(); });
+  };
+  setInterval(function () {
+    render(); if ($('adminViewCloud') && $('adminViewCloud').classList.contains('active')) renderLog();
+    if (unseenRecovered && adminOpen()) { showRecovered(unseenRecovered); unseenRecovered = 0; }
+  }, 5000);
+  render(); renderLog();
+})();
+</script>
+<style id="gmPopupCss">
+/* ===== سكرول لأي بوب-أب: لو المحتوى أطول من الشاشة يتعمل له سكرول بدل ما يتقص ===== */
+.modal-overlay,.cap-overlay,#shModal,#ftSheet{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.modal{max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.cap-card{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#capModal .cap-card{overflow-y:auto}
+.sh-panel{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.fs-p{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#fbDiagModal>div,#dataCmpModal>div{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+</style>
+<script id="gmPopupUX">
+(function () {
+  // أي حاجة تظهر في نص الشاشة (بوب-أب) تتقفل بالضغط على الخلفية، والقائمة الجانبية تتقفل بالضغط برّاها
+  var OV = '.modal-overlay,.cap-overlay,#shModal,#ftSheet,#fbDiagModal,#dataCmpModal';
+  var downT = null;
+  function vis(el) { return el && el.isConnected && getComputedStyle(el).display !== 'none'; }
+  function closeOverlay(ov) {
+    var id = ov.id || '';
+    if (ov.hasAttribute('data-keep')) return false;
+    if (id === 'capModal') { var x = document.getElementById('capClose'); if (x) { x.click(); return true; } }
+    if (id === 'fbDiagModal' || id === 'dataCmpModal') {
+      var b = ov.querySelector('#fbDiagCloseBtn,#dataCmpClose'); if (b) { b.click(); return true; }
+      ov.remove(); return true;
+    }
+    if (id === 'shModal' || id === 'ftSheet') { ov.classList.remove('open'); return true; }
+    if (ov.classList.contains('modal-overlay')) {
+      var own = id ? ov.querySelector('[onclick*="closeActiveModal"][onclick*="' + id + '"]') : null;
+      if (own) own.click(); else ov.style.display = 'none';
+      return true;
+    }
+    if (ov.classList.contains('cap-overlay')) { ov.remove(); return true; }
+    return false;
+  }
+  function closeSidebar() {
+    var sb = document.getElementById('sidebar');
+    if (sb && sb.classList.contains('open')) { sb.classList.remove('open'); return true; }
+    return false;
+  }
+  ['pointerdown', 'mousedown', 'touchstart'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { downT = e.target; }, true);
+  });
+  document.addEventListener('click', function (e) {
+    var t = e.target; if (!t || !t.closest) return;
+    // 1) بوب-أب: الضغط على الخلفية نفسها (مش جوه الصندوق) يقفله
+    if (t.matches(OV) && downT === t && vis(t)) closeOverlay(t);
+    // 2) القائمة الجانبية: أي ضغطة برّاها تقفلها (إلا أزرار فتحها نفسها)
+    var sb = document.getElementById('sidebar');
+    if (sb && sb.classList.contains('open') && !sb.contains(t) &&
+        !t.closest('[onclick*="toggleSidebar"],[onclick*="applySidebarFilter"]')) sb.classList.remove('open');
+  }, true);
+  // زر Esc (للكمبيوتر): يقفل أعلى بوب-أب مفتوح، وإلا القائمة الجانبية
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var all = Array.prototype.slice.call(document.querySelectorAll(OV)).filter(vis);
+    all.sort(function (a, b) { return (+getComputedStyle(b).zIndex || 0) - (+getComputedStyle(a).zIndex || 0); });
+    for (var i = 0; i < all.length; i++) if (closeOverlay(all[i])) return;
+    closeSidebar();
+  });
+})();
+</script>
+<style id="gmPerfCss">
+/* ===== أداء: شيل التأثيرات الثقيلة (blur الخلفية + أنيميشن لا نهائي) ===== */
+*{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.badge-danger,.badge-warning{animation:none!important}
+#gateScreen .gate-deco span::after,
+#gateScreen#gateScreen #gateLogoImage,
+#gateScreen#gateScreen .gate-header-block::before,
+#gateScreen#gateScreen .gate-logo img.gm-gate,
+#shLogin .lx-bg::after,
+#shLogin .lx-bg::before,
+#shLogin#shLogin .lx-logo{animation:none!important}
+#gmSplash img{filter:none!important;will-change:auto!important}
+.member-item{content-visibility:auto;contain-intrinsic-size:auto 68px}
+a,button,[onclick],.tab-btn,.member-item,.stat-card,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.modal-overlay,.cap-overlay{will-change:auto}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+<style id="gmAdminBrandCss">
+/* ===== هيدر الإدارة: لوجو الجيم بتاع المالك بس (أو أول حرف من اسمه) — مفيش أي حاجة من GYM U ===== */
+html body #adminDashboardArea#adminDashboardArea>.brand-container{display:flex!important;flex-direction:row!important;flex-wrap:wrap;align-items:center!important;justify-content:flex-start!important;gap:6px 16px!important;padding:14px 20px!important;margin-bottom:16px!important;text-align:start!important;border-radius:22px!important;min-height:0!important}
+html body #adminDashboardArea#adminDashboardArea>.brand-container::before{display:none!important;content:none!important;background:none!important}
+html body #adminDashboardArea#adminDashboardArea>.brand-container[data-nologo]::before{content:attr(data-ini)!important;display:flex!important;align-items:center;justify-content:center;flex:none;width:64px!important;height:64px!important;margin:0!important;border-radius:50%;color:#fff;font:900 2rem/1 'Cairo',sans-serif;background:var(--gu-grad,linear-gradient(135deg,var(--primary),#ec4899))!important;filter:none!important;box-shadow:0 8px 20px color-mix(in srgb,var(--primary) 30%,transparent)}
+html body #adminDashboardArea#adminDashboardArea>.brand-container>.brand-logo-img{flex:none;width:68px!important;height:68px!important;margin:0!important;padding:4px!important;grid-column:auto!important;grid-row:auto!important;object-fit:contain}
+html body #adminDashboardArea#adminDashboardArea>.brand-container>h1{position:static!important;width:auto!important;height:auto!important;overflow:visible!important;clip:auto!important;white-space:normal!important;margin:0!important;font-size:clamp(1.2rem,3.4vw,1.65rem)!important}
+html body #adminDashboardArea#adminDashboardArea>.brand-container>p{display:none!important}
+html body #adminDashboardArea#adminDashboardArea>.brand-container.has-sub>p{display:block!important;flex-basis:100%;margin:0!important;font-size:.9rem}
+html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge{margin:0!important;margin-inline-start:auto!important;font-size:.8rem;padding:6px 14px}
+#adminDashLogoIcon{display:none!important}
+</style>
+<script id="gmAdminBrand">
+(function(){
+  function sync(){
+    try{
+      var bc=document.querySelector('#adminDashboardArea>.brand-container'); if(!bc)return;
+      var h=bc.querySelector('h1'),img=bc.querySelector('.brand-logo-img');
+      var gym=(window.__GYM&&window.__GYM.name)||'';
+      if(h&&gym&&(!h.textContent.trim()||/^gym\s*u$/i.test(h.textContent.trim())))h.textContent=gym;
+      var name=(h&&h.textContent.trim())||gym||'';
+      var hasLogo=!!(img&&img.getAttribute('src')&&img.style.display!=='none');
+      if(hasLogo)bc.removeAttribute('data-nologo');
+      else{bc.setAttribute('data-nologo','1');bc.setAttribute('data-ini',(name.replace(/^[^\p{L}\p{N}]+/u,'').charAt(0)||'•'));}
+      var sub='';try{sub=localStorage.getItem('gym_pro_app_subtitle')||'';}catch(e){}
+      bc.classList.toggle('has-sub',!!sub);
+    }catch(e){}
+  }
+  ['applyStoredLogo','applyBrandTextSettings'].forEach(function(k){
+    var f=window[k]; if(typeof f==='function')window[k]=function(){var r=f.apply(this,arguments);sync();return r;};
+  });
+  setInterval(sync,2000);document.addEventListener('DOMContentLoaded',sync);window.addEventListener('load',sync);sync();
+})();
+</script>
 </body>
 </html>
