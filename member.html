@@ -113,6 +113,18 @@ h1{font-size:1.15rem}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 @media(prefers-reduced-motion:reduce){.avatar.pulse{animation:none}.nudge{transition:opacity .2s}}
 </style>
+<style>
+.qrq{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.qrq .qt{width:150px;flex:none;border:2px solid var(--line);border-radius:18px;padding:6px;background:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.qrq .qt svg{display:block;width:100%;height:auto}
+.qrq .qx{flex:1;min-width:210px}
+.qfc{display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700;font-size:.92rem;cursor:pointer}
+.qfc input{width:auto;margin:0;display:inline-block;flex:none}
+.qrfs{position:fixed;inset:0;z-index:100000;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.qrbig{width:min(90vw,64vh);max-width:560px}.qrbig svg{display:block;width:100%;height:auto}
+.qrn{font:900 1.25rem 'Cairo',sans-serif;color:#1b2240;text-align:center}.qrn small{color:#6a7597;font-weight:700}
+.qrh{font:700 .9rem 'Cairo',sans-serif;color:#6a7597}
+</style>
 </head>
 <body>
 <script>
@@ -190,7 +202,7 @@ window.gmQR = function (text) {
   var URL_ = 'https://wvekeoemprxbxjklbaig.supabase.co', KEY = 'sb_publishable_irn-GODoQ0YCFNOku8nZlQ_RQY9Z1xV';
   var slug = new URLSearchParams(location.search).get('g') || '', TK = 'mp_tok_' + slug;
   var app = document.getElementById('app'), gymName = '', gymLogo = '', token = null, me = null, cardCache = { sig: '', url: '' }, cardFlip = false;
-  var _mem = {};
+  var _mem = {}, offline = false, snapAt = 0, qrShown = false;
   function sget(k) { try { var v = localStorage.getItem(k); return v == null ? (_mem[k] || null) : v; } catch (e) { return _mem[k] || null; } }
   function sset(k, v) { _mem[k] = v; try { localStorage.setItem(k, v); } catch (e) {} }
   function sdel(k) { delete _mem[k]; try { localStorage.removeItem(k); } catch (e) {} }
@@ -236,12 +248,12 @@ window.gmQR = function (text) {
       setTimeout(close, 9000);
     }, 700);
   }
-  function rpc(n, a, tries) {
+  function rpc(n, a, tries, ms) {
     tries = tries == null ? ((n === 'portal_gym' || n === 'portal_me') ? 2 : 1) : tries;
-    var ac = window.AbortController ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, 10000);
+    var ac = window.AbortController ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, ms || 10000);
     return fetch(URL_ + '/rest/v1/rpc/' + n, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(a || {}), signal: ac ? ac.signal : undefined })
       .then(function (r) { clearTimeout(to); return r.json(); })
-      .catch(function () { clearTimeout(to); return tries > 1 ? rpc(n, a, tries - 1) : { error: 'net' }; });
+      .catch(function () { clearTimeout(to); return tries > 1 ? rpc(n, a, tries - 1, ms) : { error: 'net' }; });
   }
   function retryView(msg) { app.className = 'wrap narrow'; app.innerHTML = '<h1>' + esc(msg || 'النت بطيء شوية') + '</h1><p class="sub">مقدرناش نوصل للجيم. اتأكد من الإنترنت وجرّب تاني.</p><button class="btn" id="rt">🔄 إعادة المحاولة</button>'; document.getElementById('rt').onclick = function () { location.reload(); }; }
   function err(r) { return ERR[r.error] || (r.error === 'net' ? 'مفيش اتصال بالإنترنت.' : 'حصلت مشكلة، حاول تاني.'); }
@@ -298,9 +310,9 @@ window.gmQR = function (text) {
   function load() {
     if (savingPhoto) return;
     rpc('portal_me', { p_token: token }).then(function (r) {
-      if (r && r.error === 'net') { if (!me) retryView(); return; }
-      if (r.error) { var kicked = r.error === 'unauthorized' && me; sdel(TK); token = null; me = null; authView(kicked ? 'تم تسجيل الدخول بنفس الحساب من جهاز تاني، فاتسجّل خروجك من هنا.' : ''); return; }
-      me = r;
+      if (r && r.error === 'net') { if (!me) { var sn = readSnap(); if (sn && token) goOffline(sn); else retryView(); } else if (!offline) { offline = true; if (!document.querySelector('.ov')) home(); } return; }
+      if (r.error) { var kicked = r.error === 'unauthorized' && me; sdel(TK); sdel('mp_snap_' + slug); token = null; me = null; authView(kicked ? 'تم تسجيل الدخول بنفس الحساب من جهاز تاني، فاتسجّل خروجك من هنا.' : ''); return; }
+      me = r; offline = false; saveSnap(r);
       try { window.__mpInfo = window.__mpInfo || {}; window.__mpInfo.name = String((r.member && r.member.name) || '').trim(); window.__mpInfo.photo = r.photo || ''; window.dispatchEvent(new Event('mpinfo')); } catch (e) {}
       home();
     }).catch(function () { if (!me) retryView(); });
@@ -467,6 +479,75 @@ window.gmQR = function (text) {
     var cut = today() - 29 * 864e5, in30 = days.filter(function (d) { var x = pd(d); return x && x.getTime() >= cut; }).length, last = v.last ? fmt(v.last, 'ar') : '—';
     return '<div class="box s12"><h2>حضورك 🏋️</h2><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div class="stat"><b class="num">' + (+v.month || 0) + '</b><small>مرة الشهر ده</small></div><div class="stat"><b class="num">' + in30 + '</b><small>آخر 30 يوم</small></div><div class="stat"><b class="num" style="font-size:1.05rem;line-height:1.9">' + last + '</b><small>آخر زيارة</small></div></div><div class="pbar">' + cells + '</div><div class="plbl"><span>' + ((+v.total || 0) ? 'أيام حضورك الشهر ده (الدهبي = حضرت) · إجمالي زياراتك ' + (+v.total) : 'هيظهر حضورك هنا أول ما تمسح كارنيهك عند الكابتن') + '</span></div></div>';
   }
+  // ---------- أوفلاين: نسخة محفوظة من بيانات المشترك + عرض الكيو ار لوحده ----------
+  function readSnap() { try { var o = JSON.parse(localStorage.getItem('mp_snap_' + slug)); return o && o.me && o.me.member ? o : null; } catch (e) { return null; } }
+  function writeSnap(o) {
+    try { localStorage.setItem('mp_snap_' + slug, JSON.stringify(o)); }
+    catch (e) { try { var c = JSON.parse(JSON.stringify(o)); c.me.photo = ''; c.gym.logo = ''; localStorage.setItem('mp_snap_' + slug, JSON.stringify(c)); } catch (e2) {} }
+  }
+  function inl(u) {   // صورة من رابط → data URL علشان تظهر أوفلاين (لو المتصفح سمح)
+    if (!u || u.indexOf('http') !== 0 || !window.fetch || !window.FileReader) return Promise.resolve(u);
+    return fetch(u, { mode: 'cors' }).then(function (r) { return r.ok ? r.blob() : Promise.reject(); }).then(function (b) {
+      if (b.size > 450000) return u;
+      return new Promise(function (res) { var f = new FileReader(); f.onload = function () { res(String(f.result)); }; f.onerror = function () { res(u); }; f.readAsDataURL(b); });
+    }).catch(function () { return u; });
+  }
+  function saveSnap(r) {
+    var o = { v: 1, at: Date.now(), gym: { name: gymName, logo: gymLogo }, me: r }; writeSnap(o);
+    if ((gymLogo && gymLogo.indexOf('http') === 0) || (r.photo && String(r.photo).indexOf('http') === 0)) {
+      Promise.all([inl(gymLogo), inl(r.photo)]).then(function (a) {
+        var c = readSnap(); if (!c || c.at !== o.at) return; c.gym.logo = a[0] || ''; if (c.me) c.me.photo = a[1] || ''; writeSnap(c);
+      });
+    }
+  }
+  function goOffline(sn) {
+    gymName = sn.gym.name || ''; gymLogo = sn.gym.logo || ''; token = sget(TK); me = sn.me; offline = true; snapAt = sn.at || 0;
+    window.__mpInfo = { gym: gymName, logo: gymLogo, name: String((me.member && me.member.name) || '').trim(), photo: me.photo || '' }; try { window.dispatchEvent(new Event('mpinfo')); } catch (e) {}
+    home();
+  }
+  function agoTxt(ts) {
+    if (!ts) return 'قبل كده'; var mn = Math.max(0, Math.round((Date.now() - ts) / 60000));
+    if (mn < 2) return 'من شوية'; if (mn < 60) return 'من ' + mn + ' دقيقة'; var h = Math.round(mn / 60); if (h < 24) return 'من ' + h + ' ساعة'; return 'من ' + Math.round(h / 24) + ' يوم';
+  }
+  function qf() { try { return localStorage.getItem('mp_qf_' + slug) === '1'; } catch (e) { return false; } }
+  function qrSvg(id, quiet) {
+    var m = window.gmQR && gmQR(String(id)); if (!m) return ''; var n = m.length, q = quiet == null ? 4 : quiet, d = '', x, y, t = n + 2 * q;
+    for (y = 0; y < n; y++) for (x = 0; x < n; x++) if (m[y][x]) d += 'M' + (x + q) + ' ' + (y + q) + 'h1v1h-1z';
+    return '<svg viewBox="0 0 ' + t + ' ' + t + '" shape-rendering="crispEdges" role="img" aria-label="كيو آر الدخول"><rect width="' + t + '" height="' + t + '" fill="#fff"/><path d="' + d + '" fill="#000"/></svg>';
+  }
+  function qrPng() {   // QR بس، من غير أي كتابة
+    var m = window.gmQR && gmQR(String(me.member.id)); if (!m) return null; var n = m.length, q = 4, px = Math.max(4, Math.floor(900 / (n + 2 * q))), S = (n + 2 * q) * px, cv = document.createElement('canvas'), c, x, y;
+    cv.width = cv.height = S; c = cv.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, S, S); c.fillStyle = '#000';
+    for (y = 0; y < n; y++) for (x = 0; x < n; x++) if (m[y][x]) c.fillRect((x + q) * px, (y + q) * px, px, px);
+    return cv.toDataURL('image/png');
+  }
+  function saveQR() {
+    var u = qrPng(); if (!u) return; var a = document.createElement('a'); a.href = u; a.download = 'qr-' + me.member.id + '.png'; document.body.appendChild(a); a.click(); a.remove();
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) { var w = window.open(); if (w) w.document.write('<img src="' + u + '" style="width:100%"><p style="text-align:center;font:16px sans-serif">اضغط مطوّلاً على الصورة واختار "حفظ"</p>'); }
+  }
+  function shareQR() {
+    var u = qrPng(); if (!u) return;
+    fetch(u).then(function (r) { return r.blob(); }).then(function (b) {
+      var f = new File([b], 'qr-' + me.member.id + '.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) return navigator.share({ files: [f], title: gymName, text: 'كيو ار دخولي في ' + gymName });
+      saveQR(); toast('اتحفظ كصورة — ابعتها من المعرض على واتساب');
+    }).catch(function (e) { if (e && e.name !== 'AbortError') saveQR(); });
+  }
+  var qrWL = null;
+  function closeQR() { var o = document.getElementById('qrfs'); if (o) o.remove(); try { if (qrWL) { qrWL.release(); qrWL = null; } } catch (e) {} }
+  function openQR() {
+    if (!me || document.getElementById('qrfs')) return; var m = me.member, o = document.createElement('div'); o.id = 'qrfs'; o.className = 'qrfs';
+    o.innerHTML = '<div class="qrbig">' + qrSvg(m.id, 2) + '</div><div class="qrn">' + esc(m.name) + ' <small>#' + esc(m.id) + '</small></div><div class="qrh">اضغط في أي مكان للرجوع</div>';
+    o.onclick = closeQR; document.body.appendChild(o);
+    try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { qrWL = l; }).catch(function () {}); } catch (e) {}
+  }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeQR(); });
+  function qrBox(m) {
+    return '<div class="box qrq" id="qrq"><button class="qt" id="qrt" aria-label="كبّر الكيو آر">' + qrSvg(m.id, 2) + '</button><div class="qx"><h2 style="margin:0 0 4px">🔳 كيو ار الدخول</h2><p class="sub" style="margin:0 0 10px">اضغط عليه يتكبّر على الشاشة كلها وقرّب موبايلك من السكانر. شغال من غير إنترنت.</p>' +
+      '<div class="tools"><button class="btn" id="qsv">📥 حفظ كصورة</button><button class="btn ghost" id="qsh">📤 ابعته على واتساب</button></div>' +
+      '<label class="qfc"><input type="checkbox" id="qfc"' + (qf() ? ' checked' : '') + '> افتح البرنامج على الكيو ار مباشرة</label></div></div>';
+  }
+
   function home() {
     app.className = 'wrap';
     var m = me.member, st = status(m, 'ar'), s = pd(m.start), e = pd(m.end);
@@ -487,9 +568,9 @@ window.gmQR = function (text) {
     var av = me.photo ? 'style="background-image:url(' + me.photo + ')"' : '';
     app.innerHTML =
       '<div class="bar"><div class="lg" ' + (gymLogo ? 'style="background-image:url(' + esc(gymLogo) + ')"' : '') + '>' + (gymLogo ? '' : esc((gymName || 'G').charAt(0))) + '</div><b>' + esc(gymName) + (inf.subtitle ? '<small style="display:block;color:var(--mut);font-weight:600;font-size:.78rem">' + esc(inf.subtitle) + '</small>' : '') + '</b><button class="ib" id="rf">تحديث</button><button class="ib" id="lo">خروج</button></div>' +
-      '<div class="hero"><button class="avatar" id="chg" ' + av + ' aria-label="تغيير الصورة">' + (me.photo ? '' : esc((m.name || '?').charAt(0))) + '<i>📷</i></button><div><div class="hi">' + (hr < 12 ? 'صباح الخير' : hr < 18 ? 'أهلاً بيك' : 'مساء الخير') + ' يا ' + esc(first) + ' 👋</div><div class="nm">' + esc(m.name) + '</div><div class="mot">' + mot + '</div><div class="chips"><span class="chip ' + st.k + '">' + esc(st.t) + '</span><span class="chip num">كود #' + esc(m.id) + '</span>' + (m.plan ? '<span class="chip">' + esc(m.plan) + '</span>' : '') + '</div></div></div>' +
+      (offline ? '<div class="alert warn"><span>📴 شغال بدون إنترنت — الكيو ار شغال عادي. البيانات من آخر تحديث ' + agoTxt(snapAt) + '.</span></div>' : '') + '<div class="hero"><button class="avatar" id="chg" ' + av + ' aria-label="تغيير الصورة">' + (me.photo ? '' : esc((m.name || '?').charAt(0))) + '<i>📷</i></button><div><div class="hi">' + (hr < 12 ? 'صباح الخير' : hr < 18 ? 'أهلاً بيك' : 'مساء الخير') + ' يا ' + esc(first) + ' 👋</div><div class="nm">' + esc(m.name) + '</div><div class="mot">' + mot + '</div><div class="chips"><span class="chip ' + st.k + '">' + esc(st.t) + '</span><span class="chip num">كود #' + esc(m.id) + '</span>' + (m.plan ? '<span class="chip">' + esc(m.plan) + '</span>' : '') + '</div></div></div>' +
       (inf.notice ? '<div class="alert warn"><span>📢 ' + esc(inf.notice) + '</span></div>' : '') + (st.k !== 'ok' && left != null ? '<div class="alert ' + st.k + '"><span>' + (left < 0 ? 'اشتراكك خلص يوم ' + endTxt + '. جدّد دلوقتي وكمّل تمرينك' + priceTxt + '.' : (left === 0 ? 'النهارده آخر يوم في اشتراكك' : 'اشتراكك بينتهي يوم ' + endTxt + ' (باقي ' + left + ' يوم)') + '. جدّد قبل ما يفوتك يوم' + priceTxt + '.') + '</span><button class="btn" data-k="renewal">جدّد اشتراكك</button></div>' : '') +
-      '<div class="grid">' +
+      qrBox(m) + '<div class="grid">' +
       '<div class="box s7"><div class="flip' + (cardFlip ? ' on' : '') + '" id="flip" role="button" tabindex="0" aria-label="اقلب الكارنيه"><div class="fi"><img class="cardimg face" id="cardImg" alt="وش الكارنيه"' + (cardCache.url ? ' src="' + cardCache.url + '"' : '') + '><img class="cardimg face bk" id="cardBack" alt="ضهر الكارنيه وعليه الكيو آر"' + (backCache.url ? ' src="' + backCache.url + '"' : '') + '></div></div><button class="link" id="flb" style="display:block;margin:12px auto 0">' + (cardFlip ? '↩️ ارجع لوش الكارنيه' : '🔄 اقلب الكارنيه عشان تظهر الكيو آر') + '</button><div class="tools"><button class="btn" id="dl">⬇️ تحميل الكارنيه</button><button class="btn ghost" id="prt">🖨️ طباعة الكارنيه</button><button class="btn ghost" id="chg2">📷 غيّر صورتي</button><button class="btn ghost" id="shr">📤 شارك الكارنيه</button></div><div style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap"><span class="sub" style="margin:0">لغة الكارنيه</span><span class="seg"><button data-l="en" class="' + (cardLang === 'en' ? 'on' : '') + '">English</button><button data-l="ar" class="' + (cardLang === 'ar' ? 'on' : '') + '">عربي</button></span></div><div style="text-align:center">' + (cardLang === 'en' ? '<button class="link" id="en">✏️ تعديل الاسم اللي على الكارنيه (' + esc(enName(m)) + ')</button>' : '') + '</div></div>' +
       '<div class="box s5"><h2>اشتراكك الحالي</h2><div class="ringbox"><div class="ring"><svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="52" fill="none" stroke="#e8edf9" stroke-width="12"/><circle cx="66" cy="66" r="52" fill="none" stroke="' + col + '" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - frac)).toFixed(1) + '"/></svg><div><b class="num" style="color:' + col + '">' + (left == null ? '—' : Math.max(0, left)) + '</b><small>يوم متبقي</small></div></div><div style="flex:1">' + kv([['من', fmt(m.start, 'ar')], ['إلى', fmt(m.end, 'ar')], total ? ['مدة الاشتراك', total + ' يوم'] : null, used != null ? ['اللي عدّى', used + ' يوم'] : null]) + '</div></div></div>' +
       (lim ? '<div class="box s6"><h2>حصصك</h2><div class="num" style="font-size:2rem;font-weight:800;color:var(--goldt)">' + done + ' <small style="font-size:1rem;color:var(--mut)">/ ' + lim + ' حصة</small></div><div class="bartrack"><i style="width:' + Math.min(100, done / lim * 100) + '%"></i></div><div class="sub" style="margin:0">' + (expired ? 'الاشتراك انتهى، وباقي الحصص اتلغى. جدّد عشان تكمّل.' : done >= lim ? 'خلصت كل حصص الباقة.' : 'فاضل لك <b class="num">' + (lim - done) + '</b> حصة لحد ' + fmt(m.end, 'ar') + '.') + '</div></div>' : '') +
@@ -499,8 +580,8 @@ window.gmQR = function (text) {
       (pays.length ? '<div class="box s6"><h2>سجل مدفوعاتك</h2>' + pays.map(function (p) { return '<div class="hist"><span>' + (PAY[p.t] || 'دفعة') + '<small class="num">' + esc(p.d || '') + '</small></span><b class="num">' + esc(p.a) + ' ج</b></div>'; }).join('') + '</div>' : '') + '<div class="box s6"><h2>آخر طلباتك</h2>' + (me.requests.length ? me.requests.map(function (q) { return '<div class="hist"><span>' + (KIND[q.kind] || q.kind) + '<small>' + fmt(q.at, 'ar') + '</small></span><span class="pill ' + q.status + '">' + (ST[q.status] || q.status) + '</span></div>'; }).join('') : '<p class="sub" style="margin:0">لسه ما قدمتش أي طلب. أي تجديد أو تجميد أو شكوى هتلاقيها هنا.</p>') + '</div>' +
       ((inf.promo || inf.wa || inf.fb || inf.hours || ph || waA) ? '<div class="box s6 ct"><h2>من الجيم</h2>' + (inf.hours ? '<p class="sub" style="color:var(--txt)">🕒 ' + esc(inf.hours) + '</p>' : '') + (ph ? '<p class="sub" style="color:var(--txt)">📞 <a href="tel:' + esc(ph) + '" dir="ltr" style="color:inherit;font-weight:800">' + esc(ph) + '</a></p>' : '') + (waA ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(waA) + '">💬 كلّم الكابتن على واتساب</a>' : '') + '' + (inf.promo ? '<div class="rnw" style="margin:12px 0">🎁 ' + esc(inf.promo) + '</div>' : '') + '<div class="tools" style="margin-top:0">' + (inf.wa ? '<a class="btn" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="' + esc(inf.wa) + '">💬 جروب الواتساب</a>' : '') + (inf.fb ? '<a class="btn ghost" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="' + esc(inf.fb) + '">صفحة الفيسبوك</a>' : '') + '</div></div>' : '') + '<div class="box s6"><h2>إنجازاتك</h2>' + (mdays != null ? '<div class="cnt">🗓️ عضو معانا من ' + mdays + ' يوم</div>' : '') + '<div class="bdg">' + BD.map(function (b) { return '<div class="bd' + (b[2] ? '' : ' off') + '"><span>' + b[0] + '</span>' + b[1] + '<small>' + b[3] + '</small></div>'; }).join('') + '</div></div><div class="box s6"><h2>نصيحة النهارده</h2><div class="tip2"><em>💡</em><div>' + tip + '<small>' + new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' }) + '</small></div></div></div>' +
       '<p class="sub s12" style="text-align:center;margin:4px 0 0">🔒 رابط بوابتك خاص بيك وبيفتح كارنيهك وبياناتك، متشاركوش مع حد.</p></div>';
-    document.getElementById('lo').onclick = function () { sdel(TK); token = null; authView(); };
-    document.getElementById('rf').onclick = load; document.getElementById('chg').onclick = document.getElementById('chg2').onclick = pickPhoto; document.getElementById('dl').onclick = downloadCard; document.getElementById('prt').onclick = function () { Promise.all([drawCard(), drawCard('b')]).then(printCardImage); }; document.getElementById('shr').onclick = shareCard;
+    document.getElementById('lo').onclick = function () { sdel(TK); sdel('mp_snap_' + slug); token = null; authView(); };
+    document.getElementById('rf').onclick = function () { if (offline && !navigator.onLine) toast('مفيش إنترنت دلوقتي'); load(); }; document.getElementById('chg').onclick = document.getElementById('chg2').onclick = pickPhoto; document.getElementById('dl').onclick = downloadCard; document.getElementById('prt').onclick = function () { Promise.all([drawCard(), drawCard('b')]).then(printCardImage); }; document.getElementById('shr').onclick = shareCard;
     [].forEach.call(document.querySelectorAll('[data-l]'), function (b) { b.onclick = function () { cardLang = b.getAttribute('data-l'); try { localStorage.setItem('mp_cl', cardLang); } catch (e) {} home(); }; });
     if (document.getElementById('en')) document.getElementById('en').onclick = function () { var v = prompt('اكتب اسمك بالإنجليزي زي ما عايزه على الكارنيه:', enName(m)); if (v && v.trim()) { try { localStorage.setItem('mp_en_' + slug + '_' + m.id, v.trim().slice(0, 40)); } catch (e) {} home(); } };
     [].forEach.call(document.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { sheet(b.getAttribute('data-k')); }; });
@@ -516,6 +597,9 @@ window.gmQR = function (text) {
       fe.onclick = fb.onclick = flip;
       fe.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } };
     })();
+    document.getElementById('qrt').onclick = openQR; document.getElementById('qsv').onclick = saveQR; document.getElementById('qsh').onclick = shareQR;
+    document.getElementById('qfc').onchange = function () { try { localStorage.setItem('mp_qf_' + slug, this.checked ? '1' : '0'); } catch (e) {} toast(this.checked ? 'تمام — هيفتح على الكيو ار كل مرة' : 'اتلغى فتح الكيو ار تلقائي'); };
+    if (!qrShown && qf()) { qrShown = true; setTimeout(openQR, 80); } else qrShown = true;
     nudge();
   }
 
@@ -587,11 +671,14 @@ window.gmQR = function (text) {
   }
 
   setInterval(function () { if (token && me && !document.hidden && !document.querySelector('.ov')) load(); }, 20000);
+  window.addEventListener('online', function () { if (token && me && !document.querySelector('.ov')) load(); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && token && me && !document.querySelector('.ov')) load(); });
   setTimeout(function () { if (app.querySelector('.spin')) retryView('التحميل واخد وقت'); }, 25000);
   if (!slug) { app.innerHTML = '<h1>الرابط ناقص</h1><p class="sub">اطلب من الجيم رابط البوابة الصحيح.</p>'; return; }
-  rpc('portal_gym', { p_slug: slug }).then(function (g) {
-    if (g.error === 'net') { retryView(); return; }
+  var snap0 = readSnap(), tk0 = sget(TK);
+  if (snap0 && tk0 && !navigator.onLine) { goOffline(snap0); return; }
+  rpc('portal_gym', { p_slug: slug }, snap0 ? 1 : undefined, snap0 ? 4500 : undefined).then(function (g) {
+    if (g.error === 'net') { if (snap0 && tk0) { goOffline(snap0); return; } retryView(); return; }
     if (g.error) { app.innerHTML = '<h1>الجيم غير متاح</h1><p class="sub">' + esc(err(g)) + '</p>'; return; }
     gymName = g.name; gymLogo = g.logo || ''; token = sget(TK);
     window.__mpInfo = { gym: gymName, logo: gymLogo, name: '' }; try { window.dispatchEvent(new Event('mpinfo')); } catch (e) {}
@@ -606,7 +693,7 @@ window.gmQR = function (text) {
       return;
     }
     if (token) load(); else authView();
-  }).catch(function () { retryView(); });
+  }).catch(function () { if (snap0 && tk0) goOffline(snap0); else retryView(); });
 })();
 </script>
 <script>
@@ -869,6 +956,23 @@ window.gmQR = function (text) {
   setInterval(build, 2000);
 })();
 
+</script>
+<script>
+/* ===== أوفلاين: تسجيل السيرفس ووركر + حفظ الصفحة والخطوط ===== */
+(function () {
+  if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; }).then(function () {
+      if (!window.caches) return;
+      var key = new Request(location.origin + location.pathname);
+      caches.open('gm-member-v1').then(function (c) { return fetch(location.pathname + location.search, { cache: 'reload' }).then(function (r) { if (r && r.ok) return c.put(key, r); }); }).catch(function () {});
+      var l = document.querySelector('link[href*="fonts.googleapis.com"][rel="stylesheet"]'); if (!l) return;   // نسخّن الخطوط عشان تظهر أوفلاين
+      fetch(l.href).then(function (r) { return r.text(); }).then(function (css) {
+        (css.match(/https:\/\/fonts\.gstatic\.com[^)'"\s]+/g) || []).slice(0, 24).forEach(function (u) { fetch(u).catch(function () {}); });
+      }).catch(function () {});
+    }).catch(function () {});
+  });
+})();
 </script>
 </body>
 </html>
