@@ -2298,10 +2298,10 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         </div>
 
         <!-- ===== سجل النشاطات (مراقبة شاملة للكباتن) ===== -->
-        <!-- ===== حضور الكباتن: أول دخول لكل كابتن/كابتنة كل يوم (اليوم بيبدأ الساعة 4 الفجر بتوقيت القاهرة) ===== -->
+        <!-- ===== حضور الكباتن: أول دخول لكل كابتن/كابتنة كل يوم (اليوم بيبدأ الساعة 4 الفجر) ===== -->
         <div id="adminViewAttendance" class="admin-view-panel">
             <h3 class="admin-section-title"><span class="ico" data-i="fa-clock"></span> حضور الكباتن</h3>
-            <p class="hint-note">بيتسجل تلقائيًا أول دخول لكل كابتن وكابتنة كل يوم بكلمة السر، بتوقيت القاهرة. اليوم الجديد بيبدأ الساعة 4 الفجر.</p>
+            <p class="hint-note">بيتسجل تلقائيًا أول دخول لكل كابتن وكابتنة كل يوم بكلمة السر. اليوم الجديد بيبدأ الساعة 4 الفجر.</p>
             <div id="attTodayBox" class="att-today"></div>
             <div class="att-filters">
                 <label>الشهر: <input type="month" id="attMonth" class="form-control" style="display:inline-block;width:auto" onchange="renderAttendancePanel()"></label>
@@ -2736,7 +2736,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 'gym_pro_wa_group_men', 'gym_pro_wa_group_women', 'gym_pro_fb_link', 'gym_pro_promo_message', 'gym_pro_gym_hours', 'gym_pro_gym_phone', 'gym_pro_wa_admin',
                 'gym_pro_active_theme',
                 'gym_pro_logo_image', 'gym_pro_logo_shape', 'gym_pro_logo_size',
-                'gym_pro_customer_broadcast_msg'
+                'gym_pro_customer_broadcast_msg', 'gym_pro_attendance_v1'
             ];
 
             let isApplyingRemote = false;
@@ -2845,9 +2845,11 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             function queuePush(key, rawValue) {
                 pendingQueue[key] = rawValue;
                 clearTimeout(flushTimer);
-                flushTimer = setTimeout(flushPush, 900);
+                flushTimer = setTimeout(flushPush, Math.max(900, (window.__gmSyncHoldUntil || 0) - Date.now() + 80));
             }
             function flushPush() {
+                const holdLeft = (window.__gmSyncHoldUntil || 0) - Date.now();
+                if (holdLeft > 0) { clearTimeout(flushTimer); flushTimer = setTimeout(flushPush, holdLeft + 80); return; }
                 const keys = Object.keys(pendingQueue);
                 if (keys.length === 0) return;
                 setSyncStatus('syncing');
@@ -3066,6 +3068,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                  'renderActivityLogPanel', 'renderSalesTable', 'renderWorkspaceSalesTable',
                  'renderAdminFinancialVault', 'renderDailySessionsView', 'renderSubscriptionSelectOptions',
                  'renderExpenseCategoriesEditor', 'renderExpensesTable', 'renderSubsPlanEditorIfIdle'].forEach(safeCall);
+                try { if (typeof gmRefreshSuggestedId === 'function') gmRefreshSuggestedId(); } catch (e) {}
             }
 
             // ============================================================================
@@ -3210,7 +3213,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 try { const v = JSON.parse(raw); return Array.isArray(v) ? v : []; } catch (e) { return []; }
             }
             function safeParseTombstones(raw) {
-                const base = { memberIds: [], memberSigs: [], sessionIds: [], expenseIds: [], memberDeleted: {}, memberRevived: {} };
+                const base = { memberIds: [], memberSigs: [], sessionIds: [], expenseIds: [], financialKeys: [], saleKeys: [], memberDeleted: {}, memberRevived: {} };
                 if (raw === null || raw === undefined) return base;
                 function asMap(x) { return (x && typeof x === 'object' && !Array.isArray(x)) ? x : {}; }
                 try {
@@ -3220,6 +3223,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                         memberSigs: Array.isArray(v && v.memberSigs) ? v.memberSigs : [],
                         sessionIds: Array.isArray(v && v.sessionIds) ? v.sessionIds : [],
                         expenseIds: Array.isArray(v && v.expenseIds) ? v.expenseIds : [],
+                        financialKeys: Array.isArray(v && v.financialKeys) ? v.financialKeys : [],
+                        saleKeys: Array.isArray(v && v.saleKeys) ? v.saleKeys : [],
                         // وقت آخر حذف / آخر "إحياء" لكل كود مشترك — الأحدث بينهم هو اللي يحسم (حذف ولا موجود)
                         memberDeleted: asMap(v && v.memberDeleted),
                         memberRevived: asMap(v && v.memberRevived)
@@ -3247,6 +3252,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     memberSigs: unionArr(localT.memberSigs, cloudT.memberSigs),
                     sessionIds: unionArr(localT.sessionIds, cloudT.sessionIds),
                     expenseIds: unionArr(localT.expenseIds, cloudT.expenseIds),
+                    financialKeys: unionArr(localT.financialKeys, cloudT.financialKeys),
+                    saleKeys: unionArr(localT.saleKeys, cloudT.saleKeys),
                     memberDeleted: maxMap(localT.memberDeleted, cloudT.memberDeleted),
                     memberRevived: maxMap(localT.memberRevived, cloudT.memberRevived)
                 };
@@ -3285,11 +3292,89 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 'gym_pro_financials_v3': { identity: financialIdentity, tomb: 'financial' },
                 'gym_pro_daily_sessions_v1': { identity: sessionIdentity, tomb: 'session' },
                 'gym_pro_activity_log_v1': { identity: function (a) { return 'id:' + (a && a.id); }, tomb: null, sortDesc: true, cap: 400 },
-                'gym_pro_sales_v1': { identity: saleIdentity, tomb: null },
+                'gym_pro_sales_v1': { identity: saleIdentity, tomb: 'sale' },
+                'gym_pro_attendance_v1': { identity: function (r) { return 'att:' + (r && r.day) + '|' + (r && r.captainId); }, tomb: null, earliestWins: true },
                 'gym_pro_expenses_v1': { identity: expenseIdentity, tomb: 'expense' },
                 // ملاحظة: باقات الاشتراك ومنتجات البيع مش هنا عن قصد — دي قوائم إعدادات بتتعدّل وتتحذف،
                 // فلازم تتزامن بالأحدث يكسب (Last-Write-Wins) مش بالدمج، وإلا النسخ القديمة بترجع وتتكرر.
             };
+
+
+            // ===== دمج المشتركين: لو شخصين مختلفين أخدوا نفس الكود (من جهازين) منمسحش حد — بنفصلهم =====
+            function gmNorm(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' '); }
+            function gmSamePersonRecord(a, b) {
+                var ca = Number(a.createdAt) || 0, cb = Number(b.createdAt) || 0;
+                if (ca && cb) return ca === cb;               // نفس التسجيل (التعديل مبيغيّرش وقت التسجيل)
+                var pa = String(a.phone || '').trim(), pb = String(b.phone || '').trim();
+                return gmNorm(a.name) === gmNorm(b.name) || (!!pa && pa === pb);
+            }
+            function gmShowIdConflictBanner() {
+                var list = window.__gmIdConflicts || []; if (!list.length) return;
+                window.__gmIdConflicts = [];
+                var d = document.getElementById('gmIdConflictBanner');
+                if (!d) {
+                    d = document.createElement('div'); d.id = 'gmIdConflictBanner';
+                    d.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483000;max-width:min(560px,92vw);background:#b45309;color:#fff;padding:14px 18px;border-radius:14px;box-shadow:0 12px 34px rgba(0,0,0,.35);font:700 .95rem/1.8 Cairo,sans-serif;direction:rtl;text-align:right';
+                    document.body.appendChild(d);
+                }
+                d.textContent = '';
+                var h = document.createElement('div'); h.style.cssText = 'font-weight:900;margin-bottom:4px';
+                h.textContent = '⚠️ شخصين اتسجلوا بنفس الكود من جهازين. اتفصلوا ومحدش اتمسح:'; d.appendChild(h);
+                var seen = {};
+                list.forEach(function (c) {
+                    var k = c.name + '|' + c.from + '|' + c.to; if (seen[k]) return; seen[k] = 1;
+                    var r = document.createElement('div'); r.textContent = '• ' + (c.name || '؟') + ': الكود اتغير من ' + c.from + ' إلى ' + c.to; d.appendChild(r);
+                });
+                var b = document.createElement('button'); b.textContent = 'تمام';
+                b.style.cssText = 'margin-top:8px;border:0;border-radius:10px;padding:6px 18px;font:900 .9rem Cairo,sans-serif;cursor:pointer;background:#fff;color:#b45309';
+                b.onclick = function () { d.remove(); }; d.appendChild(b);
+            }
+            function mergeMemberRecords(localArr, cloudArr, isTombstoned, isBlocked) {
+                var items = [];
+                (localArr || []).forEach(function (it) { if (it && typeof it === 'object') items.push(it); });
+                (cloudArr || []).forEach(function (it) { if (it && typeof it === 'object' && !isTombstoned(it)) items.push(it); });
+                // نسخ قديمة لمشترك اتنقل كوده قبل كده — متتكررش
+                var moved = {};
+                items.forEach(function (it) { if (it.idMovedFrom != null) moved[String(it.idMovedFrom) + '|' + (Number(it.createdAt) || 0) + '|' + gmNorm(it.name)] = 1; });
+                var groups = new Map(), order = [];
+                items.forEach(function (it) {
+                    var k;
+                    if (it.id === undefined || it.id === null) k = 'sig:' + gmNorm(it.name) + '|' + String(it.phone || '').trim();
+                    else {
+                        if (it.idMovedFrom == null && moved[String(it.id) + '|' + (Number(it.createdAt) || 0) + '|' + gmNorm(it.name)]) return;
+                        k = 'id:' + String(it.id);
+                    }
+                    var g = groups.get(k); if (!g) { g = []; groups.set(k, g); order.push(k); }
+                    for (var i = 0; i < g.length; i++) if (gmSamePersonRecord(g[i], it)) return; // نفس الشخص: النسخة المحلية تكسب زي الأول
+                    g.push(it);
+                });
+                var res = [], reassign = [], maxId = 0;
+                order.forEach(function (k) { groups.get(k).forEach(function (it) { var n = Number(it.id); if (n > maxId) maxId = n; }); });
+                order.forEach(function (k) {
+                    var g = groups.get(k);
+                    if (g.length === 1) { res.push(g[0]); return; }
+                    // الأقدم تسجيلاً يحتفظ بالكود، والباقي ياخد كود جديد (ترتيب ثابت عشان كل الأجهزة توصل لنفس النتيجة)
+                    var s = g.slice().sort(function (a, b) {
+                        var d = (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0); if (d) return d;
+                        var x = gmNorm(a.name) + '|' + String(a.phone || ''), y = gmNorm(b.name) + '|' + String(b.phone || '');
+                        return x < y ? -1 : x > y ? 1 : 0;
+                    });
+                    res.push(s[0]);
+                    for (var i = 1; i < s.length; i++) reassign.push(s[i]);
+                });
+                if (reassign.length) {
+                    var used = new Set(res.map(function (m) { return String(m.id); }));
+                    var conflicts = [];
+                    reassign.forEach(function (it) {
+                        var n = maxId + 1; while (used.has(String(n)) || isBlocked(n)) n++;
+                        maxId = n; used.add(String(n));
+                        conflicts.push({ name: it.name, from: it.id, to: n });
+                        res.push(Object.assign({}, it, { id: n, idMovedFrom: it.id }));
+                    });
+                    try { window.__gmIdConflicts = (window.__gmIdConflicts || []).concat(conflicts); setTimeout(gmShowIdConflictBanner, 700); } catch (e) {}
+                }
+                return res;
+            }
 
             // دمج مصفوفتين (محلية + سحابة) بدون فقد أي عنصر من الاتنين، مع احترام شواهد الحذف الفعلي فقط
             function mergeRecordArray(key, localArr, cloudArr, tombstones) {
@@ -3298,6 +3383,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 const tombSigs = new Set((tombstones && tombstones.memberSigs) || []);
                 const tombSessIds = new Set(((tombstones && tombstones.sessionIds) || []).map(String));
                 const tombExpenseIds = new Set(((tombstones && tombstones.expenseIds) || []).map(String));
+                const tombFinKeys = new Set(((tombstones && tombstones.financialKeys) || []).map(String));
+                const tombSaleKeys = new Set(((tombstones && tombstones.saleKeys) || []).map(String));
 
                 const tombDeleted = (tombstones && tombstones.memberDeleted) || {};
                 const tombRevived = (tombstones && tombstones.memberRevived) || {};
@@ -3317,22 +3404,30 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     }
                     if (cfg.tomb === 'session') return tombSessIds.has(String(item && item.id));
                     if (cfg.tomb === 'expense') return tombExpenseIds.has(String(item && item.id));
+                    if (cfg.tomb === 'sale') return tombSaleKeys.has(saleIdentity(item));
                     if (cfg.tomb === 'financial') {
+                        if (tombFinKeys.has(financialIdentity(item))) return true;
                         if (item && item.type === 'DAILY_SESSION') return tombSessIds.has(String(item.memberId));
                         return isMemberIdBlocked(item && item.memberId);
                     }
                     return false;
                 }
 
+                if (cfg.tomb === 'member') return mergeMemberRecords(localArr, cloudArr, isTombstoned, isMemberIdBlocked);
                 const map = new Map();
                 (localArr || []).forEach(function (item) {
                     // المصروف اللي اتحذف بقرار صريح على أي جهاز بيتشال من هنا كمان (مش بس بيتمنع يرجع)
                     if (cfg.tomb === 'expense' && isTombstoned(item)) return;
+                    if (cfg.tomb === 'sale' && isTombstoned(item)) return;
+                    if (cfg.tomb === 'financial' && tombFinKeys.has(financialIdentity(item))) return;
                     map.set(cfg.identity(item), item);
                 });
                 (cloudArr || []).forEach(function (item) {
                     const id = cfg.identity(item);
-                    if (map.has(id)) return;      // موجود بالفعل على الجهاز ده — متكررش
+                    if (map.has(id)) {            // موجود بالفعل على الجهاز ده — متكررش
+                        if (cfg.earliestWins) { const cur = map.get(id); if ((Number(item && item.ts) || Infinity) < (Number(cur && cur.ts) || Infinity)) map.set(id, item); }
+                        return;
+                    }
                     if (isTombstoned(item)) return; // اتحذف قصدًا قبل كده على الجهاز ده — متسترجعش
                     map.set(id, item);
                 });
@@ -3521,6 +3616,15 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             function attachRealtimeListener() {
                 if (listenerAttached) return;
                 listenerAttached = true;
+                setTimeout(function () {
+                    try {
+                        const k = 'gym_pro_members_v3', localArr = safeParseArray(localStorage.getItem(k));
+                        const merged = mergeRecordArray(k, localArr, [], safeParseTombstones(localStorage.getItem(TOMBSTONE_KEY)));
+                        if (JSON.stringify(merged) !== JSON.stringify(localArr)) {
+                            applyLocally(k, merged); queuePush(k, JSON.stringify(merged)); refreshUiAfterRemoteChange();
+                        }
+                    } catch (e) { console.warn('member id repair failed', e); }
+                }, 6000);
                 db.collection(COLLECTION).onSnapshot({ includeMetadataChanges: true }, function (snapshot) {
                     if (snapshot.metadata.fromCache && !hasCompletedInitialMerge) return;
                     let changed = false;
@@ -3680,7 +3784,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         let financialsLog = JSON.parse(localStorage.getItem('gym_pro_financials_v3')) || [];
         // "قبر" المحذوفين: أي مشترك أو حصة يومية اتحذفت نهائياً بتتسجل هنا، عشان لو حصل استيراد نسخة احتياطية قديمة تاني (من جهاز تاني أو من قبل)
         // البرنامج يرفض يرجعها تلقائي زي ما كانت، وده اللي بيخلي الحاسبة على أي جهاز (موبايل أو كمبيوتر) متطابقة مع بعض
-        let deletedTombstones = JSON.parse(localStorage.getItem('gym_pro_deleted_tombstones_v1')) || { memberIds: [], memberSigs: [], sessionIds: [], expenseIds: [] };
+        let deletedTombstones = JSON.parse(localStorage.getItem('gym_pro_deleted_tombstones_v1')) || { memberIds: [], memberSigs: [], sessionIds: [], expenseIds: [], financialKeys: [], saleKeys: [] };
         function persistTombstones() {
             localStorage.setItem('gym_pro_deleted_tombstones_v1', JSON.stringify(deletedTombstones));
         }
@@ -3690,6 +3794,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             if (!Array.isArray(deletedTombstones.memberSigs)) deletedTombstones.memberSigs = [];
             if (!Array.isArray(deletedTombstones.sessionIds)) deletedTombstones.sessionIds = [];
             if (!Array.isArray(deletedTombstones.expenseIds)) deletedTombstones.expenseIds = [];
+            if (!Array.isArray(deletedTombstones.financialKeys)) deletedTombstones.financialKeys = [];
+            if (!Array.isArray(deletedTombstones.saleKeys)) deletedTombstones.saleKeys = [];
             if (!deletedTombstones.memberDeleted || typeof deletedTombstones.memberDeleted !== 'object') deletedTombstones.memberDeleted = {};
             if (!deletedTombstones.memberRevived || typeof deletedTombstones.memberRevived !== 'object') deletedTombstones.memberRevived = {};
         }
@@ -3750,6 +3856,23 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         let activeGenderFilterState = null; // null (الكل) | 'شاب' | 'بنت' - تُستخدم فقط في وضع صاحب الجيم
 
         const STARTING_ID_THRESHOLD = 800;
+        // أول كود فاضي: بيقرا أحدث بيانات من الجهاز (فيها اللي وصل من الأجهزة التانية) ومبيفترضش إن الأكواد أرقام
+        function gmNextFreeMemberId() {
+            let list = membersData;
+            try { const f = JSON.parse(localStorage.getItem('gym_pro_members_v3')); if (Array.isArray(f)) list = f; } catch (e) {}
+            let max = 0;
+            (list || []).forEach(m => { const n = parseInt(m && m.id); if (n > max) max = n; });
+            let next = max >= STARTING_ID_THRESHOLD ? max + 1 : STARTING_ID_THRESHOLD;
+            while ((list || []).some(m => String(m.id) === String(next))) next++;
+            return next;
+        }
+        function gmRefreshSuggestedId() {
+            const f = document.getElementById('fieldMemberId'), mode = document.getElementById('formExecutionMode');
+            if (!f || !mode || mode.value !== 'CREATE') return;
+            if (window.__gmAutoId != null && String(f.value) === String(window.__gmAutoId)) {
+                const n = gmNextFreeMemberId(); f.value = n; window.__gmAutoId = n;
+            }
+        }
 
         // --- نظام بوابة الدخول (تقسيم رجالي / بنات / صاحب الجيم) ---
         let currentAppMode = null; // 'MEN' | 'WOMEN' | 'OWNER'
@@ -3980,13 +4103,13 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                         </div>`;
                 }
             }
-            // كارت الحضور (هادي وبدون أي تحذير): وقت تسجيل الدخول بتوقيت القاهرة
+            // كارت الحضور (هادي وبدون أي تحذير): وقت تسجيل الدخول
             const _att = window.__attendanceToday;
             if (_capNm && _att && _att.ts) {
                 bodyHtml = `<div class="att-welcome">
                     <div class="att-welcome-lbl">${_att.first ? 'تم تسجيل حضورك اليوم' : 'حضورك مسجّل اليوم'}</div>
-                    <div class="att-welcome-time">${attTimeLabel(_att.ts)}</div>
-                    <div class="att-welcome-sub">بتوقيت القاهرة 🕓</div>
+                    <div class="att-welcome-time">${attTimeHtml(_att.ts)}</div>
+                    <div class="att-welcome-sub">${attDayLabel(_att.day)}</div>
                 </div>` + bodyHtml;
             }
             document.getElementById('welcomeAlertsBody').innerHTML = bodyHtml;
@@ -4022,21 +4145,22 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         };
 
         // ==========================================================
-        // حضور الكباتن: بتوقيت القاهرة، واليوم بيبدأ الساعة 4 الفجر
+        // حضور الكباتن: اليوم بيبدأ الساعة 4 الفجر
         // ==========================================================
-        const GYM_TZ = 'Africa/Cairo';
         const ATT_KEY = 'gym_pro_attendance_v1';
         function attLoad() { try { const a = JSON.parse(localStorage.getItem(ATT_KEY)); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+        // اليوم بيبدأ الساعة 4 الفجر بتوقيت الجهاز: أي دخول قبل 4 الفجر بيتحسب من اليوم اللي فات
         function attDayKey(d) {
-            const shifted = new Date(d.getTime() - 4 * 3600 * 1000);   // قبل 4 الفجر يتحسب من اليوم اللي فات
-            const o = {};
-            new Intl.DateTimeFormat('en-CA', { timeZone: GYM_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(shifted).forEach(p => { o[p.type] = p.value; });
-            return o.year + '-' + o.month + '-' + o.day;
+            const x = new Date(d.getTime() - 4 * 3600 * 1000);
+            return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
         }
-        function attTimeLabel(ts) {
-            try { return new Date(ts).toLocaleTimeString('ar-EG', { timeZone: GYM_TZ, hour: '2-digit', minute: '2-digit', hour12: true }); }
-            catch (e) { return new Date(ts).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }); }
+        function attTimeParts(ts) {
+            const d = new Date(ts), h24 = d.getHours(), h12 = h24 % 12 || 12, mm = String(d.getMinutes()).padStart(2, '0');
+            const nf = new Intl.NumberFormat('ar-EG', { useGrouping: false });
+            return { t: nf.format(h12) + ':' + nf.format(Number(mm)).padStart(2, '٠'), p: h24 < 12 ? 'صباحًا' : 'مساءً' };
         }
+        function attTimeLabel(ts) { const x = attTimeParts(ts); return x.t + ' ' + x.p; }
+        function attTimeHtml(ts) { const x = attTimeParts(ts); return '<span class="att-t">' + x.t + '</span><span class="att-p">' + x.p + '</span>'; }
         function attDayLabel(day) {
             try { return new Date(day + 'T12:00:00Z').toLocaleDateString('ar-EG', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
             catch (e) { return day; }
@@ -4073,7 +4197,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             if (tb) {
                 tb.innerHTML = '<div class="att-today-title">اليوم — ' + attEsc(attDayLabel(todayKey)) + '</div>' +
                     (todayRecs.length
-                        ? '<div class="att-chips">' + todayRecs.map(r => '<span class="att-chip"><b>' + attEsc(r.name) + '</b><small>' + attEsc(SEC_L[r.section] || '') + '</small><em>' + attEsc(attTimeLabel(r.ts)) + '</em></span>').join('') + '</div>'
+                        ? '<div class="att-chips">' + todayRecs.map(r => '<span class="att-chip"><b>' + attEsc(r.name) + '</b><small>' + attEsc(SEC_L[r.section] || '') + '</small><em>' + attTimeHtml(r.ts) + '</em></span>').join('') + '</div>'
                         : '<div class="att-empty">لسه ما حدش سجّل حضوره النهارده.</div>');
             }
 
@@ -4096,7 +4220,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             list.innerHTML = Object.keys(byDay).sort().reverse().map(day => {
                 const items = byDay[day].sort((a, b) => a.ts - b.ts);
                 return '<div class="att-day"><div class="att-day-head">' + attEsc(attDayLabel(day)) + '<span>' + items.length + ' حضور</span></div>' +
-                    items.map(r => '<div class="att-row"><div class="att-name">👤 ' + attEsc(r.name) + '</div><div class="att-sec">' + attEsc(SEC_L[r.section] || '') + '</div><div class="att-time">' + attEsc(attTimeLabel(r.ts)) + '</div></div>').join('') + '</div>';
+                    items.map(r => '<div class="att-row"><div class="att-name">👤 ' + attEsc(r.name) + '</div><div class="att-sec">' + attEsc(SEC_L[r.section] || '') + '</div><div class="att-time">' + attTimeHtml(r.ts) + '</div></div>').join('') + '</div>';
             }).join('');
         }
 
@@ -5071,6 +5195,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
 
         function deleteSaleRecord(id) {
             if (!confirm("هل تريد حذف هذه العملية؟")) return;
+            { const _r = salesData.find(s => s.id === id); if (_r) { ensureTombstoneShape(); deletedTombstones.saleKeys.push(gmSaleKey(_r)); persistTombstones(); } }
             salesData = salesData.filter(s => s.id !== id);
             commitSalesToStorage();
             renderSalesTable();
@@ -5168,6 +5293,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         // تنفيذ حذف عملية البيع الفعلي - يُستخدم من صاحب الجيم مباشرة، أو بعد موافقته على طلب حذف من كابتن
         function performWorkspaceSaleDeletion(id, approvedNote) {
             const rec = salesData.find(s => s.id === id);
+            if (rec) { ensureTombstoneShape(); deletedTombstones.saleKeys.push(gmSaleKey(rec)); persistTombstones(); }
             salesData = salesData.filter(s => s.id !== id);
             commitSalesToStorage();
             renderWorkspaceSalesTable();
@@ -5291,12 +5417,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             document.getElementById('fieldEndDate').value = getFormattedDateString(dateExactlyOneMonthLater);
             document.getElementById('fieldEndDate').disabled = false;
 
-            let calculatedNextId = STARTING_ID_THRESHOLD;
-            if (membersData.length > 0) {
-                const existingIdsArray = membersData.map(member => parseInt(member.id) || 0);
-                const maximumCurrentId = Math.max(...existingIdsArray);
-                if (maximumCurrentId >= STARTING_ID_THRESHOLD) calculatedNextId = maximumCurrentId + 1;
-            }
+            const calculatedNextId = gmNextFreeMemberId();
+            window.__gmAutoId = calculatedNextId;
             document.getElementById('fieldMemberId').value = calculatedNextId;
             renderSubscriptionSelectOptions();
             calculateSubscriptionCost();
@@ -5443,7 +5565,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
 
         document.getElementById('gymRegistrationForm').addEventListener('submit', function(event) {
             event.preventDefault();
-            const inputId = parseInt(document.getElementById('fieldMemberId').value);
+            let inputId = parseInt(document.getElementById('fieldMemberId').value);
             const inputName = document.getElementById('fieldMemberName').value.trim();
             const inputPhone = document.getElementById('fieldMemberPhone').value.trim();
             const inputGender = document.getElementById('fieldMemberGender').value;
@@ -5454,6 +5576,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             const inputEnd = document.getElementById('fieldEndDate').value;
             
             const operationalMode = document.getElementById('formExecutionMode').value;
+            var idChangedNote = '';
 
             if (!inputStart || !inputEnd) {
                 alert("⚠️ لازم تختار تاريخ البداية والنهاية كاملين (اليوم والشهر والسنة).");
@@ -5487,12 +5610,21 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             }
 
             if (operationalMode === "CREATE") {
-                if (membersData.some(m => m.id === inputId)) {
-                    alert("⚠️ عذراً، رقم الـ ID هذا مسجل بالفعل لشخص آخر! اختر رقم كود مختلف.");
-                    return;
+                // أحدث بيانات (فيها اللي اتسجل من أي جهاز تاني) قبل ما نحجز الكود
+                try { const fresh = JSON.parse(localStorage.getItem('gym_pro_members_v3')); if (Array.isArray(fresh)) membersData = fresh; } catch (e) {}
+                const idTaken = id => membersData.some(m => String(m.id) === String(id));
+                if (isNaN(inputId) || idTaken(inputId)) {
+                    if (isNaN(inputId) || (window.__gmAutoId != null && String(window.__gmAutoId) === String(inputId))) {
+                        const oldId = inputId; inputId = gmNextFreeMemberId();
+                        if (!isNaN(oldId)) idChangedNote = `\n\nℹ️ الكود ${oldId} اتاخد من جهاز تاني قبل لحظات، فاتسجل بكود ${inputId}.`;
+                    } else {
+                        alert("⚠️ عذراً، رقم الـ ID هذا مسجل بالفعل لشخص آخر! اختر رقم كود مختلف.");
+                        document.getElementById('fieldMemberId').value = gmNextFreeMemberId();
+                        return;
+                    }
                 }
                 let initialAttendedCount = 0;
-                membersData.push({ photo: window.__gmPhoto || '', id: inputId, name: inputName, phone: inputPhone, gender: inputGender, subtype: inputSubtype, paid: inputPaid, debt: inputDebt, start: inputStart, end: inputEnd, sessionsCount: initialAttendedCount });
+                membersData.push({ createdAt: Date.now(), photo: window.__gmPhoto || '', id: inputId, name: inputName, phone: inputPhone, gender: inputGender, subtype: inputSubtype, paid: inputPaid, debt: inputDebt, start: inputStart, end: inputEnd, sessionsCount: initialAttendedCount });
                 reviveMemberId(inputId);
                 
                 financialsLog.push({ at: Date.now(), timestamp: getFormattedDateString(new Date()), memberId: inputId, memberName: inputName, gender: inputGender, amountCollected: inputPaid, type: "NEW_REGISTRATION" });
@@ -5505,12 +5637,12 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 const previousPaidAmount = parseFloat(membersData[underlyingIndex].paid) || 0;
                 
                 // التأكد من عدم تكرار الـ ID أثناء التعديل لشخص آخر
-                if(membersData[underlyingIndex].id !== inputId && membersData.some(m => m.id === inputId)) {
+                if(String(membersData[underlyingIndex].id) !== String(inputId) && membersData.some(m => String(m.id) === String(inputId))) {
                      alert("⚠️ عذراً، رقم الـ ID الجديد مسجل بالفعل لشخص آخر! اختر رقم كود مختلف.");
                      return;
                 }
 
-                membersData[underlyingIndex] = { photo: window.__gmPhoto || '', id: inputId, name: inputName, phone: inputPhone, gender: inputGender, subtype: inputSubtype, paid: inputPaid, debt: inputDebt, start: inputStart, end: inputEnd, sessionsCount: preExistingSessionsCount, ...(membersData[underlyingIndex].visits ? { visits: membersData[underlyingIndex].visits, lastVisit: membersData[underlyingIndex].lastVisit } : {}), ...(preExistingHidden ? { hiddenFromCaptain: true } : {}) };
+                membersData[underlyingIndex] = { photo: window.__gmPhoto || '', id: inputId, name: inputName, phone: inputPhone, gender: inputGender, subtype: inputSubtype, paid: inputPaid, debt: inputDebt, start: inputStart, end: inputEnd, sessionsCount: preExistingSessionsCount, ...(membersData[underlyingIndex].visits ? { visits: membersData[underlyingIndex].visits, lastVisit: membersData[underlyingIndex].lastVisit } : {}), ...(preExistingHidden ? { hiddenFromCaptain: true } : {}), ...(membersData[underlyingIndex].createdAt ? { createdAt: membersData[underlyingIndex].createdAt } : {}), ...(membersData[underlyingIndex].idMovedFrom != null ? { idMovedFrom: membersData[underlyingIndex].idMovedFrom } : {}) };
 
                 // تسجيل حركة مالية جديدة فقط لو المبلغ المدفوع اتغير فعلاً عن قبل التعديل
                 // (تعديل الاسم أو الرقم أو التاريخ بس من غير تغيير الفلوس، متسجلش فلوس جديدة تاني في الخزينة)
@@ -5525,7 +5657,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             recalculateMetricsDashboard();
             renderMembersList();
             renderSpecialPackageTrackerGrid();
-            alert("🚀 تم حفظ وتحديث داتا الكابتن بنجاح داخل قاعدة البيانات!");
+            alert("🚀 تم حفظ وتحديث داتا الكابتن بنجاح داخل قاعدة البيانات!" + (typeof idChangedNote !== "undefined" ? idChangedNote : ""));
             if (operationalMode === "CREATE") {
                 offerGymLinksAfterRegistration({ id: inputId, name: inputName, phone: inputPhone, gender: inputGender, plan: inputSubtype, start: inputStart, end: inputEnd, paid: inputPaid, debt: inputDebt });
             }
@@ -6825,6 +6957,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                                     </div>
                                 </div>
                                 <div class="fd-card-net ${netCls}"><b>${plain(net)}</b><small>الصافي</small></div>
+                                ${ev.length > 1 ? `<button type="button" class="fd-del-all" title="حذف كل حركات ${String(name).replace(/"/g, '')} من السجل المالي" onclick="deleteFinanceDrilldownGroup('${ev.filter(r => r.src === 'fin').map(r => r.idx).join(',')}', '${String(name).replace(/['"\\]/g, '')}')">🗑 حذف الكل</button>` : ''}
                             </div>
                             <div class="fd-lines tl">${lines}</div>
                             ${foot}
@@ -7091,25 +7224,47 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         }
 
         // حذف حركة مالية أو عملية بيع واحدة من التقرير التفصيلي (لتصحيح أي حركة خاطئة أو مكررة تسللت للسجل)
-        function deleteFinanceDrilldownRow(src, idx) {
-            if (!confirm("🚨 هل أنت متأكد من حذف هذه الحركة نهائياً من السجل المالي؟ هذا لن يحذف المشترك نفسه، فقط هذه الحركة من الخزينة.")) return;
-            if (src === 'fin') {
-                financialsLog.splice(idx, 1);
-            } else if (src === 'sale') {
-                salesData.splice(idx, 1);
-            }
+        // نفس معادلة هوية الحركة المستخدمة في المزامنة بالظبط (لازم تفضل متطابقة)
+        function gmFinKey(l) { return ['fin', l && l.timestamp, l && l.memberId, l && l.type, l && l.amountCollected].concat(l && l.at ? [l.at] : []).join('|'); }
+        function gmSaleKey(x) {
+            if (x && x.id !== undefined && x.id !== null) return 'id:' + x.id;
+            return ['sale', x && x.date, x && x.section, x && x.product, x && x.qty, x && x.unitPrice].join('|');
+        }
+        // بيشيل الحركات من السجل ويسجّل "شاهد حذف" عشان المزامنة ماترجّعهاش من أي جهاز تاني أو من السحابة
+        function gmRemoveFinanceRows(src, idxList) {
+            ensureTombstoneShape();
+            const list = src === 'fin' ? financialsLog : salesData;
+            (idxList || []).slice().sort((p, q) => q - p).forEach(i => {
+                const it = list[i]; if (!it) return;
+                if (src === 'fin') deletedTombstones.financialKeys.push(gmFinKey(it));
+                else deletedTombstones.saleKeys.push(gmSaleKey(it));
+                list.splice(i, 1);
+            });
+            persistTombstones();
             commitSystemStateToStorage();
             localStorage.setItem('gym_pro_sales_v1', JSON.stringify(salesData));
+        }
+        function gmAfterFinanceRowsRemoved() {
             recalculateMetricsDashboard();
             renderAdminFinancialVault();
             const briefingEl = document.getElementById('adminBriefingModal');
             if (briefingEl && briefingEl.style.display === 'flex') renderAdminBriefingModal();
             const lastKind = window._fdLastKind || 'total';
-            if (typeof lastKind === 'string' && lastKind.startsWith('period:')) {
-                openPeriodDrilldown(lastKind.split(':')[1]);
-            } else {
-                openFinanceDrilldown(lastKind);
-            }
+            if (typeof lastKind === 'string' && lastKind.startsWith('period:')) openPeriodDrilldown(lastKind.split(':')[1]);
+            else openFinanceDrilldown(lastKind);
+        }
+        function deleteFinanceDrilldownRow(src, idx) {
+            if (!confirm("🚨 هل أنت متأكد من حذف هذه الحركة نهائياً من السجل المالي؟ هذا لن يحذف المشترك نفسه، فقط هذه الحركة من الخزينة.")) return;
+            gmRemoveFinanceRows(src, [idx]);
+            gmAfterFinanceRowsRemoved();
+        }
+        // حذف كل حركات شخص واحد في التقرير الحالي مرة واحدة
+        function deleteFinanceDrilldownGroup(idxCsv, name) {
+            const idxList = String(idxCsv).split(',').map(Number).filter(n => !isNaN(n));
+            if (!idxList.length) return;
+            if (!confirm("🚨 هتحذف كل حركات \"" + (name || 'المشترك') + "\" (" + idxList.length + ") من السجل المالي نهائياً وهتتخصم من الإجمالي.\nده مش بيحذف المشترك نفسه. متأكد؟")) return;
+            gmRemoveFinanceRows('fin', idxList);
+            gmAfterFinanceRowsRemoved();
         }
 
         // إزاحة شهر بصيغة yyyy-mm بمقدار delta (سالب أو موجب)
@@ -7913,8 +8068,9 @@ window.__gmShellRun = function () {
           t.active = t.active === false; save(dd); note((t.active ? '✅ تم تفعيل' : '⛔ تم إيقاف') + ' الكابتن "' + c.name + '"'); renderAdmin();
         });
         btn('حذف', 'danger', function () {
-          if (!confirm('تحذف الكابتن "' + c.name + '"؟ سجل حركاته القديمة هيفضل موجود.')) return;
-          var dd = load(); dd.list = dd.list.filter(function (x) { return x.id !== c.id; }); save(dd); note('🗑️ تم حذف الكابتن "' + c.name + '"'); renderAdmin();
+          var doDel = function () { var dd = load(); dd.list = dd.list.filter(function (x) { return x.id !== c.id; }); save(dd); note('🗑️ تم حذف الكابتن "' + c.name + '"'); renderAdmin(); };
+          if (window.gmUndoable) window.gmUndoable('الكابتن "' + c.name + '"', doDel);
+          else if (confirm('تحذف الكابتن "' + c.name + '"؟ سجل حركاته القديمة هيفضل موجود.')) doDel();
         });
         row.appendChild(ops); box.appendChild(row);
       });
@@ -10991,8 +11147,11 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
 /* ===== حضور الكباتن + كارت الترحيب ===== */
 .att-welcome{background:linear-gradient(135deg,var(--primary-light),var(--bg-card));border:1px solid var(--border-color);border-radius:18px;padding:16px 18px 14px;margin-bottom:14px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.06)}
 .att-welcome-lbl{font-size:.88rem;font-weight:700;color:var(--text-muted)}
-.att-welcome-time{font-size:2.3rem;font-weight:900;color:var(--primary);line-height:1.25;margin:2px 0;letter-spacing:1px}
+.att-welcome-time{display:flex;align-items:baseline;justify-content:center;gap:10px;margin:6px 0 4px;color:var(--primary);direction:rtl}
+.att-welcome-time .att-t{font-size:3rem;font-weight:900;line-height:1.1;letter-spacing:1px;font-variant-numeric:tabular-nums}
+.att-welcome-time .att-p{font-size:1.05rem;font-weight:800;padding:3px 12px;border-radius:99px;background:color-mix(in srgb,var(--primary) 14%,transparent)}
 .att-welcome-sub{font-size:.78rem;font-weight:600;color:var(--text-muted)}
+.fd-del-all{margin-inline-start:8px;border:1px solid var(--danger);background:var(--danger-light);color:var(--danger);border-radius:10px;padding:5px 10px;font:800 .78rem inherit;font-family:inherit;cursor:pointer;white-space:nowrap}
 .att-today{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:14px 16px;margin:12px 0}
 .att-today-title{font-weight:800;margin-bottom:10px}
 .att-chips{display:flex;flex-wrap:wrap;gap:8px}
@@ -11003,7 +11162,10 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
 .att-day-head{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:var(--primary-light);font-weight:800}
 .att-day-head span{font-size:.82rem;color:var(--text-muted)}
 .att-row{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;padding:11px 16px;border-top:1px solid var(--border-color)}
-.att-name{font-weight:800}.att-sec{color:var(--text-muted);font-weight:700;font-size:.88rem}.att-time{font-weight:900;color:var(--primary);min-width:84px;text-align:left}
+.att-name{font-weight:800}.att-sec{color:var(--text-muted);font-weight:700;font-size:.88rem}.att-time{display:inline-flex;align-items:baseline;gap:6px;min-width:104px;justify-content:flex-end;color:var(--primary);direction:rtl}
+.att-time .att-t{font-size:1.25rem;font-weight:900;font-variant-numeric:tabular-nums}
+.att-time .att-p,.att-chip em .att-p{font-size:.76rem;font-weight:800;padding:2px 9px;border-radius:99px;background:color-mix(in srgb,var(--primary) 13%,transparent)}
+.att-chip em{display:inline-flex;align-items:baseline;gap:5px}.att-chip em .att-t{font-size:1.05rem;font-weight:900}
 .att-empty{color:var(--text-muted);font-weight:700;padding:14px;text-align:center}
 </style>
 <script id="gmAdminBrand">
@@ -11529,6 +11691,201 @@ window.gmQR = function (text) {
     if (e.key.length === 1 || e.key === 'Enter') { var i = $('ckInput'); if (i) i.focus(); }
   });
   document.addEventListener('keydown', function (e) { if (e.target && e.target.id === 'ckInput' && e.key === 'Enter') { e.preventDefault(); gmCkSubmit(); } });
+})();
+</script>
+
+<style id="gm-undo-css">
+#gmUndoBar{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,24px);opacity:0;pointer-events:none;z-index:2147483200;
+  display:flex;align-items:center;gap:14px;min-width:min(420px,92vw);max-width:92vw;padding:12px 14px 14px 16px;border-radius:16px;background:#1f2430;color:#fff;
+  box-shadow:0 18px 44px rgba(0,0,0,.38);font:700 .95rem/1.4 'Cairo',sans-serif;direction:rtl;overflow:hidden;transition:opacity .22s ease,transform .22s ease}
+#gmUndoBar.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#gmUndoBar .gu-msg{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#gmUndoBar button{border:0;border-radius:11px;padding:8px 18px;font:900 .95rem 'Cairo',sans-serif;cursor:pointer;background:#fff;color:#1f2430;white-space:nowrap}
+#gmUndoBar button:hover{background:#e9ecf5}
+#gmUndoBar .gu-cd{display:inline-block;min-width:1.1em;text-align:center;opacity:.8;font-variant-numeric:tabular-nums}
+#gmUndoBar .gu-bar{position:absolute;left:0;bottom:0;height:4px;width:100%;background:linear-gradient(90deg,#ff4f93,#7b2cf0);transform-origin:right center}
+#gmUndoBar.run .gu-bar{animation:guShrink 5s linear forwards}
+@keyframes guShrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+</style>
+<script>
+/* ===== تراجع لمدة 5 ثواني بعد أي حذف مهم (زي تليجرام) ===== */
+(function () {
+  var UNDO_MS = 5000;
+  var ARR_KEYS = ['gym_pro_members_v3', 'gym_pro_financials_v3', 'gym_pro_daily_sessions_v1', 'gym_pro_sales_v1', 'gym_pro_expenses_v1'];
+  var RAW_KEYS = ['gym_pro_sale_products_v1', 'gym_pro_sub_plans_men_v1', 'gym_pro_sub_plans_women_v1', 'gym_pro_sub_plans_v1', 'gym_pro_expense_categories_v1', 'gym_pro_captains_v1', 'gym_pro_delete_requests_v1', 'gym_pro_admin_notices_v1'];
+  var TOMB = 'gym_pro_deleted_tombstones_v1';
+  var TOMB_ARR = ['memberIds', 'memberSigs', 'sessionIds', 'expenseIds', 'financialKeys', 'saleKeys'];
+  var TOMB_MAP = ['memberDeleted', 'memberRevived'];
+  var pending = null, timer = 0, tick = 0;
+
+  function ls(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function jp(raw, d) { try { var v = JSON.parse(raw); return v == null ? d : v; } catch (e) { return d; } }
+  function snap() { var s = {}; ARR_KEYS.concat(RAW_KEYS, [TOMB]).forEach(function (k) { s[k] = ls(k); }); return s; }
+  function counts(arr) { var m = {}; arr.forEach(function (x) { var j = JSON.stringify(x); m[j] = (m[j] || 0) + 1; }); return m; }
+
+  function buildPlan(before, after) {
+    var plan = { arrays: [], tomb: { arr: {}, map: {} }, raw: [], real: false };
+    ARR_KEYS.forEach(function (k) {
+      if (before[k] === after[k]) return;
+      var b = jp(before[k], []), a = jp(after[k], []), ca = counts(a), removed = [];
+      b.forEach(function (it, i) { var j = JSON.stringify(it); if (ca[j]) ca[j]--; else removed.push({ item: it, index: i }); });
+      if (removed.length) { plan.arrays.push({ key: k, removed: removed }); plan.real = true; }
+    });
+    if (before[TOMB] !== after[TOMB]) {
+      var tb = jp(before[TOMB], {}), ta = jp(after[TOMB], {});
+      TOMB_ARR.forEach(function (f) {
+        var cb = counts((tb[f] || []).map(String)), added = [];
+        (ta[f] || []).map(String).forEach(function (x) { var j = JSON.stringify(x); if (cb[j]) cb[j]--; else added.push(x); });
+        if (added.length) { plan.tomb.arr[f] = added; plan.real = true; }
+      });
+      TOMB_MAP.forEach(function (f) {
+        var mb = tb[f] || {}, ma = ta[f] || {}, ch = {};
+        Object.keys(ma).forEach(function (id) { if (ma[id] !== mb[id]) ch[id] = { before: mb[id], after: ma[id] }; });
+        if (Object.keys(ch).length) plan.tomb.map[f] = ch;
+      });
+    }
+    RAW_KEYS.forEach(function (k) {
+      if (before[k] === after[k]) return;
+      plan.raw.push({ key: k, before: before[k], after: after[k] });
+      if (k !== 'gym_pro_delete_requests_v1' && k !== 'gym_pro_admin_notices_v1') plan.real = true;
+    });
+    return plan;
+  }
+
+  function reloadAndRender(plan) {
+    function g(k, d) { return jp(ls(k), d); }
+    try { if (typeof membersData !== 'undefined') membersData = g('gym_pro_members_v3', []); } catch (e) {}
+    try { if (typeof financialsLog !== 'undefined') financialsLog = g('gym_pro_financials_v3', []); } catch (e) {}
+    try { if (typeof dailySessionsData !== 'undefined') dailySessionsData = g('gym_pro_daily_sessions_v1', []); } catch (e) {}
+    try { if (typeof salesData !== 'undefined') salesData = g('gym_pro_sales_v1', []); } catch (e) {}
+    try { if (typeof expensesData !== 'undefined') expensesData = g('gym_pro_expenses_v1', []); } catch (e) {}
+    try { if (typeof deletedTombstones !== 'undefined') deletedTombstones = g(TOMB, { memberIds: [], memberSigs: [], sessionIds: [], expenseIds: [], financialKeys: [], saleKeys: [] }); } catch (e) {}
+    try { var sp = g('gym_pro_sale_products_v1', null); if (typeof saleProducts !== 'undefined' && Array.isArray(sp)) saleProducts = sp; } catch (e) {}
+    try { var pm = g('gym_pro_sub_plans_men_v1', null); if (typeof subscriptionPlansMen !== 'undefined' && Array.isArray(pm)) subscriptionPlansMen = pm; } catch (e) {}
+    try { var pw = g('gym_pro_sub_plans_women_v1', null); if (typeof subscriptionPlansWomen !== 'undefined' && Array.isArray(pw)) subscriptionPlansWomen = pw; } catch (e) {}
+    try { var ec = g('gym_pro_expense_categories_v1', null); if (typeof expenseCategories !== 'undefined' && Array.isArray(ec) && ec.length) expenseCategories = ec; } catch (e) {}
+    try { if (typeof pendingDeleteRequests !== 'undefined') pendingDeleteRequests = g('gym_pro_delete_requests_v1', []); } catch (e) {}
+    ['recalculateMetricsDashboard', 'renderMembersList', 'renderSpecialPackageTrackerGrid', 'renderActivityLogPanel', 'renderSalesTable', 'renderWorkspaceSalesTable',
+     'renderAdminFinancialVault', 'renderDailySessionsView', 'renderSubscriptionSelectOptions', 'renderExpenseCategoriesEditor', 'renderExpensesTable',
+     'renderSubsPlanEditorIfIdle', 'renderSaleProductsEditor', 'refreshAllPendingMarkedLists'].forEach(function (n) { try { if (typeof window[n] === 'function') window[n](); } catch (e) {} });
+    try {
+      var bm = document.getElementById('adminBriefingModal');
+      if (bm && bm.style.display === 'flex' && typeof renderAdminBriefingModal === 'function') renderAdminBriefingModal();
+      var fm = document.getElementById('financeDrilldownModal'), lk = window._fdLastKind;
+      if (fm && fm.style.display === 'flex' && typeof lk === 'string') { if (lk.indexOf('period:') === 0) openPeriodDrilldown(lk.split(':')[1]); else openFinanceDrilldown(lk); }
+      if (plan.raw.some(function (r) { return r.key === 'gym_pro_captains_v1'; }) && typeof window.switchAdminView === 'function') window.switchAdminView('captains');
+    } catch (e) {}
+  }
+
+  function applyUndo(plan) {
+    plan.arrays.forEach(function (p) {
+      var cur = jp(ls(p.key), []);
+      p.removed.slice().sort(function (a, b) { return a.index - b.index; }).forEach(function (r) { cur.splice(Math.min(r.index, cur.length), 0, r.item); });
+      try { localStorage.setItem(p.key, JSON.stringify(cur)); } catch (e) {}
+    });
+    if (Object.keys(plan.tomb.arr).length || Object.keys(plan.tomb.map).length) {
+      var t = jp(ls(TOMB), {});
+      Object.keys(plan.tomb.arr).forEach(function (f) {
+        var cur = (t[f] || []).slice();
+        plan.tomb.arr[f].forEach(function (x) { var i = cur.map(String).lastIndexOf(String(x)); if (i > -1) cur.splice(i, 1); });
+        t[f] = cur;
+      });
+      Object.keys(plan.tomb.map).forEach(function (f) {
+        t[f] = t[f] || {};
+        Object.keys(plan.tomb.map[f]).forEach(function (id) {
+          var c = plan.tomb.map[f][id];
+          if (c.before === undefined) delete t[f][id]; else t[f][id] = c.before;
+        });
+      });
+      try { localStorage.setItem(TOMB, JSON.stringify(t)); } catch (e) {}
+    }
+    plan.raw.forEach(function (r) {
+      if (ls(r.key) !== r.after) return;               // اتغير بعد كده من مكان تاني: منلمسوش
+      try { if (r.before === null || r.before === undefined) localStorage.removeItem(r.key); else localStorage.setItem(r.key, r.before); } catch (e) {}
+    });
+    reloadAndRender(plan);
+  }
+
+  function bar() {
+    var b = document.getElementById('gmUndoBar');
+    if (b) return b;
+    b = document.createElement('div'); b.id = 'gmUndoBar'; b.setAttribute('role', 'status'); b.setAttribute('aria-live', 'polite');
+    b.innerHTML = '<span class="gu-msg"></span><span class="gu-cd"></span><button type="button">↩️ تراجع</button><i class="gu-bar"></i>';
+    b.querySelector('button').onclick = undo;
+    document.body.appendChild(b);
+    return b;
+  }
+  function hideBar() { var b = document.getElementById('gmUndoBar'); if (b) { b.classList.remove('show', 'run'); } }
+  function finalize() {
+    clearTimeout(timer); clearInterval(tick);
+    if (pending) { window.__gmSyncHoldUntil = 0; pending = null; }
+    hideBar();
+  }
+  function undo() {
+    if (!pending) return;
+    var p = pending; pending = null;
+    clearTimeout(timer); clearInterval(tick);
+    window.__gmSyncHoldUntil = 0;
+    applyUndo(p.plan);
+    try { if (typeof logActivity === 'function') logActivity('↩️ تم التراجع عن حذف ' + p.label, 'fa-rotate-left'); } catch (e) {}
+    var b = bar(); b.classList.remove('run');
+    b.querySelector('.gu-msg').textContent = '✅ اتراجع عن حذف ' + p.label; b.querySelector('.gu-cd').textContent = ''; b.querySelector('button').style.display = 'none';
+    b.classList.add('show');
+    setTimeout(function () { var bb = document.getElementById('gmUndoBar'); if (bb) { bb.classList.remove('show'); bb.querySelector('button').style.display = ''; } }, 1600);
+  }
+  function showBar(label) {
+    var b = bar(), left = Math.round(UNDO_MS / 1000);
+    b.querySelector('.gu-msg').textContent = '🗑 تم حذف ' + label;
+    b.querySelector('button').style.display = '';
+    var cd = b.querySelector('.gu-cd'); cd.textContent = left;
+    b.classList.remove('run'); void b.offsetWidth; b.classList.add('show', 'run');
+    clearInterval(tick);
+    tick = setInterval(function () { left--; if (left > 0) cd.textContent = left; }, 1000);
+  }
+
+  /* بينفّذ الحذف زي ما هو (من غير رسالة تأكيد) ويوريك شريط التراجع */
+  window.gmUndoable = function (label, fn) {
+    if (pending) finalize();                           // أي حذف سابق بيبقى نهائي فورًا
+    var before = snap(), oc = window.confirm, oa = window.alert, result;
+    window.__gmSyncHoldUntil = Date.now() + UNDO_MS + 400;
+    window.confirm = function () { return true; };
+    window.alert = function (m) { if (/(تم (مسح|حذف)|مسح وحذف)/.test(String(m || ''))) return; return oa.apply(window, arguments); };
+    try { result = fn(); } finally { window.confirm = oc; window.alert = oa; }
+    var plan = buildPlan(before, snap());
+    if (!plan.real) { window.__gmSyncHoldUntil = 0; return result; }   // مفيش حذف فعلي (مثلاً طلب حذف من كابتن)
+    pending = { plan: plan, label: label };
+    showBar(label);
+    timer = setTimeout(finalize, UNDO_MS);
+    return result;
+  };
+
+  function wrap(name, labelFn, pred) {
+    var orig = window[name];
+    if (typeof orig !== 'function' || orig.__gmU) return;
+    var w = function () {
+      var self = this, args = arguments;
+      if (pred && !pred.apply(self, args)) return orig.apply(self, args);
+      var label; try { label = labelFn.apply(self, args); } catch (e) { label = 'العنصر'; }
+      return window.gmUndoable(label, function () { return orig.apply(self, args); });
+    };
+    w.__gmU = true; window[name] = w;
+  }
+  function nm(o, f) { return o && o[f] ? '"' + o[f] + '"' : ''; }
+  function init() {
+    wrap('removeMemberPermanently', function () { var m = (membersData || []).find(function (x) { return x.id === currentlySelectedMemberIdForModal; }); return 'المشترك ' + nm(m, 'name'); });
+    wrap('cancelDailySession', function (id) { var s = (dailySessionsData || []).find(function (x) { return x.id === id; }); return 'الحصة اليومية ' + nm(s, 'name'); });
+    wrap('deleteExpenseRecord', function () { return 'المصروف'; });
+    wrap('deleteExpenseCategory', function () { return 'بند المصروفات'; });
+    wrap('deleteSaleProduct', function () { return 'الصنف'; });
+    wrap('deleteSaleRecord', function () { return 'عملية البيع'; });
+    wrap('deleteWorkspaceSaleRecord', function () { return 'عملية البيع'; });
+    wrap('deleteSubscriptionPlan', function () { return 'الباقة'; });
+    wrap('deleteFinanceDrilldownRow', function () { return 'الحركة المالية'; });
+    wrap('deleteFinanceDrilldownGroup', function (csv, name) { return 'حركات ' + (name ? '"' + name + '"' : 'الشخص'); });
+    wrap('resolveDeleteRequest', function () { return 'العنصر المطلوب حذفه'; }, function (id, approved) { return approved === true; });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  window.addEventListener('pagehide', function () { if (pending) { pending = null; window.__gmSyncHoldUntil = 0; } });
 })();
 </script>
 </body>
