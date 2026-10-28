@@ -15120,6 +15120,18 @@ html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-
 #gateScreen#gateScreen .gx-fxt{padding:8px 16px;border-radius:999px;border:1.5px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font:800 .82rem 'Cairo',sans-serif;cursor:pointer}
 #gateScreen#gateScreen .gx-fxt[hidden]{display:none}
 @media(min-width:760px){#gateScreen#gateScreen .gx-fx{min-height:400px}#gateScreen#gateScreen .gx-fx p{font-size:1.7rem}}
+
+/* ===== البار العائم ما يغطّيش اللوجو: المحتوى كله ينزل تحت البار ===== */
+body.gm-tb-on #gateScreen#gateScreen{padding-top:calc(env(safe-area-inset-top,0px) + var(--gmoff,84px) + 14px)!important}
+body.gm-tb-on #gateScreen#gateScreen .gate-wrap{min-height:calc(100vh - 70px - var(--gmoff,84px));min-height:calc(100dvh - 70px - var(--gmoff,84px))}
+html.gmb body.gm-tb-on #gateScreen#gateScreen{padding-top:clamp(18px,3.5vh,40px)!important}
+html.gmb body.gm-tb-on #gateScreen#gateScreen .gate-wrap{min-height:calc(100vh - 70px);min-height:calc(100dvh - 70px)}
+/* ===== قائمة الإدارة الجانبية: سكرول لما تطول عن الشاشة ===== */
+@media (min-width:1000px){
+#adminDashboardArea>.top-actions-bar{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;padding:2px 4px 8px;box-sizing:border-box}
+body.gm-tb-on #adminDashboardArea>.top-actions-bar{max-height:calc(100vh - var(--gmoff,84px) - 28px);max-height:calc(100dvh - var(--gmoff,84px) - 28px)}
+html.gmb body.gm-tb-on #adminDashboardArea>.top-actions-bar{max-height:calc(100vh - var(--gmoffb,86px) - 28px);max-height:calc(100dvh - var(--gmoffb,86px) - 28px)}
+}
 </style>
 </body>
 </html>
