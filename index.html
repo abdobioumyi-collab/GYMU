@@ -975,6 +975,18 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
 .kg-badge.ok{background:rgba(22,163,74,.2);color:#86efac}.kg-badge.info{background:rgba(59,130,246,.2);color:#93c5fd}
 .kg-badge.warn{background:rgba(245,158,11,.2);color:#fcd34d}.kg-badge.bad{background:rgba(220,38,38,.2);color:#ff9a8f}
 .kg-mid{display:flex;gap:18px;align-items:center}
+.kg-sum{margin:12px 0 4px;padding:12px;border-radius:16px;background:rgba(127,127,127,.12);border:1px solid rgba(127,127,127,.16)}
+.kg-sum-top{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.kg-chip{font-size:.78rem;font-weight:800;padding:4px 10px;border-radius:99px;background:rgba(127,127,127,.18)}
+.kg-chip.ok{background:rgba(34,197,94,.18);color:#16a34a}.kg-chip.warn{background:rgba(245,158,11,.2);color:#b45309}.kg-chip.bad{background:rgba(239,68,68,.18);color:#dc2626}
+.kg-sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kg-sum-c{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border-radius:12px;background:rgba(127,127,127,.12);text-align:center}
+.kg-sum-c b{font-size:1.2rem;font-weight:900}.kg-sum-c span{font-size:.72rem;opacity:.7;font-weight:700}
+.kg-contact{margin-top:10px;padding-top:10px;border-top:1px dashed rgba(127,127,127,.3);display:flex;flex-direction:column;gap:8px}
+.kg-cnum{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.9rem}.kg-cnum b{font-size:1.02rem;letter-spacing:.3px}
+.kg-cbtns{display:flex;gap:6px}.kg-cbtns .kg-btn{flex:1;text-align:center;text-decoration:none;padding:9px 6px}
+.kg-cbtns .kg-btn.wa{background:#22c55e;color:#fff;border-color:#22c55e}
+.kg-sum-cap{margin-top:10px;font-size:.8rem;font-weight:700;opacity:.8;line-height:1.7}
 .kg-days{flex:none;min-width:96px;text-align:center;padding:12px;border-radius:16px;background:rgba(255,255,255,.06)}
 .kg-days b{display:block;font-size:2.2rem;line-height:1;color:#86efac}.kg-days span{font-size:.8rem;color:#9ba1ad}
 .kg-days.warn b{color:#fcd34d}.kg-days.bad b{color:#ff9a8f}
@@ -1386,8 +1398,24 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         <input id="shGymSub" class="sh-input" maxlength="80" placeholder="مثال: نادي لياقة بدنية وكمال أجسام" autocomplete="off">
         <label class="sh-lbl" for="shGymMgr">اسم المسؤول <span class="sh-opt">(اختياري)</span></label>
         <input id="shGymMgr" class="sh-input" maxlength="60" placeholder="مثال: إدارة: الكابتن أحمد" autocomplete="off">
-        <label class="sh-lbl">شعار الجيم <span class="sh-opt">(اختياري)</span></label>
-        <div class="wz-logo"><img id="wzLogoPrev" alt="" style="display:none"><label class="wz-pick" for="shGymLogo">اختار صورة الشعار</label><input id="shGymLogo" type="file" accept="image/*" hidden></div>
+        <label class="sh-lbl" for="shGymPhone">رقم واتساب صاحب الجيم <span style="color:#dc2626;font-weight:900">*</span> <span class="sh-opt">(إجباري)</span></label>
+        <input id="shGymPhone" class="sh-input" type="tel" inputmode="tel" dir="ltr" maxlength="20" placeholder="01XXXXXXXXX" autocomplete="tel" style="text-align:left">
+        <p class="sh-sub" style="margin:6px 0 0;font-size:.82rem">بنتواصل معاك عليه لو احتجت مساعدة أو في موضوع الاشتراك. مش بيظهر لمشتركينك.</p>
+        <style>
+        #shCreate .wz-logo-card{margin:16px 0 14px;padding:16px;border-radius:20px;border:2px solid #6a2bdc;background:linear-gradient(135deg,rgba(106,43,220,.14),rgba(255,79,147,.12));box-shadow:0 10px 26px -14px rgba(106,43,220,.55)}
+        #shCreate .wz-logo-card .wz-lt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:900;font-size:1.05rem;margin:0 0 4px}
+        #shCreate .wz-logo-card .wz-lt em{font-style:normal;font-size:.72rem;font-weight:900;color:#fff;background:linear-gradient(135deg,#6a2bdc,#ff4f93);padding:3px 10px;border-radius:99px}
+        #shCreate .wz-logo-card .wz-ld{margin:0 0 12px;font-size:.85rem;opacity:.8;line-height:1.6}
+        #shCreate .wz-logo-card .wz-logo{margin:0}
+        #shCreate .wz-logo-card .wz-logo img{width:72px;height:72px;border-radius:16px;border:2px solid #6a2bdc;background:#fff}
+        #shCreate .wz-logo-card .wz-pick{flex:1;text-align:center;border:0;border-radius:14px;padding:14px 16px;font-weight:900;font-size:15px;color:#fff;background:linear-gradient(135deg,#3b1fa3,#6a2bdc 60%,#ff4f93);box-shadow:0 10px 22px -10px rgba(106,43,220,.8)}
+        #shCreate .wz-logo-card .wz-pick:active{transform:scale(.98)}
+        </style>
+        <div class="wz-logo-card">
+          <div class="wz-lt">🖼️ شعار الجيم <em>مهم</em></div>
+          <p class="wz-ld">الشعار هو اللي بيظهر على أيقونة البرنامج على موبايلك وموبايل مشتركينك، وفي أعلى الشاشة. تقدر تتخطاه وتضيفه بعدين.</p>
+          <div class="wz-logo"><img id="wzLogoPrev" alt="" style="display:none"><label class="wz-pick" for="shGymLogo">📷 اختار صورة الشعار</label><input id="shGymLogo" type="file" accept="image/*" hidden></div>
+        </div>
         <div id="shCreateMsg" class="sh-msg" role="alert"></div>
         <div class="sh-btns"><button class="sh-btn sh-ghost" type="button" id="wzBack1">رجوع</button><button class="sh-btn" type="button" id="wzNext1">التالي</button></div>
       </div>
@@ -8997,6 +9025,8 @@ window.__gmShellRun = function () {
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeFt(); });
 
   /* ---------- معاينة بيانات الجيم ---------- */
+  function wzPhoneDigits(v) { return String(v || '').replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).replace(/\D/g, ''); }
+  function wzPhoneOk(v) { var d = wzPhoneDigits(v); return d.length >= 10 && d.length <= 15; }
   function wzPv() {
     var n = val('shGymName'), L = $('pvLogo');
     $('pvName').textContent = n || 'اسم جيمك'; $('pvSub').textContent = val('shGymSub') || 'وصف قصير لنشاطك'; $('pvMgr').textContent = val('shGymMgr') || 'اسم المسؤول';
@@ -9021,6 +9051,7 @@ window.__gmShellRun = function () {
   $('wzRecheck').addEventListener('click', function () { route(state.session); });
   $('wzNext1').addEventListener('click', function () {
     if (val('shGymName').length < 2) { $('shCreateMsg').textContent = 'اكتب اسم الجيم (حرفين على الأقل).'; return; }
+    if (!wzPhoneOk(val('shGymPhone'))) { $('shCreateMsg').textContent = 'اكتب رقم واتساب صاحب الجيم (10 أرقام على الأقل). ده إجباري.'; try { $('shGymPhone').focus(); } catch (e) {} return; }
     $('shCreateMsg').textContent = ''; wzGo('L');
   });
   document.querySelectorAll('.wz-opt[data-layout]').forEach(function (b) {
@@ -9031,7 +9062,7 @@ window.__gmShellRun = function () {
   $('wzBack1').addEventListener('click', function () { state.rows.length ? show('shPicker') : wzGo('F'); });
   $('wzBack2').addEventListener('click', function () { wzGo('L'); });
   $('wzNext2').addEventListener('click', function () {
-    var rows = [['اسم الجيم', val('shGymName')], ['الوصف', val('shGymSub') || '—'], ['المسؤول', val('shGymMgr') || '—'], ['الشعار', wz.logo ? 'تم الرفع' : '—'], ['نوع الجيم', wz.layout === 'mixed' ? 'مختلط' : 'رجالي وبنات منفصلين'], ['التجربة المجانية', '١٤ يوم']];
+    var rows = [['اسم الجيم', val('shGymName')], ['الوصف', val('shGymSub') || '—'], ['المسؤول', val('shGymMgr') || '—'], ['واتساب صاحب الجيم', val('shGymPhone')], ['الشعار', wz.logo ? 'تم الرفع' : '—'], ['نوع الجيم', wz.layout === 'mixed' ? 'مختلط' : 'رجالي وبنات منفصلين'], ['التجربة المجانية', '١٤ يوم']];
     var box = $('wzSum'); box.textContent = '';
     rows.forEach(function (r) { var d = document.createElement('div'), a = document.createElement('span'), b = document.createElement('b'); a.textContent = r[0]; b.textContent = r[1]; d.appendChild(a); d.appendChild(b); box.appendChild(d); });
     $('smName').textContent = val('shGymName'); var sl = $('smLogo'); if (wz.logo) { sl.src = wz.logo; sl.style.display = 'block'; } else sl.style.display = 'none';
@@ -9039,12 +9070,14 @@ window.__gmShellRun = function () {
   });
   $('wzBack3').addEventListener('click', function () { wzGo('2'); });
   $('shCreateBtn').addEventListener('click', function () {
-    var name = val('shGymName'), msg = $('shCreateMsg2');
+    var name = val('shGymName'), msg = $('shCreateMsg2'), ownerPhone = val('shGymPhone');
     msg.textContent = '';
+    if (!wzPhoneOk(ownerPhone)) { msg.textContent = 'رقم واتساب صاحب الجيم إجباري. ارجع لخطوة «بيانات جيمك» واكتبه.'; return; }
     var btn = $('shCreateBtn'); btn.disabled = true;
     sb.rpc('create_my_gym', { p_name: name }).then(function (r) {
       btn.disabled = false;
       if (r.error) { msg.textContent = /too many/.test(r.error.message) ? 'وصلت للحد الأقصى من الجيمات.' : 'تعذّر إنشاء الجيم: ' + r.error.message; return; }
+      sb.rpc('gym_set_owner_phone', { p_gym_id: r.data, p_phone: ownerPhone.trim() }).then(function (pr) { if (pr && pr.error) console.warn('owner phone', pr.error.message); }, function (e) { console.warn('owner phone', e); });
       wzPendingClear(); state.onboard = { gymId: r.data, name: name, sub: val('shGymSub'), mgr: val('shGymMgr'), waMen: val('shWaMen'), waWomen: val('shWaWomen'), fb: val('shFb'), logo: wz.logo };
       if (wz.layout === 'mixed') return sb.rpc('gym_set_layout', { p_gym_id: r.data, p_mode: 'mixed' }).then(function () { return route(state.session, r.data); }, function () { return route(state.session, r.data); });
       return route(state.session, r.data);
@@ -9151,14 +9184,14 @@ window.__gmShellRun = function () {
   /* ============ تسجيل غير مكتمل: مسودة + تنبيهات ============ */
   var WZ_KEY = 'gm_wz_pending', wzOn = false, wzAct = Date.now(), wzLastNudge = 0, wzHiddenT = null, wzRestored = false;
   function wzDraft() {
-    return { email: state.email, ts: Date.now(), step: wz.step, layout: wz.layout, name: val('shGymName'), sub: val('shGymSub'), mgr: val('shGymMgr'), waMen: val('shWaMen'), waWomen: val('shWaWomen'), fb: val('shFb') };
+    return { email: state.email, ts: Date.now(), step: wz.step, layout: wz.layout, name: val('shGymName'), sub: val('shGymSub'), mgr: val('shGymMgr'), phone: val('shGymPhone'), waMen: val('shWaMen'), waWomen: val('shWaWomen'), fb: val('shFb') };
   }
   function wzSave() { if (!wzOn) return; try { RawLS.set.call(localStorage, WZ_KEY, JSON.stringify(wzDraft())); } catch (e) {} wzSync(); }
   function wzRestoreDraft() {
     wzRestored = false;
     var d = rawJSON(WZ_KEY); if (!d || d.email !== state.email) return;
     if (!d.name && !d.sub && !d.mgr && (!d.step || d.step === 'F')) return;
-    var map = { shGymName: d.name, shGymSub: d.sub, shGymMgr: d.mgr, shWaMen: d.waMen, shWaWomen: d.waWomen, shFb: d.fb };
+    var map = { shGymName: d.name, shGymSub: d.sub, shGymMgr: d.mgr, shGymPhone: d.phone, shWaMen: d.waMen, shWaWomen: d.waWomen, shFb: d.fb };
     Object.keys(map).forEach(function (id) { if (map[id]) $(id).value = map[id]; });
     if (d.layout) { wz.layout = d.layout; document.querySelectorAll('.wz-opt[data-layout]').forEach(function (x) { x.classList.toggle('sel', x.getAttribute('data-layout') === d.layout); }); }
     wzPv();
@@ -9571,7 +9604,7 @@ window.__gmShellRun = function () {
   }
 
   // ---------- لوحة صاحب المنصة ----------
-  var kg = { gyms: [], filter: 'all', q: '', tab: 'gyms' };
+  var kg = { gyms: [], filter: 'all', q: '', tab: 'gyms', stats: {} };
   function rpc(name, args) { return sb.rpc(name, args || {}).then(function (r) { if (r.error) throw new Error(r.error.message || 'error'); return r.data; }); }
   function daysLeft(g) { return Math.ceil((new Date(g.access_until).getTime() - Date.now()) / 86400000); }
   function kgState(g) {
@@ -9655,6 +9688,38 @@ window.__gmShellRun = function () {
     rpc('platform_log_entry', { p_gym_id: g.id, p_action: 'enter' }).catch(function () {});
     startGym({ role: 'owner', section_id: null, support: true, gyms: { id: g.id, name: g.name, slug: g.slug, status: g.status, access_until: g.access_until, grace_days: g.grace_days, plan_code: g.plan_code, layout_mode: g.layout_mode, layout_request: g.layout_request } });
   }
+  /* ملخص سريع للجيم: نشاط + حجم + مشتركين + كباتن (من platform_gym_stats) */
+  function gymSummary(g) {
+    var s = kg.stats && kg.stats[g.id]; if (!s) return null;
+    var box = el('div', 'kg-sum'), tot = s.members_total || 0;
+    var lastMs = g.last_activity ? Date.parse(g.last_activity) : (s.last_data_change ? Date.parse(s.last_data_change) : NaN);
+    var days = isNaN(lastMs) ? 999 : (Date.now() - lastMs) / 864e5;
+    var act = days <= 2 ? ['🟢 نشط', 'ok'] : days <= 7 ? ['🟡 هادي', 'warn'] : ['🔴 خامل', 'bad'];
+    var size = tot >= 150 ? '🏢 جيم كبير' : tot >= 50 ? '🏬 جيم متوسط' : tot > 0 ? '🏠 جيم صغير' : '⚪ لسه مفيش مشتركين';
+    var top = el('div', 'kg-sum-top'); top.appendChild(el('span', 'kg-chip ' + act[1], act[0])); top.appendChild(el('span', 'kg-chip', size));
+    if (tot >= 50) top.appendChild(el('span', 'kg-chip ok', '👥 أعضاء كتير'));
+    box.appendChild(top);
+    var grid = el('div', 'kg-sum-grid');
+    [['إجمالي المشتركين', tot], ['شباب', s.men || 0], ['بنات', s.women || 0], ['اشتراكهم ساري', s.active_now || 0], ['منتهي', s.expired || 0], ['جداد الشهر ده', s.new_this_month || 0]].forEach(function (x) {
+      var c = el('div', 'kg-sum-c'); c.appendChild(el('b', '', String(x[1]))); c.appendChild(el('span', '', x[0])); grid.appendChild(c);
+    });
+    box.appendChild(grid);
+    var cap = el('div', 'kg-sum-cap');
+    cap.textContent = '🏅 كباتن: ' + ((s.captains_men || 0) ? 'رجالي (' + s.captains_men + ')' : 'مفيش كابتن رجالي') + ' · ' + ((s.captains_women || 0) ? 'بنات (' + s.captains_women + ')' : 'مفيش كابتنة بنات') + '   |   الشهر اللي فات: ' + (s.new_last_month || 0) + ' جديد';
+    box.appendChild(cap);
+    /* تواصل مع صاحب الجيم: رقمه + واتساب + اتصال + إيميل */
+    var ph = String(s.owner_phone || '').trim(), dg = ph.replace(/\D/g, '');
+    if (dg.indexOf('00') === 0) dg = dg.slice(2); else if (dg.charAt(0) === '0') dg = '20' + dg.slice(1); else if (/^1\d{9}$/.test(dg)) dg = '20' + dg;
+    var ct = el('div', 'kg-contact');
+    var num = el('div', 'kg-cnum'); num.appendChild(el('span', 'kg-muted', '📞 صاحب الجيم')); var nb = el('b', '', ph || 'مفيش رقم متسجّل'); nb.style.direction = 'ltr'; num.appendChild(nb); ct.appendChild(num);
+    var cb = el('div', 'kg-cbtns');
+    function lk(t, href, cls) { var a = el('a', 'kg-btn ' + cls, t); a.href = href; a.target = '_blank'; a.rel = 'noopener'; cb.appendChild(a); }
+    if (dg.length >= 10) { lk('واتساب', 'https://wa.me/' + dg, 'wa'); lk('اتصال', 'tel:+' + dg, ''); }
+    if (g.owner_email) lk('إيميل', 'mailto:' + g.owner_email, '');
+    if (cb.children.length) ct.appendChild(cb);
+    box.appendChild(ct);
+    return box;
+  }
   function gymCard(g) {
     var st = kgState(g), d = daysLeft(g), card = el('div', 'kg-card' + (g.layout_request ? ' req' : ''));
     var top = el('div', 'kg-ctop'), nb = el('div'); nb.appendChild(el('h3', '', g.name)); nb.appendChild(el('div', 'kg-muted', g.owner_email || 'بدون مالك')); top.appendChild(nb);
@@ -9666,6 +9731,7 @@ window.__gmShellRun = function () {
       var r = el('div'); r.appendChild(el('span', 'kg-muted', x[0] + ': ')); r.appendChild(el('b', '', x[1])); meta.appendChild(r);
     });
     mid.appendChild(meta); card.appendChild(mid);
+    var sm = gymSummary(g); if (sm) card.appendChild(sm);
     if (g.layout_request) {
       var rq = el('div', 'kg-req'); rq.appendChild(el('b', '', '📩 طلب تحويل الجيم لمختلط'));
       var a = el('button', 'kg-btn gold', 'موافقة'); a.type = 'button'; a.onclick = function () { rpc('platform_set_gym_layout', { p_gym_id: g.id, p_mode: 'mixed' }).then(kgLoad, function (e) { alert(e.message); }); };
@@ -9951,7 +10017,8 @@ var mix = g.layout_mode === 'mixed';
     }, 'تمام', function () {});
   }
   function kgLoad() {
-    return rpc('platform_list_gyms').then(function (rows) { kg.gyms = rows || []; kgRender(); show('shKing'); }, function (e) {
+    var stP = rpc('platform_gym_stats').then(function (r) { var m = {}; (r || []).forEach(function (x) { m[x.gym_id] = x; }); return m; }, function () { return null; });
+    return rpc('platform_list_gyms').then(function (rows) { kg.gyms = rows || []; return stP.then(function (m) { if (m) kg.stats = m; kgRender(); show('shKing'); }); }, function (e) {
       show('shKing'); $('kgWrap').textContent = ''; $('kgWrap').appendChild(el('div', 'kg-muted', 'تعذّر تحميل الجيمات: ' + e.message));
     });
   }
