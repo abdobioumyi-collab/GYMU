@@ -13398,10 +13398,20 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
 
   /* ---------- البيانات ---------- */
   function readReq() { var p = $('mrPill'), n = 0; if (p && p.style.display !== 'none') { var m = (p.textContent || '').match(/\((\d+)\)/); n = m ? +m[1] : 0; } return n; }
+  /* نطاق الكابتن: رجالي = شاب فقط، بنات = بنت فقط، غير كده بيشوف الكل */
+  function scopeG() {
+    try {
+      var c = window.__captain; if (!c || c.id === 'owner') return '';
+      var sec = c.section || ''; if (!sec && typeof currentAppMode !== 'undefined') sec = currentAppMode;
+      return sec === 'MEN' ? 'شاب' : sec === 'WOMEN' ? 'بنت' : '';
+    } catch (e) { return ''; }
+  }
   function readSoon() {
     var out = [], now = new Date(); now.setHours(0, 0, 0, 0);
+    var sg = scopeG(), isCap = !!(window.__captain && window.__captain.id !== 'owner' && window.__captain.id !== 'king');
     members().forEach(function (m) {
-      if (!m || !m.end) return; var e = new Date(m.end + 'T00:00:00'); if (isNaN(e)) return;
+      if (!m || !m.end) return; if (sg && m.gender !== sg) return; if (isCap && m.hiddenFromCaptain) return;
+      var e = new Date(m.end + 'T00:00:00'); if (isNaN(e)) return;
       var left = Math.round((e - now) / 86400000); if (left >= 0 && left <= 3) out.push({ name: m.name || '—', id: m.id, left: left });
     });
     out.sort(function (a, b) { return a.left - b.left; }); return out;
@@ -13544,6 +13554,7 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
     if (d.mode === 'owner' || d.mode === 'kingGym' || d.mode === 'captain') { if (S.tickN % 10 === 1 || (S.soon.length === 0 && S.tickN % 3 === 0)) S.soon = readSoon(); }
     if (d.mode === 'king') { S.kingStats = readKingStats(); loadKingLog(); }
     if (prevReq !== null && S.req > prevReq) { toastMsg('📥 طلب جديد من مشترك'); var bl = $('gmBell'); if (bl) { bl.classList.add('ring'); setTimeout(function () { bl.classList.remove('ring'); }, 1600); } }
+    if (typeof window.__gmBarOff === 'function' && window.__gmBarOff()) { closePanel(); bar.classList.remove('show'); document.body.classList.remove('gm-tb-on'); S.sig = ''; return; }
     var firstShow = !bar.classList.contains('show');
     document.body.classList.add('gm-tb-on'); bar.classList.add('show');
     if (firstShow) { bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = ''; }
@@ -13941,6 +13952,7 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
     Array.prototype.forEach.call(main.querySelectorAll('.b'), function (b) {
       var s = b.querySelector('small'), lb = s ? s.textContent : '';
       if (lb && cf.hide.indexOf(lb) > -1) b.style.display = 'none';
+      if (c.d.mode === 'captain' && lb && ['الخزنة', 'مالية', 'مصروفات', 'طلبات', 'مشتركين'].indexOf(lb) > -1) b.remove();
     });
     cf.cx.forEach(function (x) {
       if (!x.on) return;
@@ -14104,6 +14116,173 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
     } catch (x) { console.error(x); toast('❌ فشل النشر: ' + ((x && x.message) || x)); }
   }
   window.__gmDock = { norm: norm, load: load, apply: apply, tick: tick, vars: vars, dbg: function () { return { CUR: CUR, W: W, DRAFT: DRAFT }; } };
+})();
+</script>
+
+
+<!-- ===== gm-role-guard: صلاحيات الكابتن + قفل البار من الكينج + إشعارات دخول جيميل جديد ===== -->
+<script id="gm-role-guard">
+(function () {
+  if (window.__gmRG) return; window.__gmRG = 1;
+  var $ = function (i) { return document.getElementById(i); };
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function toast(m) {
+    var t = $('gmToast'); if (!t) { try { alert(m); } catch (e) {} return; }
+    t.textContent = m; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('on'); }, 3800);
+  }
+  function sbr() { var sb = window.__gmSb; return (sb && !sb.__stub && sb.from) ? sb : null; }
+
+  /* ---------- 1) حراسة الخزنة: كابتن القسم ما يدخلهاش ---------- */
+  function isSectionCaptain() {
+    try {
+      var c = window.__captain; if (c && c.id === 'owner') return false;
+      return typeof currentAppMode !== 'undefined' && (currentAppMode === 'MEN' || currentAppMode === 'WOMEN' || currentAppMode === 'ALL');
+    } catch (e) { return false; }
+  }
+  ['backToAdminDashboard', 'switchAdminView', 'openMembersWorkspaceFromAdmin'].forEach(function (fn) {
+    var o = window[fn]; if (typeof o !== 'function') return;
+    window[fn] = function () {
+      if (isSectionCaptain()) { toast('🔒 دي مش بتاعتك — الخزنة والإدارة لصاحب الجيم بس'); return; }
+      return o.apply(this, arguments);
+    };
+  });
+
+  /* ---------- 2) قفل البار نهائيًا من الكينج ---------- */
+  var OFFK = 'gm_bar_off';
+  window.__gmBarOff = function () { try { return localStorage.getItem(OFFK) === '1'; } catch (e) { return false; } };
+  function setOffLocal(v) { try { localStorage.setItem(OFFK, v ? '1' : '0'); } catch (e) {} try { window.__gmTBApi && window.__gmTBApi.refresh(); } catch (e) {} }
+  function fetchOff() {
+    var sb = sbr(); if (!sb) return;
+    sb.from('main_list').select('body').eq('kind', 'setting').eq('title', 'bar_off').limit(1).then(function (r) {
+      if (!r || r.error) return; var row = (r.data || [])[0];
+      setOffLocal(!!(row && String(row.body || '').trim() === '1'));
+    }, function () {});
+  }
+  async function publishOff(v) {
+    var sb = sbr(); if (!sb) return toast('مفيش اتصال بالسيرفر دلوقتي');
+    try {
+      var r = await sb.from('main_list').select('id').eq('kind', 'setting').eq('title', 'bar_off').limit(1), res, row = (r.data || [])[0];
+      if (row) res = await sb.from('main_list').update({ body: v ? '1' : '0', updated_at: new Date().toISOString() }).eq('id', row.id);
+      else res = await sb.from('main_list').insert({ kind: 'setting', title: 'bar_off', body: v ? '1' : '0', sort_order: 901, active: true });
+      if (res && res.error) throw res.error;
+      setOffLocal(v); toast(v ? '🔌 البار اتقفل نهائيًا على كل الجيمات' : '✅ البار اشتغل تاني');
+    } catch (x) { console.error(x); toast('❌ فشل الحفظ: ' + ((x && x.message) || x)); }
+  }
+  function offCard(host) {
+    if (host.querySelector('#gmBarOffCard')) return;
+    var c = el('div', 'dknote warn'); c.id = 'gmBarOffCard';
+    var on = window.__gmBarOff();
+    c.appendChild(el('div', '', '🔌 البار العائم على كل الجيمات: ' + (on ? 'مقفول نهائيًا' : 'شغّال')));
+    c.appendChild(el('div', '', 'القفل بيشيل البار من عند الكل (كباتن ومالكين) والبرنامج يفضل شغال عادي. الإشعارات بتفضل توصل برّه البار.'));
+    var b = el('button', 'dkbtn ' + (on ? 'ok' : 'dg'), on ? '✅ تشغيل البار' : '🔌 قفل البار نهائيًا'); b.type = 'button';
+    b.onclick = function () { if (confirm(on ? 'تشغيل البار تاني على كل الجيمات؟' : 'قفل البار نهائيًا على كل الجيمات؟ البرنامج هيشتغل عادي من غيره.')) publishOff(!on).then(function () { var n = c.parentNode; c.remove(); if (n) offCard(n); }); };
+    var row = el('div', 'dkrow'); row.appendChild(b); c.appendChild(row);
+    host.insertBefore(c, host.firstChild);
+  }
+  var origRender = window.__gmDockRender;
+  window.__gmDockRender = function (r, h) {
+    var res = origRender ? origRender.apply(this, arguments) : undefined;
+    if (r === 'king' && h) {
+      offCard(h);
+      if (!h._offObs && window.MutationObserver) { h._offObs = new MutationObserver(function () { if (!h.querySelector('#gmBarOffCard')) offCard(h); }); h._offObs.observe(h, { childList: true }); }
+    }
+    return res;
+  };
+  setTimeout(fetchOff, 1500); setInterval(fetchOff, 120000);
+
+  /* ---------- 3) تسجيل دخول أي جيميل (من أي جيم) ---------- */
+  function logMyLogin() {
+    var sb = sbr(); if (!sb || !sb.rpc || !sb.auth || !navigator.onLine) return;
+    sb.auth.getSession().then(function (r) {
+      var s = r && r.data && r.data.session; if (!s) return;
+      var k = 'gm_login_logged_' + s.user.id, last = 0; try { last = +localStorage.getItem(k) || 0; } catch (e) {}
+      if (Date.now() - last < 6 * 3600 * 1000) return;
+      sb.rpc('log_my_login', { p_ua: String(navigator.userAgent || '').slice(0, 180) }).then(function (x) {
+        if (x && !x.error) { try { localStorage.setItem(k, String(Date.now())); } catch (e) {} }
+      }, function () {});
+    }, function () {});
+  }
+  setTimeout(logMyLogin, 2500); setInterval(logMyLogin, 60000);
+
+  /* ---------- 4) إشعارات الكينج: دخول جيميل جديد (شغالة سواء البار مفتوح أو مقفول) ---------- */
+  var SEENK = 'gm_king_login_seen', NOTK = 'gm_king_login_notified', king = null, myEmail = '', rows = [], missing = false, bell, badge, panel, banner, bannerT = 0;
+  function num(k) { try { return +localStorage.getItem(k) || 0; } catch (e) { return 0; } }
+  function put(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} }
+  function fresh() { var seen = num(SEENK); return rows.filter(function (x) { return new Date(x.first_seen_at).getTime() > seen && String(x.email || '').toLowerCase() !== myEmail; }); }
+  function css() {
+    if ($('gmKingCss')) return; var st = el('style'); st.id = 'gmKingCss';
+    st.textContent = '#gmKBell{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 100px);z-index:5200;width:50px;height:50px;border-radius:50%;border:0;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:22px;background:linear-gradient(135deg,#3B1A8C,#6D3FD6);color:#fff;box-shadow:0 10px 24px -8px rgba(30,10,80,.6)}#gmKBell.on{display:flex}'
+      + '#gmKBell b{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e5233d;color:#fff;font:900 .68rem/20px Cairo,sans-serif;text-align:center;display:none}'
+      + '#gmKPanel{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 160px);z-index:5201;width:min(360px,calc(100vw - 24px));max-height:60vh;overflow:auto;direction:rtl;font-family:Cairo,Tahoma,sans-serif;border-radius:20px;padding:12px;background:var(--bg-card,#fff);color:var(--text-main,#1b1233);border:1px solid var(--border-color,rgba(120,100,180,.25));box-shadow:0 24px 50px -16px rgba(20,10,50,.5);display:none}#gmKPanel.show{display:block}'
+      + '#gmKPanel h4{margin:0 0 8px;font-weight:900}#gmKPanel .r{padding:9px 10px;border-radius:12px;margin:5px 0;font-weight:700;font-size:.84rem;background:color-mix(in srgb,var(--primary,#6a2bdc) 6%,transparent)}#gmKPanel .r.n{background:color-mix(in srgb,#e5233d 10%,transparent)}#gmKPanel small{display:block;opacity:.7;font-weight:700}#gmKPanel .m{padding:10px;border-radius:12px;background:#fff4dc;color:#7a4b00;font-weight:700;font-size:.8rem;line-height:1.7}#gmKPanel button{border:0;border-radius:10px;padding:8px 12px;margin-top:8px;font:800 .8rem Cairo,sans-serif;background:var(--primary,#6a2bdc);color:#fff;cursor:pointer}'
+      + '#gmKBanner{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translate(-50%,-140%);z-index:5300;max-width:min(94vw,440px);padding:12px 18px;border-radius:18px;direction:rtl;font:800 .88rem/1.6 Cairo,Tahoma,sans-serif;color:#fff;background:linear-gradient(135deg,#3B1A8C,#6D3FD6);box-shadow:0 18px 40px -12px rgba(0,0,0,.55);transition:transform .45s cubic-bezier(.2,1.2,.3,1);cursor:pointer}#gmKBanner.on{transform:translate(-50%,0)}';
+    document.head.appendChild(st);
+  }
+  function build() {
+    if (bell) return; css();
+    bell = el('button', '', '🔔'); bell.id = 'gmKBell'; bell.type = 'button'; bell.setAttribute('aria-label', 'إشعارات دخول جديد'); badge = el('b'); bell.appendChild(badge);
+    panel = el('div'); panel.id = 'gmKPanel'; banner = el('div'); banner.id = 'gmKBanner';
+    bell.onclick = function (e) { e.stopPropagation(); togglePanel(); };
+    banner.onclick = function () { banner.classList.remove('on'); togglePanel(true); };
+    panel.onclick = function (e) { e.stopPropagation(); };
+    document.addEventListener('click', function () { panel.classList.remove('show'); });
+    document.body.appendChild(bell); document.body.appendChild(panel); document.body.appendChild(banner);
+  }
+  function draw() {
+    if (!bell) return; var n = fresh().length;
+    badge.textContent = n > 99 ? '99+' : String(n); badge.style.display = n ? 'block' : 'none';
+    panel.textContent = ''; panel.appendChild(el('h4', '', '🔔 دخول جيميلات جديدة'));
+    if (missing) { panel.appendChild(el('div', 'm', 'ميزة تسجيل الدخول محتاجة تشغيل ملف king_new_login_alerts.sql مرة واحدة في Supabase (SQL Editor). لحد ما يتشغّل مفيش إشعارات.')); return; }
+    var seen = num(SEENK);
+    if (!rows.length) panel.appendChild(el('div', 'm', 'لسه مفيش دخول مسجّل.'));
+    rows.slice(0, 20).forEach(function (x) {
+      var isNew = new Date(x.first_seen_at).getTime() > seen && String(x.email || '').toLowerCase() !== myEmail;
+      var r = el('div', 'r' + (isNew ? ' n' : ''), (isNew ? '🆕 ' : '') + x.email); r.appendChild(el('small', '', 'أول دخول: ' + new Date(x.first_seen_at).toLocaleString('ar-EG')));
+      panel.appendChild(r);
+    });
+    if ('Notification' in window && Notification.permission === 'default') {
+      var b = el('button', '', '📲 فعّل إشعارات الجهاز'); b.type = 'button';
+      b.onclick = function () { try { Notification.requestPermission().then(function () { draw(); }); } catch (e) {} }; panel.appendChild(b);
+    }
+  }
+  function togglePanel(open) {
+    var show = open === true ? true : !panel.classList.contains('show');
+    panel.classList.toggle('show', show);
+    if (show) { draw(); put(SEENK, Date.now()); setTimeout(function () { badge.style.display = 'none'; }, 1200); }
+  }
+  function announce(list) {
+    var txt = list.length === 1 ? '🆕 دخول جيميل جديد: ' + list[0].email : '🆕 ' + list.length + ' جيميلات جديدة دخلت البرنامج';
+    banner.textContent = txt; banner.classList.add('on'); clearTimeout(bannerT); bannerT = setTimeout(function () { banner.classList.remove('on'); }, 10000);
+    try { if (navigator.vibrate) navigator.vibrate([120, 60, 120]); } catch (e) {}
+    try { if ('Notification' in window && Notification.permission === 'granted') new Notification('GYM U — دخول جديد', { body: txt.replace('🆕 ', ''), tag: 'gm-new-login' }); } catch (e) {}
+  }
+  function poll() {
+    var sb = sbr(); if (!sb || !sb.rpc || !navigator.onLine) return;
+    sb.rpc('platform_new_logins').then(function (r) {
+      if (!r) return;
+      if (r.error) { var m = String(r.error.message || '') + String(r.error.code || ''); if (/platform_new_logins|PGRST202|42883|schema cache/i.test(m)) { missing = true; draw(); } return; }
+      missing = false; rows = r.data || [];
+      if (!num(SEENK)) put(SEENK, Date.now());                 // أول مرة: نتجاهل التاريخ القديم
+      var last = num(NOTK) || num(SEENK), newer = fresh().filter(function (x) { return new Date(x.first_seen_at).getTime() > last; });
+      if (newer.length) { put(NOTK, Math.max.apply(null, newer.map(function (x) { return new Date(x.first_seen_at).getTime(); }))); announce(newer); }
+      draw();
+    }, function () {});
+  }
+  checkKing.t = 0;
+  function checkKing() {
+    var sb = sbr(); if (!sb || !sb.rpc || !sb.auth) return; if (king === true) return;
+    if (king === false && Date.now() - checkKing.t < 300000) return; checkKing.t = Date.now();
+    sb.auth.getSession().then(function (r) { var s = r && r.data && r.data.session; myEmail = s ? String(s.user.email || '').toLowerCase() : ''; });
+    sb.rpc('am_i_platform_admin').then(function (r) {
+      if (!r || r.error) return;
+      king = r.data === true;
+      if (king) { build(); bell.classList.add('on'); if (!num(SEENK)) put(SEENK, Date.now()); poll(); }
+      else if (bell) bell.classList.remove('on');
+    }, function () {});
+  }
+  setTimeout(checkKing, 2000); setInterval(checkKing, 5000);
+  setInterval(function () { if (king === true) poll(); }, 30000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && king === true) poll(); });
 })();
 </script>
 
