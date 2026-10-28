@@ -10785,7 +10785,11 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
       ]
     };
     var sl = gymSlug(), url;
-    if (sl) {   /* جيم معروف: الـ manifest والأيقونات بتتقدّم من رابط https حقيقي (Edge Function: pwa) عشان كروم يعمل تثبيت حقيقي */
+    if (platformSession()) {   /* الكينج/الدعم: manifest ثابت من ملف حقيقي جنب index.html (عشان كروم يعمل WebAPK من غير علامة كروم) */
+      url = new URL('manifest.json', location.href).href;
+      setLink('manifest', { href: url });
+      if (manifestURL) { URL.revokeObjectURL(manifestURL); manifestURL = null; }
+    } else if (sl) {   /* جيم معروف: الـ manifest والأيقونات بتتقدّم من رابط https حقيقي (Edge Function: pwa) عشان كروم يعمل تثبيت حقيقي */
       url = PWA_FN + '?g=' + sl + '&o=' + encodeURIComponent(location.origin) + '&p=' + encodeURIComponent(location.pathname) + (HEXRE.test(bg) ? '&bg=' + encodeURIComponent(bg) : '') + (HEXRE.test(theme) ? '&t=' + encodeURIComponent(theme) : '');
       setLink('manifest', { href: url });
       if (manifestURL) { URL.revokeObjectURL(manifestURL); manifestURL = null; }
