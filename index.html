@@ -3776,16 +3776,20 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 const tombDeleted = (tombstones && tombstones.memberDeleted) || {};
                 const tombRevived = (tombstones && tombstones.memberRevived) || {};
                 // كود المشترك محظور فقط لو اتحذف، ومفيش "إحياء" (تسجيل مشترك جديد بنفس الكود) بعد آخر حذف
-                function isMemberIdBlocked(id) {
+                // ts (اختياري) = وقت تسجيل السجل نفسه. لو السجل اتعمل بعد وقت الحذف يبقى ده مشترك جديد
+                // أخد كود قديم، مش المحذوف — حتى لو شاهد "الإحياء" ما وصلش للجهاز ده لسه.
+                // (ده كان بيمسح مشتركين جداد وفلوسهم من السحابة لما كود محذوف يتعاد استخدامه)
+                function isMemberIdBlocked(id, ts) {
                     const k = String(id);
                     if (!tombIds.has(k)) return false;
+                    if (ts && Number(tombDeleted[k]) && Number(ts) > Number(tombDeleted[k])) return false;
                     return !((Number(tombRevived[k]) || 0) > (Number(tombDeleted[k]) || 0));
                 }
                 function isTombstoned(item) {
                     if (cfg.tomb === 'member') {
                         // لو المشترك له كود، الكود هو الحكم — الاسم والرقم لوحدهم مش سبب كفاية لاعتباره محذوف
                         // (ممكن نفس الشخص اتحذف ثم اتسجل من جديد). التوقيع (اسم|رقم) بيُستخدم بس لو مفيش كود.
-                        if (item && item.id !== undefined && item.id !== null) return isMemberIdBlocked(item.id);
+                        if (item && item.id !== undefined && item.id !== null) return isMemberIdBlocked(item.id, Number(item.createdAt) || 0);
                         const sig = (((item && item.name) || '').trim().toLowerCase()) + '|' + (((item && item.phone) || '').trim());
                         return tombSigs.has(sig);
                     }
@@ -3796,7 +3800,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     if (cfg.tomb === 'financial') {
                         if (tombFinKeys.has(financialIdentity(item))) return true;
                         if (item && item.type === 'DAILY_SESSION') return tombSessIds.has(String(item.memberId));
-                        return isMemberIdBlocked(item && item.memberId);
+                        return isMemberIdBlocked(item && item.memberId, Number(item && item.at) || 0);
                     }
                     return false;
                 }
@@ -4253,7 +4257,10 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             let max = 0;
             (list || []).forEach(m => { const n = parseInt(m && m.id); if (n > max) max = n; });
             let next = max >= STARTING_ID_THRESHOLD ? max + 1 : STARTING_ID_THRESHOLD;
-            while ((list || []).some(m => String(m.id) === String(next))) next++;
+            // ممنوع نعيد استخدام كود مشترك اتحذف قبل كده: ده كان بيخلي المشترك الجديد يتمسح مع القديم
+            let deadIds = new Set();
+            try { ensureTombstoneShape(); deadIds = new Set((deletedTombstones.memberIds || []).map(String)); } catch (e) {}
+            while ((list || []).some(m => String(m.id) === String(next)) || deadIds.has(String(next))) next++;
             return next;
         }
         function gmRefreshSuggestedId() {
@@ -6004,7 +6011,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 // أحدث بيانات (فيها اللي اتسجل من أي جهاز تاني) قبل ما نحجز الكود
                 try { const fresh = JSON.parse(localStorage.getItem('gym_pro_members_v3')); if (Array.isArray(fresh)) membersData = fresh; } catch (e) {}
                 const idTaken = id => membersData.some(m => String(m.id) === String(id));
-                if (isNaN(inputId) || idTaken(inputId)) {
+                const autoIdIsDead = !isNaN(inputId) && window.__gmAutoId != null && String(window.__gmAutoId) === String(inputId) && (deletedTombstones.memberIds || []).map(String).indexOf(String(inputId)) !== -1;
+                if (isNaN(inputId) || idTaken(inputId) || autoIdIsDead) {
                     if (isNaN(inputId) || (window.__gmAutoId != null && String(window.__gmAutoId) === String(inputId))) {
                         const oldId = inputId; inputId = gmNextFreeMemberId();
                         if (!isNaN(oldId)) idChangedNote = `\n\nℹ️ الكود ${oldId} اتاخد من جهاز تاني قبل لحظات، فاتسجل بكود ${inputId}.`;
@@ -8639,13 +8647,21 @@ window.__gmShellRun = function () {
   }
   /* ===== حارس الخروج: ممنوع الخروج لو فيه بيانات لسه ما اترفعتش على السحابة ===== */
   function unsyncedCount() {
-    var n = 0;
+    // لو مفيش جيم مفتوح (مثلاً لوحة صاحب المنصة) مفيش حاجة ممكن تتعلّق: أي sh_pending_ قديم
+    // بتاع جيم تاني ما ينفعش يترفع من هنا، فكان بيحبس الخروج للأبد. البيانات دي فاضلة محفوظة
+    // وهتترفع أول ما الجيم ده يتفتح تاني.
+    if (!state.current) return 0;
+    var n = 0, curId = state.current.gyms && state.current.gyms.id;
     try { if (typeof window.__gmLocalUnsynced === 'function') n += window.__gmLocalUnsynced(); } catch (e) {}
     try { if (window.__gmCloud) { n += window.__gmCloud.pendingCount(); n += (window.__gmCloud.state && window.__gmCloud.state.inflight) || 0; } } catch (e) {}
     try {
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i);
-        if (k && k.indexOf('sh_pending_') === 0) { var v = JSON.parse(RawLS.get.call(localStorage, k)); if (v && typeof v === 'object' && Object.keys(v).length) n++; }
+      if (curId) {
+        var pk = 'sh_pending_' + curId;
+        // لو __gmCloud بيعدّ نفس المفاتيح ما نعدّهاش مرتين
+        if (!window.__gmCloud) {
+          var v = JSON.parse(RawLS.get.call(localStorage, pk) || 'null');
+          if (v && typeof v === 'object' && Object.keys(v).length) n++;
+        }
       }
     } catch (e) {}
     if (window.__gmPushFailed) n++;
@@ -9713,7 +9729,7 @@ var mix = g.layout_mode === 'mixed';
     abtn('+ جيم جديد', createDlg, 'gold'); abtn('🔔 إشعارات الدخول', kgPushEnable); abtn('تحديث', kgLoad); abtn('خروج', function () { if (typeof window.__gmKingCard === 'function') window.__gmKingCard(); else if (confirm('تسجيل الخروج من حساب جوجل؟')) window.__shSignOut(); }, 'danger');
     hero.appendChild(acts); w.appendChild(hero);
     var tabs = el('div', 'kg-tabs');
-    [['gyms', '🏋️ الجيمات'], ['site', '🧩 الفوتر والمنظومة'], ['log', '🕘 سجل دخولي'], ['dock', '🫧 البار العائم']].forEach(function (t) {
+    [['gyms', '🏋️ الجيمات'], ['site', '🧩 الفوتر والمنظومة'], ['log', '🕘 سجل دخولي'], ['dock', '🫧 البار العائم'], ['trash', '🗑️ سلة المهملات']].forEach(function (t) {
       var b = el('button', 'kg-tab' + (kg.tab === t[0] ? ' on' : ''), t[1]); b.type = 'button'; b.onclick = function () { kg.tab = t[0]; kgRender(); }; tabs.appendChild(b);
     });
     w.appendChild(tabs);
@@ -9721,7 +9737,92 @@ var mix = g.layout_mode === 'mixed';
     if (kg.tab === 'site') return kgSite(body);
     if (kg.tab === 'log') return kgLog(body);
     if (kg.tab === 'dock') { if (window.__gmDockRender) window.__gmDockRender('king', body); return; }
+    if (kg.tab === 'trash') return kgTrash(body);
     kgGyms(body);
+  }
+  /* ===== تبويب سلة المهملات: أي حاجة تتحذف من أي جيم (بقصد أو بدون) بتيجي هنا 15 يوم ===== */
+  var KT_FIN = { NEW_REGISTRATION: 'تسجيل جديد', RENEWAL_EXTENSION: 'تجديد', DEBT_CLEARANCE: 'سداد مديونية', DAILY_SESSION: 'حصة يوم', UPDATE_MODIFICATION: 'تعديل مبلغ' };
+  var KT_TABLE = {
+    gym_pro_members_v3: ['member', '👤 مشترك'], gym_pro_financials_v3: ['fin', '💰 حركة مالية'], gym_pro_daily_sessions_v1: ['session', '🏃 حصة يومية'],
+    gym_pro_sales_v1: ['sale', '🛒 مبيعات'], gym_pro_expenses_v1: ['expense', '💸 مصروف'], gym_pro_captains_v1: ['captain', '🧑‍🏫 كابتن'],
+    gym_pro_sale_products_v1: ['plan', '📦 منتج'], gym_pro_sub_plans_men_v1: ['plan', '🏷️ باقة'], gym_pro_sub_plans_women_v1: ['plan', '🏷️ باقة'],
+    gym_pro_sub_plans_v1: ['plan', '🏷️ باقة'], gym_pro_expense_categories_v1: ['plan', '🗂️ بند مصروف']
+  };
+  var KT_FILTERS = [['all', 'الكل'], ['member', 'مشتركين'], ['fin', 'حركات مالية'], ['session', 'حصص يومية'], ['sale', 'مبيعات'], ['expense', 'مصروفات'], ['captain', 'كباتن'], ['plan', 'باقات ومنتجات'], ['gym', 'جيمات كاملة'], ['row', 'أخرى']];
+  function ktInfo(x) {
+    if (x.type === 'gym') return { f: 'gym', tag: '🏢 جيم كامل', sum: x.detail || '' };
+    var m = KT_TABLE[x.table], d = x.data || {}, f = m ? m[0] : 'row', tag = m ? m[1] : '📄 سجل (' + (x.table || '') + ')', s = [];
+    function add(k, v) { if (v !== undefined && v !== null && v !== '') s.push(k + ' ' + v); }
+    if (f === 'member') { add('كود', d.id); add('📞', d.phone); add('باقة', d.subtype); add('مدفوع', d.paid); add('مديونية', Number(d.debt) > 0 ? d.debt : ''); add('ينتهي', d.end); }
+    else if (f === 'fin') { add('', KT_FIN[d.type] || d.type); add('مبلغ', d.amountCollected); add('', d.memberName); add('', d.timestamp); }
+    else if (f === 'session') { add('', d.name); add('📞', d.phone); add('مبلغ', d.amount); add('', d.date); }
+    else if (f === 'sale') { add('', d.product); add('كمية', d.qty); add('سعر', d.unitPrice); add('', d.date); }
+    else if (f === 'expense') { add('', d.category); add('مبلغ', d.amount); add('', d.date); add('', d.note); }
+    else if (x.type === 'row') { add('', x.row_id); }
+    else { add('', d.name); add('سعر', d.price); }
+    return { f: f, tag: tag, sum: s.join(' · ') };
+  }
+  function kgTrash(w) {
+    var st = kg.trash = kg.trash || { f: 'all', q: '', gym: '', rows: null };
+    var p = el('section', 'kg-panel'); p.appendChild(el('h3', '', '🗑️ سلة المهملات'));
+    p.appendChild(el('p', '', 'أي بيانات بتتحذف من أي جيم (بقصد أو بدون قصد) بتتحفظ هنا 15 يوم، وبعدها بتتمسح تلقائيًا. تقدر ترجّعها بضغطة.'));
+    var msg = el('div', 'kg-muted', 'جاري التحميل…'); p.appendChild(msg); w.appendChild(p);
+    var list = el('div'); w.appendChild(list);
+    function load() {
+      msg.textContent = 'جاري التحميل…';
+      rpc('platform_trash_feed').then(function (rows) { st.rows = rows || []; draw(); }, function (e) {
+        msg.textContent = ''; list.textContent = '';
+        list.appendChild(el('div', 'kg-warn', /platform_trash_feed/.test(e.message) ? 'السلة محتاجة تحديث بسيط في قاعدة البيانات: شغّل ملف trash_setup.sql في Supabase (SQL Editor) وبعدين اضغط تحديث.' : 'تعذّر التحميل: ' + e.message));
+      });
+    }
+    function act(name, ids, okMsg, confirmTxt) {
+      if (confirmTxt && !confirm(confirmTxt)) return;
+      msg.textContent = 'جاري التنفيذ…';
+      rpc(name, { p_ids: ids }).then(function (r) {
+        var t = okMsg;
+        if (r && typeof r === 'object') t = '✅ اترجع ' + (r.restored || 0) + (r.skipped ? ' — وفيه ' + r.skipped + ' ما ينفعش يترجع (موجود بالفعل أو مرتبط بحاجة تانية)' : '');
+        load(); setTimeout(function () { msg.textContent = t; }, 400);
+      }, function (e) { msg.textContent = '⚠️ ' + e.message; });
+    }
+    function draw() {
+      list.textContent = ''; var rows = st.rows || [], q = st.q.trim().toLowerCase();
+      var gyms = {}; rows.forEach(function (x) { if (x.gym_name) gyms[x.gym_name] = 1; });
+      var counts = {}; rows.forEach(function (x) { var f = ktInfo(x).f; counts[f] = (counts[f] || 0) + 1; });
+      var tools = el('div', 'kg-tools'), qi = el('input', 'kg-search'); qi.type = 'search'; qi.placeholder = 'ابحث بالاسم أو التليفون أو الجيم'; qi.value = st.q;
+      qi.oninput = function () { st.q = qi.value; drawItems(); }; tools.appendChild(qi);
+      var gs = document.createElement('select'); gs.className = 'kg-search'; gs.style.maxWidth = '180px';
+      var o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'كل الجيمات'; gs.appendChild(o0);
+      Object.keys(gyms).forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = n; if (st.gym === n) o.selected = true; gs.appendChild(o); });
+      gs.onchange = function () { st.gym = gs.value; drawItems(); }; tools.appendChild(gs);
+      KT_FILTERS.forEach(function (f) {
+        var n = f[0] === 'all' ? rows.length : (counts[f[0]] || 0); if (f[0] !== 'all' && !n) return;
+        var c = el('button', 'kg-chip' + (st.f === f[0] ? ' on' : ''), f[1] + ' (' + n + ')'); c.type = 'button'; c.onclick = function () { st.f = f[0]; draw(); }; tools.appendChild(c);
+      });
+      list.appendChild(tools);
+      var box = el('div', 'kg-grid'); list.appendChild(box);
+      function drawItems() {
+        box.textContent = ''; var qq = st.q.trim().toLowerCase(), n = 0;
+        rows.forEach(function (x) {
+          var inf = ktInfo(x); if (st.f !== 'all' && inf.f !== st.f) return; if (st.gym && x.gym_name !== st.gym) return;
+          var hay = ((x.label || '') + ' ' + inf.sum + ' ' + (x.gym_name || '')).toLowerCase(); if (qq && hay.indexOf(qq) < 0) return;
+          n++;
+          var c = el('div', 'kg-card'), top = el('div', 'kg-ctop'), nb = el('div');
+          nb.appendChild(el('h3', '', x.label || '—')); nb.appendChild(el('div', 'kg-muted', '🏋️ ' + (x.gym_name || '—') + ' · ' + inf.tag)); top.appendChild(nb); c.appendChild(top);
+          if (inf.sum) c.appendChild(el('div', 'kg-muted', inf.sum));
+          var left = Math.max(0, Math.ceil((new Date(x.expires_at) - Date.now()) / 86400000));
+          c.appendChild(el('div', 'kg-muted', '🕘 اتحذف ' + new Date(x.deleted_at).toLocaleString('ar-EG') + (x.by ? ' · بواسطة ' + x.by : '') + ' · هيتمسح نهائي بعد ' + left + ' يوم'));
+          var acts = el('div', 'kg-acts'), det = el('pre', 'kg-muted'); det.style.cssText = 'display:none;white-space:pre-wrap;direction:ltr;text-align:left;font-size:.75rem;margin:6px 0 0';
+          function b(t, cls, fn) { var y = el('button', 'kg-btn ' + (cls || ''), t); y.type = 'button'; y.onclick = fn; acts.appendChild(y); }
+          b('♻️ استرجاع', 'gold', function () { act('platform_trash_restore', x.ids, '', 'تسترجع «' + (x.label || '') + '»؟'); });
+          if (x.data) b('🔍 تفاصيل', '', function () { det.textContent = JSON.stringify(x.data, null, 1); det.style.display = det.style.display === 'none' ? 'block' : 'none'; });
+          b('🗑 مسح نهائي', 'danger', function () { act('platform_trash_purge', x.ids, '🗑 اتمسح نهائيًا', 'مسح «' + (x.label || '') + '» نهائي ومش هيتسترجع. متأكد؟'); });
+          c.appendChild(acts); c.appendChild(det); box.appendChild(c);
+        });
+        if (!n) box.appendChild(el('div', 'kg-muted', rows.length ? 'مفيش نتايج بالفلتر ده.' : '✅ السلة فاضية.'));
+      }
+      drawItems(); msg.textContent = rows.length ? rows.length + ' عنصر في السلة' : '';
+    }
+    load();
   }
   function kgGyms(w) {
     var G = kg.gyms, cnt = { all: G.length, trial: 0, active: 0, blocked: 0, req: 0 };
