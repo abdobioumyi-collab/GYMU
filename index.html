@@ -1337,7 +1337,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
   <section id="shCreate" class="sh-screen sh-light" hidden>
     <div class="cr-wrap">
     <img class="cr-logo" id="crLogo" alt="إدارة الجيمات">
-    <div class="cr-user"><span>✓</span><span id="wzMyEmail2"></span></div>
+    <div class="cr-bar"><div class="cr-user"><span>✓</span><span id="wzMyEmail2"></span></div><button type="button" class="cr-out" data-sh-logout>🚪 خروج</button></div>
     <div class="sh-card wide">
       <div class="wz-head" id="wzHead"><div class="wz-steps" id="wzSteps"></div><span class="wz-lbl" id="wzLbl"></span></div>
 
@@ -1428,7 +1428,30 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
     <div id="ftSheet" role="dialog" aria-modal="true"><div class="fs-p" id="fsP"></div></div>
   </section>
 
-  <section id="shKing" class="sh-screen kg" hidden><div class="kg-wrap" id="kgWrap"></div></section>
+  <style id="gmWzPatchCss">
+#shCreate .cr-bar{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 auto 18px;max-width:100%}
+#shCreate .cr-bar .cr-user{margin:0;max-width:100%;overflow:hidden}
+#shCreate .cr-bar .cr-user #wzMyEmail2{direction:ltr;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60vw}
+#shCreate .cr-out{padding:8px 16px;border-radius:99px;border:1px solid rgba(255,138,128,.55);background:rgba(255,90,70,.12);color:#ffb4a8;font:800 13px 'Cairo',sans-serif;cursor:pointer}
+#shCreate .cr-out:hover{background:rgba(255,90,70,.24)}
+#wzNudge{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:5300;width:min(440px,calc(100% - 24px));box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;background:#1b1403;border:1.5px solid #f7c948;color:#fff;font:700 14px/1.6 'Cairo',sans-serif;direction:rtl;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+#wzNudge b{flex:1;font-weight:800}
+#wzNudge button{border:0;border-radius:10px;padding:6px 12px;background:#f7c948;color:#1b1403;font:900 13px 'Cairo',sans-serif;cursor:pointer}
+#shPinOut{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(6,8,14,.72);backdrop-filter:blur(6px);font-family:'Cairo',Tahoma,sans-serif;direction:rtl}
+#shPinOut .po-card{width:min(380px,100%);box-sizing:border-box;padding:26px 22px 20px;border-radius:26px;background:#101013;color:#fff;border:1px solid rgba(247,201,72,.4);text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+#shPinOut .po-ic{font-size:34px;margin-bottom:6px}
+#shPinOut h3{margin:0 0 6px;font-size:20px;font-weight:900}
+#shPinOut p{margin:0 0 14px;color:#a3a9b5;font-size:14px;line-height:1.7;font-weight:700}
+#shPinOut input{width:100%;box-sizing:border-box;padding:14px;text-align:center;font:900 26px 'Cairo',sans-serif;letter-spacing:.4em;border-radius:14px;border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;margin-bottom:8px}
+#shPinOut input:focus{outline:none;border-color:#f7c948}
+#shPinOut .po-msg{min-height:1.4em;margin-bottom:8px;color:#ff9a8f;font-weight:800;font-size:13.5px}
+#shPinOut .po-btns{display:flex;gap:10px}
+#shPinOut button{flex:1;padding:12px;border-radius:13px;font:900 15px 'Cairo',sans-serif;cursor:pointer;border:1.5px solid transparent}
+#shPinOut .po-go{background:#e5392d;color:#fff}
+#shPinOut .po-go:disabled{opacity:.55}
+#shPinOut .po-cancel{background:transparent;color:#cdd1d9;border-color:rgba(255,255,255,.22)}
+</style>
+<section id="shKing" class="sh-screen kg" hidden><div class="kg-wrap" id="kgWrap"></div></section>
 
   <section id="shPicker" class="sh-screen sh-light" hidden>
     <div class="sh-card">
@@ -1980,6 +2003,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
 
     <div class="admin-dashboard" id="adminDashboardArea" style="display:none;">
         <div class="brand-container">
+            <button type="button" class="gm-acct-btn" id="gmAcctBtn" onclick="gmOpenAccount(false)" title="حسابي" aria-label="حسابي"><span data-gm-initial>G</span></button>
             <img id="adminDashLogoImg" class="brand-logo-img shape-circle" style="display:none;">
             <div class="gate-logo" id="adminDashLogoIcon" style="font-size:2.5rem;"><span class="ico" data-i="fa-dumbbell"></span></div>
             <h1 id="adminDashTitle">GYM U</h1>
@@ -3213,7 +3237,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 try { const v = JSON.parse(raw); return Array.isArray(v) ? v : []; } catch (e) { return []; }
             }
             function safeParseTombstones(raw) {
-                const base = { memberIds: [], memberSigs: [], sessionIds: [], expenseIds: [], financialKeys: [], saleKeys: [], memberDeleted: {}, memberRevived: {} };
+                const base = { memberIds: [], memberSigs: [], sessionIds: [], expenseIds: [], financialKeys: [], saleKeys: [], attendanceKeys: [], memberDeleted: {}, memberRevived: {} };
                 if (raw === null || raw === undefined) return base;
                 function asMap(x) { return (x && typeof x === 'object' && !Array.isArray(x)) ? x : {}; }
                 try {
@@ -3225,6 +3249,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                         expenseIds: Array.isArray(v && v.expenseIds) ? v.expenseIds : [],
                         financialKeys: Array.isArray(v && v.financialKeys) ? v.financialKeys : [],
                         saleKeys: Array.isArray(v && v.saleKeys) ? v.saleKeys : [],
+                        attendanceKeys: Array.isArray(v && v.attendanceKeys) ? v.attendanceKeys : [],
                         // وقت آخر حذف / آخر "إحياء" لكل كود مشترك — الأحدث بينهم هو اللي يحسم (حذف ولا موجود)
                         memberDeleted: asMap(v && v.memberDeleted),
                         memberRevived: asMap(v && v.memberRevived)
@@ -3254,6 +3279,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     expenseIds: unionArr(localT.expenseIds, cloudT.expenseIds),
                     financialKeys: unionArr(localT.financialKeys, cloudT.financialKeys),
                     saleKeys: unionArr(localT.saleKeys, cloudT.saleKeys),
+                    attendanceKeys: unionArr(localT.attendanceKeys, cloudT.attendanceKeys),
                     memberDeleted: maxMap(localT.memberDeleted, cloudT.memberDeleted),
                     memberRevived: maxMap(localT.memberRevived, cloudT.memberRevived)
                 };
@@ -3293,7 +3319,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 'gym_pro_daily_sessions_v1': { identity: sessionIdentity, tomb: 'session' },
                 'gym_pro_activity_log_v1': { identity: function (a) { return 'id:' + (a && a.id); }, tomb: null, sortDesc: true, cap: 400 },
                 'gym_pro_sales_v1': { identity: saleIdentity, tomb: 'sale' },
-                'gym_pro_attendance_v1': { identity: function (r) { return 'att:' + (r && r.day) + '|' + (r && r.captainId); }, tomb: null, earliestWins: true },
+                'gym_pro_attendance_v1': { identity: function (r) { return 'att:' + (r && r.day) + '|' + (r && r.captainId); }, tomb: 'attendance', earliestWins: true },
                 'gym_pro_expenses_v1': { identity: expenseIdentity, tomb: 'expense' },
                 // ملاحظة: باقات الاشتراك ومنتجات البيع مش هنا عن قصد — دي قوائم إعدادات بتتعدّل وتتحذف،
                 // فلازم تتزامن بالأحدث يكسب (Last-Write-Wins) مش بالدمج، وإلا النسخ القديمة بترجع وتتكرر.
@@ -3385,6 +3411,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 const tombExpenseIds = new Set(((tombstones && tombstones.expenseIds) || []).map(String));
                 const tombFinKeys = new Set(((tombstones && tombstones.financialKeys) || []).map(String));
                 const tombSaleKeys = new Set(((tombstones && tombstones.saleKeys) || []).map(String));
+                const tombAttKeys = new Set(((tombstones && tombstones.attendanceKeys) || []).map(String));
+                const attRecKey = function (r) { return 'att:' + (r && r.day) + '|' + (r && r.captainId) + '|' + (r && r.ts); };
 
                 const tombDeleted = (tombstones && tombstones.memberDeleted) || {};
                 const tombRevived = (tombstones && tombstones.memberRevived) || {};
@@ -3405,6 +3433,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     if (cfg.tomb === 'session') return tombSessIds.has(String(item && item.id));
                     if (cfg.tomb === 'expense') return tombExpenseIds.has(String(item && item.id));
                     if (cfg.tomb === 'sale') return tombSaleKeys.has(saleIdentity(item));
+                    if (cfg.tomb === 'attendance') return tombAttKeys.has(attRecKey(item));
                     if (cfg.tomb === 'financial') {
                         if (tombFinKeys.has(financialIdentity(item))) return true;
                         if (item && item.type === 'DAILY_SESSION') return tombSessIds.has(String(item.memberId));
@@ -3419,13 +3448,14 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     // المصروف اللي اتحذف بقرار صريح على أي جهاز بيتشال من هنا كمان (مش بس بيتمنع يرجع)
                     if (cfg.tomb === 'expense' && isTombstoned(item)) return;
                     if (cfg.tomb === 'sale' && isTombstoned(item)) return;
+                    if (cfg.tomb === 'attendance' && isTombstoned(item)) return;
                     if (cfg.tomb === 'financial' && tombFinKeys.has(financialIdentity(item))) return;
                     map.set(cfg.identity(item), item);
                 });
                 (cloudArr || []).forEach(function (item) {
                     const id = cfg.identity(item);
                     if (map.has(id)) {            // موجود بالفعل على الجهاز ده — متكررش
-                        if (cfg.earliestWins) { const cur = map.get(id); if ((Number(item && item.ts) || Infinity) < (Number(cur && cur.ts) || Infinity)) map.set(id, item); }
+                        if (cfg.earliestWins && !isTombstoned(item)) { const cur = map.get(id); if ((Number(item && item.ts) || Infinity) < (Number(cur && cur.ts) || Infinity)) map.set(id, item); }
                         return;
                     }
                     if (isTombstoned(item)) return; // اتحذف قصدًا قبل كده على الجهاز ده — متسترجعش
@@ -3796,6 +3826,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             if (!Array.isArray(deletedTombstones.expenseIds)) deletedTombstones.expenseIds = [];
             if (!Array.isArray(deletedTombstones.financialKeys)) deletedTombstones.financialKeys = [];
             if (!Array.isArray(deletedTombstones.saleKeys)) deletedTombstones.saleKeys = [];
+            if (!Array.isArray(deletedTombstones.attendanceKeys)) deletedTombstones.attendanceKeys = [];
             if (!deletedTombstones.memberDeleted || typeof deletedTombstones.memberDeleted !== 'object') deletedTombstones.memberDeleted = {};
             if (!deletedTombstones.memberRevived || typeof deletedTombstones.memberRevived !== 'object') deletedTombstones.memberRevived = {};
         }
@@ -4220,7 +4251,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             list.innerHTML = Object.keys(byDay).sort().reverse().map(day => {
                 const items = byDay[day].sort((a, b) => a.ts - b.ts);
                 return '<div class="att-day"><div class="att-day-head">' + attEsc(attDayLabel(day)) + '<span>' + items.length + ' حضور</span></div>' +
-                    items.map(r => '<div class="att-row"><div class="att-name">👤 ' + attEsc(r.name) + '</div><div class="att-sec">' + attEsc(SEC_L[r.section] || '') + '</div><div class="att-time">' + attTimeHtml(r.ts) + '</div></div>').join('') + '</div>';
+                    items.map(r => '<div class="att-row"><div class="att-name">👤 ' + attEsc(r.name) + '</div><div class="att-sec">' + attEsc(SEC_L[r.section] || '') + '</div><div class="att-time">' + attTimeHtml(r.ts) + '</div><button type="button" class="att-cancel" data-c="' + attEsc(r.captainId) + '" onclick="cancelAttendanceRecord(' + Number(r.ts) + ', this.dataset.c)" title="إلغاء الحضور ده — هيتسجل من أول دخول جديد">إلغاء</button></div>').join('') + '</div>';
             }).join('');
         }
 
@@ -7877,6 +7908,15 @@ window.__gmShellRun = function () {
       var hs = await Promise.all(cands.map(function (c) { return hash(pin, c.rec.salt); }));
       return cands.filter(function (c, i) { return hs[i] === c.rec.hash; });
     }
+    // تحقق من الرقم السري للمالك (بيستخدم نفس الهاش ونفس قفل المحاولات الغلط بتاع دخول المالك)
+    window.__capVerifyOwner = async function (pin) {
+      var d = load(); if (!d.owner || !d.owner.salt) return { ok: false, noPin: true };
+      var w = wait('owner'); if (w) return { ok: false, wait: w, waitText: fmt(w) };
+      var h = await hash(norm(pin), d.owner.salt);
+      if (h === d.owner.hash) { clear('owner'); return { ok: true }; }
+      fail('owner'); var w2 = wait('owner');
+      return { ok: false, wrong: true, wait: w2, waitText: w2 ? fmt(w2) : '' };
+    };
     window.__capOpen = function (target) {
       cur = { target: target, who: null }; $('capMsg').textContent = ''; $('capModal').setAttribute('data-t', target); $('capModal').style.display = 'flex';
       if (target === 'OWNER' && !load().owner) {
@@ -8223,9 +8263,9 @@ window.__gmShellRun = function () {
     setTimeout(function () { window.openGatePasswordPrompt(mode); }, 300);
   }
   window.__shSignOut = function () {
-    sb.auth.signOut().then(function () { try { sessionStorage.removeItem('sh_force_picker'); } catch (e) {} location.reload(); });
+    sb.auth.signOut().then(function () { try { sessionStorage.removeItem('sh_force_picker'); RawLS.rem.call(localStorage, 'gm_wz_pending'); } catch (e) {} location.reload(); });
   };
-  $('shBlockLogout').addEventListener('click', function () { if (confirm('تسجيل الخروج من حساب جوجل؟')) window.__shSignOut(); });
+  $('shBlockLogout').addEventListener('click', function () { window.__shSecureSignOut(); });
 
   function sectionMode(row) {
     var sec = state.sections.filter(function (x) { return x.id === row.section_id; })[0];
@@ -8296,7 +8336,7 @@ window.__gmShellRun = function () {
     var sw = el('button', 'tm-btn', 'تغيير الجيم'); sw.type = 'button';
     sw.addEventListener('click', function () { try { sessionStorage.setItem('sh_force_picker', '1'); } catch (e) {} location.reload(); });
     var lo = el('button', 'tm-btn tm-danger', 'خروج من الحساب'); lo.type = 'button';
-    lo.addEventListener('click', function () { if (confirm('تسجيل الخروج من حساب جوجل؟')) window.__shSignOut(); });
+    lo.addEventListener('click', function () { window.__shSecureSignOut(); });
     ac.appendChild(sw); ac.appendChild(lo); box.appendChild(ac);
   }
   function fillSections() {
@@ -8449,6 +8489,7 @@ window.__gmShellRun = function () {
       $('wzSteps').innerHTML = h; $('wzLbl').textContent = 'خطوة ' + n + ' من 4';
     }
     $('shCreate').scrollTop = 0;
+    if (typeof wzSave === 'function') wzSave();
   }
   function val(id) { return $(id).value.trim(); }
 
@@ -8520,6 +8561,7 @@ window.__gmShellRun = function () {
     var lg = document.querySelector('.lx-logo'); if (lg && lg.src) $('crLogo').src = lg.src;
     renderFeatures(); wzPv();
     wzGo(state.rows.length ? '1' : 'F');
+    wzRestoreDraft(); wzPendingStart();
     show('shCreate');
   }
   $('shNewGymBtn').addEventListener('click', showCreate);
@@ -8553,16 +8595,206 @@ window.__gmShellRun = function () {
     sb.rpc('create_my_gym', { p_name: name }).then(function (r) {
       btn.disabled = false;
       if (r.error) { msg.textContent = /too many/.test(r.error.message) ? 'وصلت للحد الأقصى من الجيمات.' : 'تعذّر إنشاء الجيم: ' + r.error.message; return; }
-      state.onboard = { gymId: r.data, name: name, sub: val('shGymSub'), mgr: val('shGymMgr'), waMen: val('shWaMen'), waWomen: val('shWaWomen'), fb: val('shFb'), logo: wz.logo };
+      wzPendingClear(); state.onboard = { gymId: r.data, name: name, sub: val('shGymSub'), mgr: val('shGymMgr'), waMen: val('shWaMen'), waWomen: val('shWaWomen'), fb: val('shFb'), logo: wz.logo };
       if (wz.layout === 'mixed') return sb.rpc('gym_set_layout', { p_gym_id: r.data, p_mode: 'mixed' }).then(function () { return route(state.session, r.data); }, function () { return route(state.session, r.data); });
       return route(state.session, r.data);
     });
   });
   document.querySelectorAll('[data-sh-logout]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      if (!confirm('تسجيل الخروج من حساب جوجل؟')) return;
-      sb.auth.signOut().then(function () { try { sessionStorage.removeItem('sh_force_picker'); } catch (e) {} location.reload(); });
+    b.addEventListener('click', function () { window.__shSecureSignOut(); });
+  });
+
+
+  /* ===================== خروج آمن: رقم المالك السري ===================== */
+  function gymNS(id) { return 'g' + String(id).replace(/-/g, '').slice(0, 16) + '__'; }
+  function readJSON(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+  function rawJSON(k) { try { return JSON.parse(RawLS.get.call(localStorage, k)); } catch (e) { return null; } }
+  function nonEmpty(v) { return Array.isArray(v) ? v.length > 0 : !!(v && typeof v === 'object' && Object.keys(v).length); }
+  var DATA_KEYS = ['gym_pro_members_v3', 'gym_pro_financials_v3', 'gym_pro_daily_sessions_v1', 'gym_pro_sales_v1', 'gym_pro_expenses_v1'];
+  function curHasData() { return DATA_KEYS.some(function (k) { return nonEmpty(readJSON(k)); }); }
+  function curPinSet() { var d = readJSON('gym_pro_captains_v1'); return !!(d && d.owner && d.owner.salt); }
+  /* true = الخروج محتاج رقم المالك. false = يخرج عادي (لسه ما عملش حساب/ما فيش بيانات) */
+  window.__shLogoutNeedsPin = function () {
+    if (state.current) {
+      if (state.current.support) return false;
+      if (state.current.role !== 'owner') return false;
+      return curPinSet() || curHasData();
+    }
+    return state.rows.some(function (r) { return r.role === 'owner'; });
+  };
+  function normPin(p) { return String(p || '').replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).trim(); }
+  function hx(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
+  async function pinHash(pin, salt) {
+    if (window.crypto && crypto.subtle) {
+      var k = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits']);
+      return hx(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: 120000, hash: 'SHA-256' }, k, 256));
+    }
+    var h = 2166136261, t = salt + ':' + pin;
+    for (var r = 0; r < 5000; r++) for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return 'f' + h.toString(16);
+  }
+  function ownerRecsLocal() {
+    var recs = [];
+    state.rows.forEach(function (r) {
+      if (r.role !== 'owner') return;
+      var d = rawJSON(gymNS(r.gyms.id) + 'gym_pro_captains_v1');
+      if (d && d.owner && d.owner.salt && d.owner.hash) recs.push(d.owner);
     });
+    return recs;
+  }
+  /* تحقق خارج التطبيق (شاشة اختيار الجيم): بنقارن بالهاش المحفوظ على الجهاز */
+  async function verifyOffApp(pin) {
+    var LK = 'gm_out_lock', lk = rawJSON(LK) || { n: 0, until: 0 };
+    if (lk.until > Date.now()) return { wait: Math.ceil((lk.until - Date.now()) / 1000) };
+    var recs = ownerRecsLocal(), p = normPin(pin);
+    for (var i = 0; i < recs.length; i++) { if (await pinHash(p, recs[i].salt) === recs[i].hash) { try { RawLS.rem.call(localStorage, LK); } catch (e) {} return { ok: true }; } }
+    lk.n++; if (lk.n % 3 === 0) lk.until = Date.now() + (lk.n >= 6 ? 600000 : 30000);
+    try { RawLS.set.call(localStorage, LK, JSON.stringify(lk)); } catch (e) {}
+    return { wrong: true, wait: lk.until > Date.now() ? Math.ceil((lk.until - Date.now()) / 1000) : 0 };
+  }
+  function pinDialog(verify, onOk) {
+    var old = $('shPinOut'); if (old) old.remove();
+    var m = el('div'); m.id = 'shPinOut'; var c = el('div', 'po-card'); m.appendChild(c);
+    c.appendChild(el('div', 'po-ic', '🔐')); c.appendChild(el('h3', '', 'تسجيل الخروج'));
+    c.appendChild(el('p', '', 'اكتب الرقم السري لصاحب الجيم عشان تخرج من حساب ' + (state.email || 'جوجل') + '.'));
+    var inp = el('input'); inp.type = 'password'; inp.inputMode = 'numeric'; inp.autocomplete = 'off'; inp.placeholder = '••••'; c.appendChild(inp);
+    var msg = el('div', 'po-msg'); c.appendChild(msg);
+    var bs = el('div', 'po-btns'); c.appendChild(bs);
+    var go = el('button', 'po-go', 'خروج'); go.type = 'button'; var cn = el('button', 'po-cancel', 'إلغاء'); cn.type = 'button';
+    bs.appendChild(go); bs.appendChild(cn); document.body.appendChild(m);
+    function close() { m.remove(); }
+    cn.onclick = close; m.addEventListener('click', function (e) { if (e.target === m) close(); });
+    var busy = false;
+    async function submit() {
+      if (busy) return; var pin = inp.value.trim(); if (!pin) { msg.textContent = 'اكتب الرقم السري.'; return; }
+      busy = true; go.disabled = true; msg.textContent = '';
+      var r; try { r = await verify(pin); } catch (e) { r = { err: true }; }
+      busy = false; go.disabled = false;
+      if (r && r.ok) { close(); onOk(); return; }
+      inp.value = '';
+      if (r && r.noPin) msg.textContent = 'لسه ما عيّنتش رقمك السري كمالك. ادخل الخزنة والإدارة الأول وعيّنه.';
+      else if (r && r.wait) msg.textContent = 'محاولات غلط كتير. جرّب تاني بعد ' + (r.waitText || (r.wait >= 60 ? Math.ceil(r.wait / 60) + ' دقيقة' : r.wait + ' ثانية')) + '.';
+      else if (r && r.wrong) msg.textContent = '❌ الرقم غلط.';
+      else msg.textContent = 'حصل خطأ، جرّب تاني.';
+      inp.focus();
+    }
+    go.onclick = submit;
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); else if (e.key === 'Escape') close(); });
+    setTimeout(function () { inp.focus(); }, 80);
+  }
+  window.__shSecureSignOut = function () {
+    function out() {
+      if (state.current) { try { var t = $('shRibbon'); t.textContent = '⏳ بنرفع آخر التغييرات قبل الخروج...'; t.className = 'show'; } catch (e) {} setTimeout(window.__shSignOut, 1600); }
+      else window.__shSignOut();
+    }
+    if (!window.__shLogoutNeedsPin()) { if (confirm('تسجيل الخروج من حساب جوجل؟')) out(); return; }
+    if (state.current) {
+      if (typeof window.__capVerifyOwner === 'function') return pinDialog(function (pin) { return window.__capVerifyOwner(pin); }, out);
+      if (confirm('تسجيل الخروج من حساب جوجل؟')) out(); return;
+    }
+    if (!ownerRecsLocal().length) { if (confirm('تسجيل الخروج من حساب جوجل؟')) out(); return; }
+    pinDialog(verifyOffApp, out);
+  };
+
+  /* ============ تسجيل غير مكتمل: مسودة + تنبيهات ============ */
+  var WZ_KEY = 'gm_wz_pending', wzOn = false, wzAct = Date.now(), wzLastNudge = 0, wzHiddenT = null, wzRestored = false;
+  function wzDraft() {
+    return { email: state.email, ts: Date.now(), step: wz.step, layout: wz.layout, name: val('shGymName'), sub: val('shGymSub'), mgr: val('shGymMgr'), waMen: val('shWaMen'), waWomen: val('shWaWomen'), fb: val('shFb') };
+  }
+  function wzSave() { if (!wzOn) return; try { RawLS.set.call(localStorage, WZ_KEY, JSON.stringify(wzDraft())); } catch (e) {} wzSync(); }
+  function wzRestoreDraft() {
+    wzRestored = false;
+    var d = rawJSON(WZ_KEY); if (!d || d.email !== state.email) return;
+    if (!d.name && !d.sub && !d.mgr && (!d.step || d.step === 'F')) return;
+    var map = { shGymName: d.name, shGymSub: d.sub, shGymMgr: d.mgr, shWaMen: d.waMen, shWaWomen: d.waWomen, shFb: d.fb };
+    Object.keys(map).forEach(function (id) { if (map[id]) $(id).value = map[id]; });
+    if (d.layout) { wz.layout = d.layout; document.querySelectorAll('.wz-opt[data-layout]').forEach(function (x) { x.classList.toggle('sel', x.getAttribute('data-layout') === d.layout); }); }
+    wzPv();
+    var st = d.step === '3' ? '2' : d.step;
+    if (['1', 'L', '2'].indexOf(st) >= 0) wzGo(st);
+    wzRestored = true;
+  }
+  function wzMsg() {
+    var n = WZ_N[wz.step], nm = val('shGymName');
+    if (n) return (nm ? 'جيم «' + nm + '»' : 'جيمك') + ' لسه ما اتكمّلش. إنت واقف عند خطوة ' + n + ' من 4 (' + WZ_T[n - 1] + ').';
+    return 'لسه ما كمّلتش تسجيل جيمك. اضغط «ابدأ إعداد جيمك» وكمّل الخطوات.';
+  }
+  function wzNudge(txt) {
+    var b = $('wzNudge');
+    if (!b) { b = el('div'); b.id = 'wzNudge'; document.body.appendChild(b); }
+    b.textContent = ''; b.appendChild(el('span', '', '🔔')); b.appendChild(el('b', '', txt));
+    var x = el('button', '', 'تمام'); x.type = 'button'; x.onclick = function () { b.remove(); }; b.appendChild(x);
+    clearTimeout(b._t); b._t = setTimeout(function () { if (b.parentNode) b.remove(); }, 10000);
+  }
+  function wzSys(txt) { try { if ('Notification' in window && Notification.permission === 'granted') new Notification('GYM U', { body: txt, tag: 'gm-wz-pending' }); } catch (e) {} }
+  function wzAsk() {
+    try {
+      if (!('Notification' in window)) return;
+      if (Notification.permission === 'default') { Notification.requestPermission().then(function (p) { if (p === 'granted') wzSubscribe(); }); }
+      else if (Notification.permission === 'granted') wzSubscribe();
+    } catch (e) {}
+  }
+  /* ---- Push من السيرفر (Supabase Edge Function: wizard-push) ---- */
+  var WZ_FN = 'https://wvekeoemprxbxjklbaig.supabase.co/functions/v1/wizard-push', wzSyncT = null;
+  function wzU8(b64) { var pad = '='.repeat((4 - b64.length % 4) % 4), s = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(s, function (c) { return c.charCodeAt(0); }); }
+  /* service worker مستقل للـ Push (نطاق منفصل) عشان ما نلمسش sw.js الحالي */
+  function wzPushReg() {
+    return navigator.serviceWorker.register('push-handlers.js', { scope: './push-scope/' }).then(function (reg) {
+      if (reg.active) return reg;
+      return new Promise(function (res, rej) {
+        var w = reg.installing || reg.waiting; if (!w) return res(reg);
+        w.addEventListener('statechange', function () { if (w.state === 'activated') res(reg); else if (w.state === 'redundant') rej(new Error('sw redundant')); });
+      });
+    });
+  }
+  function wzSubscribe() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !state.userId || location.protocol === 'file:') return;
+    wzPushReg().then(function (reg) {
+      return reg.pushManager.getSubscription().then(function (sub) {
+        if (sub) return sub;
+        return fetch(WZ_FN + '?action=key').then(function (r) { return r.json(); }).then(function (k) { return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: wzU8(k.publicKey) }); });
+      });
+    }).then(function (sub) {
+      var j = sub.toJSON();
+      return sb.from('push_subscriptions').upsert({ endpoint: j.endpoint, user_id: state.userId, p256dh: j.keys.p256dh, auth: j.keys.auth }, { onConflict: 'endpoint' });
+    }).then(function () {}, function (e) { console.warn('push subscribe failed', e); });
+  }
+  /* بنبعت آخر نشاط للسيرفر (كل 15 ثانية بحد أقصى) عشان يعرف إمتى يفكّره */
+  function wzSync() {
+    if (wzSyncT || !wzOn) return;
+    wzSyncT = setTimeout(function () {
+      wzSyncT = null;
+      if (!wzOn || !state.userId || navigator.onLine === false) return;
+      var d = wzDraft();
+      sb.from('wizard_drafts').upsert({ user_id: state.userId, email: state.email, step: String(d.step), gym_name: d.name || null, site_url: location.origin + location.pathname, last_activity: new Date().toISOString(), notify_count: 0, last_notified_at: null, completed: false }, { onConflict: 'user_id' }).then(function () {}, function () {});
+    }, 15000);
+  }
+  function wzDone() {
+    clearTimeout(wzSyncT); wzSyncT = null;
+    if (!state.userId) return;
+    sb.from('wizard_drafts').update({ completed: true }).eq('user_id', state.userId).then(function () {}, function () {});
+  }
+  function wzVisible() { var s = $('shCreate'); return !!s && !s.hidden; }
+  function wzPendingStart() {
+    wzOn = true; wzAct = Date.now(); wzSave();
+    try { if ('Notification' in window && Notification.permission === 'granted') wzSubscribe(); } catch (e) {}
+    if (wzRestored) { wzLastNudge = Date.now(); setTimeout(function () { wzNudge('كملنا من حيث وقفت. ' + wzMsg()); }, 600); }
+  }
+  function wzPendingClear() { wzOn = false; wzDone(); try { RawLS.rem.call(localStorage, WZ_KEY); } catch (e) {} var b = $('wzNudge'); if (b) b.remove(); }
+  ['input', 'click', 'keydown', 'touchstart'].forEach(function (ev) {
+    $('shCreate').addEventListener(ev, function () { wzAct = Date.now(); if (ev === 'input') wzSave(); wzSync(); }, true);
+  });
+  $('wzStart').addEventListener('click', wzAsk);
+  $('wzNext1').addEventListener('click', wzAsk);
+  setInterval(function () {
+    if (!wzOn || !wzVisible() || document.hidden) return;
+    var now = Date.now();
+    if (now - wzAct > 45000 && now - wzLastNudge > 90000) { wzLastNudge = now; wzNudge(wzMsg()); }
+  }, 15000);
+  document.addEventListener('visibilitychange', function () {
+    if (!wzOn) return;
+    if (document.hidden) { clearTimeout(wzHiddenT); wzHiddenT = setTimeout(function () { if (document.hidden && wzOn && wzVisible()) wzSys(wzMsg()); }, 60000); }
+    else { clearTimeout(wzHiddenT); if (wzVisible() && Date.now() - wzAct > 60000) { wzLastNudge = Date.now(); wzNudge(wzMsg()); } }
   });
 
   function route(session, openGymId) {
@@ -8871,7 +9103,7 @@ window.__gmShellRun = function () {
     var t = el('div', 'layout-txt'); t.appendChild(el('b', '', '🚪 الخروج خالص من البرنامج'));
     t.appendChild(el('p', '', 'بيسجّل خروج حساب جوجل بتاعك من الكمبيوتر ده. الكباتن مش هيقدروا يدخلوا، ولما ترجع لازم تدخل تاني بجوجل صاحب الجيم.'));
     var b = el('button', 'btn-submit', 'تسجيل الخروج خالص'); b.type = 'button'; b.style.background = 'var(--danger,#e53935)';
-    b.onclick = function () { if (confirm('هتخرج خالص من البرنامج وتحتاج دخول جوجل صاحب الجيم عشان ترجع. متأكد؟')) window.__shSignOut(); };
+    b.onclick = function () { window.__shSecureSignOut(); };
     c.appendChild(t); c.appendChild(b); anchor.parentNode.insertBefore(c, anchor.nextSibling);
   }
 
@@ -9093,7 +9325,7 @@ var mix = g.layout_mode === 'mixed';
   }
   $('shGbtn').addEventListener('click', async function () {
     var btn = $('shGbtn'); btn.disabled = true; btn.classList.add('is-loading'); $('shGlabel').textContent = 'جاري التحويل لجوجل…'; setErr('');
-    var r = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+    var r = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname, queryParams: { prompt: 'select_account' } } });
     if (r.error) { btn.disabled = false; btn.classList.remove('is-loading'); $('shGlabel').textContent = 'المتابعة بحساب Google'; setErr(friendlyAuthError(r.error.message || '') || 'تعذّر بدء الدخول بحساب Google.'); }
   });
   boot();
@@ -11161,7 +11393,9 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
 .att-day{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;margin-bottom:12px;overflow:hidden}
 .att-day-head{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:var(--primary-light);font-weight:800}
 .att-day-head span{font-size:.82rem;color:var(--text-muted)}
-.att-row{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;padding:11px 16px;border-top:1px solid var(--border-color)}
+.att-row{display:grid;grid-template-columns:1fr auto auto auto;gap:14px;align-items:center;padding:11px 16px;border-top:1px solid var(--border-color)}
+.att-cancel{border:1px solid var(--danger);background:var(--danger-light);color:var(--danger);border-radius:10px;padding:5px 12px;font:800 .8rem 'Cairo',sans-serif;cursor:pointer;white-space:nowrap}
+.att-cancel:hover{background:var(--danger);color:#fff}
 .att-name{font-weight:800}.att-sec{color:var(--text-muted);font-weight:700;font-size:.88rem}.att-time{display:inline-flex;align-items:baseline;gap:6px;min-width:104px;justify-content:flex-end;color:var(--primary);direction:rtl}
 .att-time .att-t{font-size:1.25rem;font-weight:900;font-variant-numeric:tabular-nums}
 .att-time .att-p,.att-chip em .att-p{font-size:.76rem;font-weight:800;padding:2px 9px;border-radius:99px;background:color-mix(in srgb,var(--primary) 13%,transparent)}
@@ -11694,6 +11928,22 @@ window.gmQR = function (text) {
 })();
 </script>
 
+
+<script>
+/* ===== إلغاء حضور كابتن (لو صاحب الجيم دخل بكلمة سر موظف بالغلط) ===== */
+function gmAttKey(r) { return 'att:' + (r && r.day) + '|' + (r && r.captainId) + '|' + (r && r.ts); }
+/* بيلغي حضور واحد. شاهد الحذف بيشمل وقت التسجيل ده بالذات، فأول دخول جديد بعد كده بيتسجل عادي بوقته الجديد */
+function cancelAttendanceRecord(ts, captainId) {
+  var arr = attLoad(), i = arr.findIndex(function (r) { return Number(r.ts) === Number(ts) && String(r.captainId) === String(captainId); });
+  if (i < 0) return;
+  var r = arr[i];
+  ensureTombstoneShape(); deletedTombstones.attendanceKeys.push(gmAttKey(r)); persistTombstones();
+  arr.splice(i, 1);
+  localStorage.setItem(ATT_KEY, JSON.stringify(arr));
+  try { logActivity('🕐 تم إلغاء حضور الكابتن "' + r.name + '" (' + attTimeLabel(r.ts) + ') — هيتسجل من أول دخول جديد', 'fa-rotate-left'); } catch (e) {}
+  try { renderAttendancePanel(); } catch (e) {}
+}
+</script>
 <style id="gm-undo-css">
 #gmUndoBar{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,24px);opacity:0;pointer-events:none;z-index:2147483200;
   display:flex;align-items:center;gap:14px;min-width:min(420px,92vw);max-width:92vw;padding:12px 14px 14px 16px;border-radius:16px;background:#1f2430;color:#fff;
@@ -11711,10 +11961,10 @@ window.gmQR = function (text) {
 /* ===== تراجع لمدة 5 ثواني بعد أي حذف مهم (زي تليجرام) ===== */
 (function () {
   var UNDO_MS = 5000;
-  var ARR_KEYS = ['gym_pro_members_v3', 'gym_pro_financials_v3', 'gym_pro_daily_sessions_v1', 'gym_pro_sales_v1', 'gym_pro_expenses_v1'];
+  var ARR_KEYS = ['gym_pro_members_v3', 'gym_pro_financials_v3', 'gym_pro_daily_sessions_v1', 'gym_pro_sales_v1', 'gym_pro_expenses_v1', 'gym_pro_attendance_v1'];
   var RAW_KEYS = ['gym_pro_sale_products_v1', 'gym_pro_sub_plans_men_v1', 'gym_pro_sub_plans_women_v1', 'gym_pro_sub_plans_v1', 'gym_pro_expense_categories_v1', 'gym_pro_captains_v1', 'gym_pro_delete_requests_v1', 'gym_pro_admin_notices_v1'];
   var TOMB = 'gym_pro_deleted_tombstones_v1';
-  var TOMB_ARR = ['memberIds', 'memberSigs', 'sessionIds', 'expenseIds', 'financialKeys', 'saleKeys'];
+  var TOMB_ARR = ['memberIds', 'memberSigs', 'sessionIds', 'expenseIds', 'financialKeys', 'saleKeys', 'attendanceKeys'];
   var TOMB_MAP = ['memberDeleted', 'memberRevived'];
   var pending = null, timer = 0, tick = 0;
 
@@ -11767,7 +12017,7 @@ window.gmQR = function (text) {
     try { if (typeof pendingDeleteRequests !== 'undefined') pendingDeleteRequests = g('gym_pro_delete_requests_v1', []); } catch (e) {}
     ['recalculateMetricsDashboard', 'renderMembersList', 'renderSpecialPackageTrackerGrid', 'renderActivityLogPanel', 'renderSalesTable', 'renderWorkspaceSalesTable',
      'renderAdminFinancialVault', 'renderDailySessionsView', 'renderSubscriptionSelectOptions', 'renderExpenseCategoriesEditor', 'renderExpensesTable',
-     'renderSubsPlanEditorIfIdle', 'renderSaleProductsEditor', 'refreshAllPendingMarkedLists'].forEach(function (n) { try { if (typeof window[n] === 'function') window[n](); } catch (e) {} });
+     'renderSubsPlanEditorIfIdle', 'renderSaleProductsEditor', 'refreshAllPendingMarkedLists', 'renderAttendancePanel'].forEach(function (n) { try { if (typeof window[n] === 'function') window[n](); } catch (e) {} });
     try {
       var bm = document.getElementById('adminBriefingModal');
       if (bm && bm.style.display === 'flex' && typeof renderAdminBriefingModal === 'function') renderAdminBriefingModal();
@@ -11882,10 +12132,118 @@ window.gmQR = function (text) {
     wrap('deleteSubscriptionPlan', function () { return 'الباقة'; });
     wrap('deleteFinanceDrilldownRow', function () { return 'الحركة المالية'; });
     wrap('deleteFinanceDrilldownGroup', function (csv, name) { return 'حركات ' + (name ? '"' + name + '"' : 'الشخص'); });
+    wrap('cancelAttendanceRecord', function (ts, cid) { var r = (typeof attLoad === 'function' ? attLoad() : []).find(function (x) { return Number(x.ts) === Number(ts) && String(x.captainId) === String(cid); }); return 'حضور ' + nm(r, 'name'); });
     wrap('resolveDeleteRequest', function () { return 'العنصر المطلوب حذفه'; }, function (id, approved) { return approved === true; });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   window.addEventListener('pagehide', function () { if (pending) { pending = null; window.__gmSyncHoldUntil = 0; } });
+})();
+</script>
+
+<style id="gm-account-css">
+#adminDashboardArea>.brand-container{position:relative}
+.gm-acct-btn{position:absolute;top:14px;left:14px;z-index:5;width:46px;height:46px;border-radius:50%;border:2.5px solid #fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font:900 1.25rem 'Cairo',sans-serif;color:#fff;background:linear-gradient(135deg,#6a2bdc,#ff4f93);box-shadow:0 8px 22px rgba(106,43,220,.35);transition:transform .18s ease,box-shadow .18s ease;padding:0}
+.gm-acct-btn:hover{transform:scale(1.07);box-shadow:0 12px 28px rgba(106,43,220,.45)}
+#gmAcct{position:fixed;inset:0;z-index:2147483150;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,18,30,.55);backdrop-filter:blur(4px);direction:rtl;font-family:'Cairo',sans-serif;animation:gmAcIn .18s ease}
+@keyframes gmAcIn{from{opacity:0}to{opacity:1}}
+#gmAcct .ac-card{width:min(380px,100%);border-radius:26px;overflow:hidden;background:var(--bg-card,#fff);color:var(--text-main,#1f2430);box-shadow:0 34px 90px rgba(0,0,0,.45);text-align:center;animation:gmAcUp .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes gmAcUp{from{transform:translateY(18px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+#gmAcct .ac-top{padding:28px 20px 16px;background:linear-gradient(135deg,rgba(106,43,220,.13),rgba(255,79,147,.11))}
+#gmAcct .ac-av{width:76px;height:76px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 2.1rem 'Cairo',sans-serif;color:#fff;
+  background:linear-gradient(135deg,#6a2bdc,#ff4f93);border:3px solid #fff;box-shadow:0 12px 30px rgba(106,43,220,.38)}
+#gmAcct .ac-gym{font-weight:900;font-size:1.15rem;line-height:1.4}
+#gmAcct .ac-mail{direction:ltr;font-weight:700;font-size:.88rem;color:var(--text-muted,#667);word-break:break-all;margin-top:2px}
+#gmAcct .ac-role{display:inline-block;margin-top:10px;padding:3px 14px;border-radius:99px;font-weight:800;font-size:.78rem;background:rgba(106,43,220,.12);color:var(--primary,#6a2bdc)}
+#gmAcct .ac-body{padding:16px 20px 20px}
+#gmAcct .ac-note{font-size:.84rem;font-weight:700;color:var(--text-muted,#667);line-height:1.7;margin-bottom:12px}
+#gmAcct input{width:100%;box-sizing:border-box;text-align:center;font:900 1.4rem 'Cairo',sans-serif;letter-spacing:6px;padding:11px;border-radius:12px;border:1.5px solid var(--border-color,#d5d9e6);background:var(--bg-main,#f7f8fc);color:inherit;margin-bottom:6px}
+#gmAcct .ac-msg{min-height:1.3em;margin-bottom:8px;font-weight:800;font-size:.85rem;color:var(--danger,#dc2626)}
+#gmAcct .ac-btns{display:flex;gap:10px}
+#gmAcct button{flex:1;border-radius:13px;padding:11px;font:900 .95rem 'Cairo',sans-serif;cursor:pointer;border:1.5px solid transparent}
+#gmAcct .ac-out{background:var(--danger-light,#fde8e8);color:var(--danger,#dc2626);border-color:var(--danger,#dc2626)}
+#gmAcct .ac-out.go{background:var(--danger,#dc2626);color:#fff}
+#gmAcct .ac-close{background:transparent;color:var(--text-muted,#667);border-color:var(--border-color,#d5d9e6)}
+#gmSoToast{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:2147483300;background:#1f2430;color:#fff;padding:11px 18px;border-radius:14px;font:800 .92rem 'Cairo',sans-serif;direction:rtl;box-shadow:0 14px 36px rgba(0,0,0,.35)}
+</style>
+<script>
+/* ===== حساب جوجل: أيقونة في الإدارة، و5 ضغطات على لوجو الجيم في صفحة الرجالي/البنات ===== */
+function gmSessionEmail() { try { var u = JSON.parse(localStorage.getItem('sh_cache_user')); return (u && u.email) || ''; } catch (e) { return ''; } }
+(function () {
+  function role() { return window.__GYM && window.__GYM.role; }
+  function isAdminSession() { return role() === 'owner' || role() === 'manager'; }
+  function initial() { var e = gmSessionEmail(); return (e.trim().charAt(0) || 'G').toUpperCase(); }
+  function syncUi() { try { document.querySelectorAll('[data-gm-initial]').forEach(function (n) { var i = initial(); if (n.textContent !== i) n.textContent = i; }); } catch (e) {} }
+  setInterval(syncUi, 1500); document.addEventListener('DOMContentLoaded', syncUi); window.addEventListener('load', syncUi);
+
+  function toast(msg) { var t = document.getElementById('gmSoToast'); if (!t) { t = document.createElement('div'); t.id = 'gmSoToast'; document.body.appendChild(t); } t.textContent = msg; }
+  /* لحظة ترفع فيها السحابة آخر التغييرات قبل ما الجلسة تتقفل */
+  function finishSignOut() {
+    if (typeof window.__shSignOut !== 'function') { alert('تسجيل الخروج متاح بس لما البرنامج يتفتح من الرابط بتاعه (مش كملف على الجهاز).'); return; }
+    if (navigator.onLine === false && !confirm('⚠️ مفيش إنترنت دلوقتي. أي تعديل لسه ما اترفعش على السحابة ممكن يضيع بعد الخروج. تكمّل برضو؟')) return;
+    toast('⏳ بنرفع آخر التغييرات قبل الخروج...');
+    setTimeout(function () { window.__shSignOut(); }, 1600);
+  }
+
+  /* protectedMode=true: صفحة الرجالي/البنات → لازم الرقم السري للمالك. false: جوه الإدارة → من غير كلمة سر */
+  window.gmOpenAccount = function (protectedMode) {
+    protectedMode = (typeof window.__shLogoutNeedsPin === 'function') ? !!window.__shLogoutNeedsPin() : true;
+    var old = document.getElementById('gmAcct'); if (old) old.remove();
+    function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+    var m = el('div'); m.id = 'gmAcct'; var card = el('div', 'ac-card'); m.appendChild(card);
+    var top = el('div', 'ac-top'); top.appendChild(el('div', 'ac-av', initial()));
+    top.appendChild(el('div', 'ac-gym', (window.__GYM && window.__GYM.name) || 'حسابي'));
+    top.appendChild(el('div', 'ac-mail', gmSessionEmail() || '—'));
+    top.appendChild(el('div', 'ac-role', role() === 'manager' ? '🛡️ مدير' : '👑 مالك الجيم'));
+    card.appendChild(top);
+    var body = el('div', 'ac-body'); card.appendChild(body);
+    var note = el('div', 'ac-note', 'بعد تسجيل الخروج تقدر تدخل بحساب جيميل تاني.'); body.appendChild(note);
+    var inp = el('input'); inp.type = 'password'; inp.inputMode = 'numeric'; inp.autocomplete = 'off'; inp.placeholder = '••••'; inp.style.display = 'none'; body.appendChild(inp);
+    var msg = el('div', 'ac-msg'); body.appendChild(msg);
+    var bs = el('div', 'ac-btns'); body.appendChild(bs);
+    var out = el('button', 'ac-out', 'تسجيل الخروج'); out.type = 'button';
+    var cl = el('button', 'ac-close', 'إغلاق'); cl.type = 'button';
+    bs.appendChild(out); bs.appendChild(cl);
+    document.body.appendChild(m);
+    function close() { m.remove(); }
+    cl.onclick = close; m.addEventListener('click', function (e) { if (e.target === m) close(); });
+    var stage = 0, busy = false;
+    async function onOut() {
+      if (busy) return;
+      if (stage === 0) {
+        stage = 1; out.classList.add('go');
+        if (protectedMode) { note.textContent = 'اكتب الرقم السري للمالك عشان تخرج من حساب الجيم على الجهاز ده.'; inp.style.display = 'block'; out.textContent = 'تأكيد الخروج'; setTimeout(function () { inp.focus(); }, 80); }
+        else { note.textContent = 'هتتسجّل خروج من الحساب ده على الجهاز ده وتحتاج تدخل بجوجل تاني.'; out.textContent = 'تأكيد الخروج'; }
+        return;
+      }
+      if (!protectedMode) { close(); finishSignOut(); return; }
+      var pin = inp.value.trim(); if (!pin) { msg.textContent = 'اكتب الرقم السري.'; return; }
+      if (typeof window.__capVerifyOwner !== 'function') { msg.textContent = 'التحقق مش جاهز لسه، جرّب بعد ثواني.'; return; }
+      busy = true; out.disabled = true; msg.textContent = '';
+      var r; try { r = await window.__capVerifyOwner(pin); } catch (e) { r = { err: true }; }
+      busy = false; out.disabled = false;
+      if (r.ok) { close(); finishSignOut(); return; }
+      inp.value = '';
+      if (r.noPin) msg.textContent = 'لسه ما عيّنتش رقمك السري كمالك. ادخل الخزنة والإدارة الأول وعيّنه.';
+      else if (r.wait) msg.textContent = 'محاولات غلط كتير. جرّب تاني بعد ' + (r.waitText || 'شوية') + '.';
+      else if (r.wrong) msg.textContent = '❌ الرقم غلط.';
+      else msg.textContent = 'حصل خطأ، جرّب تاني.';
+      if (r.wrong || r.wait) { try { if (typeof logActivity === 'function') logActivity('⛔ محاولة فاشلة لتسجيل خروج الحساب من الجهاز ده', 'fa-lock'); } catch (e) {} }
+      inp.focus();
+    }
+    out.onclick = onOut;
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') onOut(); else if (e.key === 'Escape') close(); });
+    document.addEventListener('keydown', function esc(e) { if (!document.getElementById('gmAcct')) { document.removeEventListener('keydown', esc); return; } if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+  };
+
+  /* مخفي: 5 ضغطات متتالية (خلال 3 ثواني) على لوجو الجيم في صفحة الرجالي/البنات */
+  var taps = [];
+  document.addEventListener('click', function (e) {
+    var bc = e.target && e.target.closest ? e.target.closest('#mainContentArea .brand-container') : null;
+    if (!bc || !isAdminSession()) return;
+    var now = Date.now(); taps = taps.filter(function (t) { return now - t < 3000; }); taps.push(now);
+    if (taps.length >= 5) { taps = []; window.gmOpenAccount(!(typeof currentAppMode !== 'undefined' && currentAppMode === 'OWNER')); }
+  });
 })();
 </script>
 </body>
