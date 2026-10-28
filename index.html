@@ -14124,7 +14124,7 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
       if (B.dataset.tone !== t) B.dataset.tone = t;
     } catch (e) {}
   }
-  addEventListener('scroll', function () { var B = bar(); if (B && B.classList.contains('invg') && Date.now() - tn > 140) { tn = Date.now(); tone(); } }, { passive: true, capture: true });
+  addEventListener('scroll', function () { var B = bar(); if (B && B.classList.contains('invg') && Date.now() - tn > 500) { tn = Date.now(); tone(); } }, { passive: true, capture: true });
   var dkT = 0, dkV = false;
   function isDark() {
     var n = Date.now(); if (n - dkT < 1500) return dkV; dkT = n;
@@ -14157,7 +14157,7 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
     return h > 0 ? Math.round(Math.min(1, y / h) * 100) : 0;
   }
   function setProg() { var b = document.querySelector('#gmTB .g.isl .bar b'), pc = document.querySelector('#gmTB .g.isl .pc'); if (!b || !pc) return; var p = pct(); b.style.width = p + '%'; pc.textContent = p + '%'; }
-  document.addEventListener('scroll', function () { var B = bar(); if (B && B.dataset.info === 'progress') setProg(); }, { passive: true, capture: true });
+  var __pt = 0; document.addEventListener('scroll', function () { if (__pt) return; var B = bar(); if (B && B.dataset.info === 'progress') { __pt = 1; requestAnimationFrame(function () { __pt = 0; setProg(); }); } }, { passive: true, capture: true });
   window.__gmDockPost = function (c) {
     var main = c.main, isl = c.isl, cf = CUR;
     var bw = document.createElement('span'); bw.className = 'bar'; bw.appendChild(document.createElement('b'));
@@ -15126,12 +15126,42 @@ body.gm-tb-on #gateScreen#gateScreen{padding-top:calc(env(safe-area-inset-top,0p
 body.gm-tb-on #gateScreen#gateScreen .gate-wrap{min-height:calc(100vh - 70px - var(--gmoff,84px));min-height:calc(100dvh - 70px - var(--gmoff,84px))}
 html.gmb body.gm-tb-on #gateScreen#gateScreen{padding-top:clamp(18px,3.5vh,40px)!important}
 html.gmb body.gm-tb-on #gateScreen#gateScreen .gate-wrap{min-height:calc(100vh - 70px);min-height:calc(100dvh - 70px)}
-/* ===== قائمة الإدارة الجانبية: سكرول لما تطول عن الشاشة ===== */
+/* ===== قائمة الإدارة الجانبية: سكرول واحد واضح جوه القائمة نفسها ===== */
 @media (min-width:1000px){
-#adminDashboardArea>.top-actions-bar{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;padding:2px 4px 8px;box-sizing:border-box}
-body.gm-tb-on #adminDashboardArea>.top-actions-bar{max-height:calc(100vh - var(--gmoff,84px) - 28px);max-height:calc(100dvh - var(--gmoff,84px) - 28px)}
-html.gmb body.gm-tb-on #adminDashboardArea>.top-actions-bar{max-height:calc(100vh - var(--gmoffb,86px) - 28px);max-height:calc(100dvh - var(--gmoffb,86px) - 28px)}
+#adminDashboardArea>.top-actions-bar{max-height:none;overflow:visible}
+#adminDashboardArea #adminTabsBar{flex:0 1 auto!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;scrollbar-width:auto!important;scrollbar-color:var(--primary,#6a2bdc) transparent!important;
+  max-height:calc(100vh - 16px - 16px - 72px);max-height:calc(100dvh - 16px - 16px - 72px)}
+body.gm-tb-on #adminDashboardArea #adminTabsBar{max-height:calc(100vh - var(--gmoff,84px) - 8px - 16px - 72px);max-height:calc(100dvh - var(--gmoff,84px) - 8px - 16px - 72px)}
+html.gmb body.gm-tb-on #adminDashboardArea #adminTabsBar{max-height:calc(100vh - var(--gmoffb,86px) - 8px - 16px - 72px);max-height:calc(100dvh - var(--gmoffb,86px) - 8px - 16px - 72px)}
+#adminDashboardArea #adminTabsBar::-webkit-scrollbar{display:block!important;width:10px}
+#adminDashboardArea #adminTabsBar::-webkit-scrollbar-track{background:transparent}
+#adminDashboardArea #adminTabsBar::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--primary,#6a2bdc) 55%,transparent);border-radius:10px;min-height:48px}
 }
+
+/* ===== أداء السكرول: إيقاف الأنيميشن الثقيل وقت السكرول + تخفيف الزجاج ===== */
+#gateScreen.gm-scrolling *,#gateScreen.gm-scrolling *::before,#gateScreen.gm-scrolling *::after{animation-play-state:paused!important}
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){animation:none!important}
+#gateScreen#gateScreen#gateScreen .gx-wa-ic{animation:none!important}
+html:root #gmTB{--dk-bl:10px;--lk-bl:10px}
+#gateScreen#gateScreen .gx-fx{contain:layout paint style}
+
+/* ===== عرض موحّد: الشاشة الرئيسية + جديد في GYM U + الفوتر ===== */
+#gateScreen#gateScreen#gateScreen#gateScreen#gateScreen .gate-wrap{max-width:min(98vw,2000px)!important}
+#gateScreen#gateScreen{padding-left:clamp(8px,1.2vw,20px)!important;padding-right:clamp(8px,1.2vw,20px)!important}
+#gateScreen#gateScreen #gmNews,#gateScreen#gateScreen #gxFooter{width:100%;max-width:min(98vw,2000px)}
+@media(min-width:1000px){#gateScreen#gateScreen #gmNews .nw-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}}
+@media(min-width:1500px){#gateScreen#gateScreen #gmNews .nw-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
+<script>
+(function(){
+  var g=document.getElementById('gateScreen'),t=null,on=false;
+  if(!g)return;
+  g.addEventListener('scroll',function(){
+    if(!on){on=true;g.classList.add('gm-scrolling');}
+    clearTimeout(t);
+    t=setTimeout(function(){on=false;g.classList.remove('gm-scrolling');},180);
+  },{passive:true});
+})();
+</script>
 </body>
 </html>
