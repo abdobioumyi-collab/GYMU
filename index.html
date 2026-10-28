@@ -14860,68 +14860,154 @@ html:not(.gm-adm-hide) #gateScreen#gateScreen .gate-admin-btn:active{transform:s
 })();
 </script>
 
-<style id="gm-admin-menace">
-/* ===== زر الإدارة: بعرض القسمين، شكل مجرم أسمر خطير ===== */
-@keyframes gmMenaceSweep{0%{transform:translateX(-130%) skewX(-18deg)}55%,100%{transform:translateX(330%) skewX(-18deg)}}
-html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn,
-html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen.gate-mixed-pin .gate-admin-btn{
-  position:relative;overflow:hidden;isolation:isolate;
-  width:100%!important;max-width:none!important;margin:16px 0 0!important;
-  padding:26px 24px 24px!important;border-radius:22px!important;
-  border:1px solid rgba(255,255,255,.06)!important;
-  background:
-    repeating-linear-gradient(45deg,rgba(255,255,255,.028) 0 2px,transparent 2px 6px),
-    radial-gradient(120% 140% at 12% 0%,#2a1210 0%,transparent 55%),
-    linear-gradient(165deg,#1a1a1d 0%,#050506 70%)!important;
-  box-shadow:0 22px 44px -16px rgba(0,0,0,.9),0 0 0 1px rgba(255,40,40,.4),0 0 26px -4px rgba(255,30,30,.45),inset 0 1px 0 rgba(255,255,255,.07),inset 0 -26px 40px -24px rgba(200,0,0,.55)!important;
-  contain:paint;
-  gap:18px!important;
-}
-/* شريط تحذير مائل أعلى الزر */
-html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn::before{
-  content:"";position:absolute;inset:0 0 auto 0;height:9px;z-index:0;
-  background:repeating-linear-gradient(-45deg,#f5c400 0 12px,#0a0a0a 12px 24px);opacity:.92}
-/* لمعة مسح بتعدّي على الزر */
-html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn::after{
-  content:"";position:absolute;top:0;bottom:0;left:0;width:34%;z-index:0;pointer-events:none;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
-  will-change:transform;animation:gmMenaceSweep 4.2s ease-in-out infinite}
-html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn>*{position:relative;z-index:1}
-#gateScreen#gateScreen#gateScreen .gate-admin-btn .ico{
-  width:64px;height:64px;border-radius:16px;
-  background:linear-gradient(160deg,#c40d0d,#5a0000);
-  border:1px solid rgba(255,120,120,.45);color:#fff;
-  box-shadow:0 0 22px rgba(255,30,30,.45),inset 0 1px 0 rgba(255,255,255,.25)}
-#gateScreen#gateScreen#gateScreen .gate-admin-btn .ico svg{width:30px;height:30px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
-#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx{flex:1;gap:5px}
-#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx b{
-  font-size:1.5rem;font-weight:900;letter-spacing:.5px;color:#fff;
-  text-shadow:0 2px 0 #000,0 0 18px rgba(255,40,40,.45)}
-#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx small{
-  font-size:.86rem;font-weight:800;color:rgba(255,255,255,.62)}
-/* شارة "منطقة محظورة" */
-#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx small::before{
-  content:"● ";color:#ff2b2b}
-@media(hover:hover){
-  html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn:hover{
-    transform:translateY(-3px) scale(1.008);border-color:rgba(255,60,60,.5)!important}
-}
-html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn:active{transform:scale(.982)}
-@media(max-width:420px){
-  html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn{padding:24px 18px 22px!important;gap:14px!important}
-  #gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx b{font-size:1.3rem}
-}
-@media(prefers-reduced-motion:reduce){
-  html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn::after{animation:none!important}
-
-}
-</style>
 <style id="gm-scroll-perf">
 /* ===== أداء السكرول: حركات لا نهائية كانت بتحرّك left / box-shadow (بتعمل إعادة رسم كل فريم) ===== */
 @keyframes gmSweep{0%,55%{transform:translateX(0) skewX(-18deg)}100%{transform:translateX(475%) skewX(-18deg)}}
 @keyframes gdSheen{0%,55%{transform:translateX(0) skewX(-20deg)}100%{transform:translateX(475%) skewX(-20deg)}}
 #gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){animation:none!important}
 #gateScreen#gateScreen#gateScreen .gx-tip::after,#gateScreen .gate-deco span::after{will-change:transform}
+</style>
+<style id="gm-gate-desktop-v3">
+/* ===== الشاشة الرئيسية v3: بعرض شاشة الكمبيوتر + ألوان للتبويبات + زر إدارة سادة ===== */
+@media(min-width:0px){
+/* 1) العرض: نفس عرض الشاشات الداخلية (تسجيل المشترك) */
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-wrap{max-width:min(100%,1380px)!important;width:100%}
+#gateScreen#gateScreen#gateScreen#gateScreen #gxFooter,#gxFooter#gxFooter{max-width:min(100%,1380px)!important}
+/* البار العائم فوق ما يغطيش اللوجو */
+html:not(.gmb) body.gm-tb-on G{padding-top:calc(var(--gmoff,84px) + 14px)!important}
+/* 2) زر الإدارة: سادة، أسود، بعرض القسمين */
+html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn,html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen#gateScreen.gate-mixed-pin .gate-admin-btn{
+  position:relative;width:100%!important;max-width:none!important;margin:18px 0 0!important;
+  padding:20px 26px!important;gap:18px!important;border-radius:24px!important;
+  background:linear-gradient(180deg,#232327,#0e0e10)!important;
+  border:1px solid rgba(255,255,255,.1)!important;
+  box-shadow:0 16px 34px -18px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.06)!important;
+  animation:none!important;overflow:visible}
+html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn::before,html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn::after{animation:none!important;background:none;position:static;height:auto;width:auto;opacity:1}
+html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn::before{content:none!important}
+html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn::after{content:"‹";order:3;margin-inline-start:auto;font-size:2rem;line-height:1;color:rgba(255,255,255,.45);transition:transform .2s,color .2s}
+@media(hover:hover){html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn:hover::after{transform:translateX(-4px);color:#fff}}
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn .ico{width:56px;height:56px;border-radius:16px;background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.16)!important;box-shadow:none!important;color:#fff}
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn .ico svg{width:28px;height:28px;filter:none}
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx{flex:1;gap:4px}
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx b{font-size:1.35rem;font-weight:800;letter-spacing:0;text-shadow:none;color:#fff;font-family:'Cairo',Tahoma,sans-serif}
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx small{font-size:.9rem;font-weight:600;color:rgba(255,255,255,.62)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx small::before{content:none}
+/* 3) ركن الكابتن */
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-extra{margin-top:48px}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-panel{padding:clamp(18px,2.6vw,36px)!important;border-radius:34px!important;background:color-mix(in srgb,var(--primary,#6d28d9) 3.5%,var(--bg-card))}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-panel::before{animation:none!important;background:linear-gradient(90deg,var(--primary,#6d28d9),color-mix(in srgb,var(--primary,#6d28d9) 55%,#2563eb),color-mix(in srgb,var(--primary,#6d28d9) 55%,#ec4899))!important;background-size:100% 100%!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-tip{padding:clamp(24px,3vw,42px)!important;border-radius:28px!important;text-align:center}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-tip-label{font-size:.95rem!important;padding:6px 16px!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-tip-text{font-size:clamp(1.1rem,1.7vw,1.5rem)!important;font-weight:800!important;line-height:1.95!important;margin:14px 0 0!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-title{display:flex!important;align-items:center;gap:14px;margin:38px 0 18px!important;font-size:clamp(1.2rem,1.7vw,1.5rem)!important;font-weight:900!important;text-align:right}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-title::after{content:"";flex:1;height:3px;border-radius:3px;background:linear-gradient(270deg,color-mix(in srgb,var(--primary,#6d28d9) 45%,transparent),transparent)}
+/* حقائق سريعة: شبكة بدل سكرول أفقي */
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-strip{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;overflow:visible!important;scroll-snap-type:none!important;padding:0!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-swipe{display:none!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-fact{--c:var(--primary,#6d28d9);flex:none!important;max-width:none!important;width:auto!important;padding:20px 16px!important;border-radius:22px!important;
+  background:color-mix(in srgb,var(--c) 6%,var(--bg-card))!important;border:1.5px solid color-mix(in srgb,var(--c) 14%,transparent)!important;box-shadow:none!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-fact::before{background:var(--c)!important;opacity:1!important;height:5px!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-fact-ic{width:56px!important;height:56px!important;font-size:1.7rem!important;background:color-mix(in srgb,var(--c) 14%,transparent)!important;border:0!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-fact b,#gateScreen#gateScreen#gateScreen#gateScreen .gx-fact strong{color:color-mix(in srgb,var(--c) 75%,var(--text-main))}
+/* المميزات: كروت ملوّنة كبيرة */
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-feat{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft,#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){--c:var(--primary,#6d28d9);display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;gap:8px!important;
+  min-height:150px;padding:24px 16px!important;border-radius:24px!important;animation:none!important;
+  background:color-mix(in srgb,var(--c) 6%,var(--bg-card))!important;border:1.5px solid color-mix(in srgb,var(--c) 22%,transparent)!important;box-shadow:0 12px 24px -22px var(--c)!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft,#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){grid-column:auto!important;grid-row:auto!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:hover{transform:translateY(-3px);border-color:var(--c)!important;box-shadow:0 18px 30px -18px var(--c)!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft::after{display:none!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft-ic{display:grid!important;place-items:center;width:64px;height:64px;border-radius:20px;font-size:2rem!important;animation:none!important;
+  background:color-mix(in srgb,var(--c) 14%,transparent)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft b{font-size:1.15rem!important;font-weight:900!important;color:color-mix(in srgb,var(--c) 72%,var(--text-main))}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft small{font-size:.92rem!important;font-weight:700!important;color:var(--text-muted)}
+/* إزاي أعمل + الأسئلة */
+#gateScreen#gateScreen#gateScreen#gateScreen #gxHow,#gateScreen#gateScreen#gateScreen#gateScreen #gxFaq{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how{--c:var(--primary,#6d28d9);margin:0!important;border-radius:22px!important;background:color-mix(in srgb,var(--c) 5%,var(--bg-card))!important;
+  border:1.5px solid color-mix(in srgb,var(--c) 14%,transparent)!important;border-inline-start:5px solid var(--c)!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how.open{border-color:var(--c)!important;box-shadow:0 16px 30px -22px var(--c)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how-h{padding:16px 18px!important;font-size:1.08rem!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how-h>span:first-child{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;font-size:1.4rem;background:color-mix(in srgb,var(--c) 14%,transparent)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how-h b{font-size:1.08rem;font-weight:900;color:color-mix(in srgb,var(--c) 70%,var(--text-main))}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how-h i{color:var(--c)!important;font-size:1.2rem}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how.open .gx-how-h{background:color-mix(in srgb,var(--c) 10%,transparent)!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how.open .gx-how-h i{background:var(--c)!important;color:#fff!important;box-shadow:none!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how-b{padding:0 18px 18px!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-st{font-size:.98rem!important;padding:12px 14px!important;background:var(--bg-card)!important;border-color:color-mix(in srgb,var(--c) 25%,var(--border-color))!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-st::before{background:var(--c)!important;box-shadow:none!important;color:#fff!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ans{font-size:.98rem!important;background:var(--bg-card)!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-q{margin-top:30px!important;padding:16px 22px!important;border-radius:20px!important;font-size:1.05rem!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-wa{margin-top:28px!important;padding:18px 24px!important;border-radius:22px!important;justify-content:center}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-wa-ic{animation:none!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-wa b{font-size:1.15rem!important}
+}
+@media(min-width:760px){
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-strip{grid-template-columns:repeat(3,minmax(0,1fr))}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-feat{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(min-width:1000px){
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-strip{grid-template-columns:repeat(5,minmax(0,1fr))}
+#gateScreen#gateScreen#gateScreen#gateScreen #gxHow,#gateScreen#gateScreen#gateScreen#gateScreen #gxFaq{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(min-width:1500px){
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-wrap{max-width:min(96vw,1840px)!important}
+#gateScreen#gateScreen#gateScreen#gateScreen #gxFooter,#gxFooter#gxFooter{max-width:min(96vw,1840px)!important}
+}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-fact:nth-child(4n+1){--c:var(--primary,#6d28d9)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-fact:nth-child(4n+2){--c:color-mix(in srgb,var(--primary,#6d28d9) 62%,#2563eb)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-fact:nth-child(4n+3){--c:color-mix(in srgb,var(--primary,#6d28d9) 62%,#ec4899)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-fact:nth-child(4n+4){--c:color-mix(in srgb,var(--primary,#6d28d9) 60%,#0ea5e9)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:nth-child(4n+1){--c:var(--primary,#6d28d9)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:nth-child(4n+2){--c:color-mix(in srgb,var(--primary,#6d28d9) 62%,#2563eb)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:nth-child(4n+3){--c:color-mix(in srgb,var(--primary,#6d28d9) 62%,#ec4899)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:nth-child(4n+4){--c:color-mix(in srgb,var(--primary,#6d28d9) 60%,#0ea5e9)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how:nth-child(4n+1){--c:var(--primary,#6d28d9)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how:nth-child(4n+2){--c:color-mix(in srgb,var(--primary,#6d28d9) 62%,#2563eb)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how:nth-child(4n+3){--c:color-mix(in srgb,var(--primary,#6d28d9) 62%,#ec4899)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how:nth-child(4n+4){--c:color-mix(in srgb,var(--primary,#6d28d9) 60%,#0ea5e9)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn{justify-content:center!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx{flex:1!important;align-items:center!important;text-align:center!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx b,#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx small{text-align:center!important;width:100%}
+html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn::after{width:56px;margin-inline-start:0!important;text-align:center;flex:none}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:nth-child(4n+1){--c1:#4c1d95;--c2:#7c3aed}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:nth-child(4n+2){--c1:#3730a3;--c2:#6366f1}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:nth-child(4n+3){--c1:#1d4ed8;--c2:#3b82f6}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:nth-child(4n+4){--c1:#be185d;--c2:#ec4899}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how:nth-child(4n+1){--c1:#4c1d95;--c2:#7c3aed}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how:nth-child(4n+2){--c1:#3730a3;--c2:#6366f1}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how:nth-child(4n+3){--c1:#1d4ed8;--c2:#3b82f6}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how:nth-child(4n+4){--c1:#be185d;--c2:#ec4899}
+
+/* --- لوجو أكبر ومسافة أوسع --- */
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-header-block{margin-bottom:clamp(36px,5vw,64px)!important;padding-top:clamp(8px,2vw,28px)}
+#gateScreen#gateScreen#gateScreen#gateScreen #gateLogoImage{width:clamp(190px,19vw,300px)!important;height:clamp(190px,19vw,300px)!important;border-radius:44px!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-logo img.gm-gate:not(#gateLogoImage){width:clamp(280px,34vw,560px)!important;height:auto!important;max-height:none!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gate-logo{margin-bottom:clamp(10px,2vw,22px)}
+/* --- المميزات: كروت صلبة بتدرّج زي النصيحة --- */
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft,#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){background:linear-gradient(135deg,var(--c1),var(--c2))!important;border:0!important;box-shadow:0 18px 30px -20px var(--c1)!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft:hover{box-shadow:0 22px 34px -18px var(--c1)!important;filter:brightness(1.06)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft-ic{background:rgba(255,255,255,.2)!important;border:1px solid rgba(255,255,255,.28)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft b{color:#fff!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-ft small{color:rgba(255,255,255,.85)!important}
+/* --- إزاي أعمل + الأسئلة: كروت مفتوحة دايمًا (من غير فتح وقفل) --- */
+#gateScreen#gateScreen#gateScreen#gateScreen #gxHow,#gateScreen#gateScreen#gateScreen#gateScreen #gxFaq{display:block!important;column-count:1;column-gap:18px}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how{break-inside:avoid;-webkit-column-break-inside:avoid;display:block;width:100%;margin:0 0 18px!important;border:0!important;border-inline-start:0!important;border-radius:22px!important;overflow:hidden;
+  background:color-mix(in srgb,var(--c2) 7%,var(--bg-card))!important;box-shadow:0 16px 28px -22px var(--c1)!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how-h{display:grid!important;grid-template-columns:48px 1fr!important;gap:12px;padding:14px 16px!important;pointer-events:none;cursor:default;
+  background:linear-gradient(135deg,var(--c1),var(--c2))!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how-h>span:first-child{background:rgba(255,255,255,.2)!important;border:1px solid rgba(255,255,255,.28)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how-h b{color:#fff!important;text-align:right!important;font-size:1.1rem}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how-h i{display:none!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how.open .gx-how-h{background:linear-gradient(135deg,var(--c1),var(--c2))!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how-b{display:block!important;padding:16px!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how .gx-st{background:var(--bg-card)!important;border:1px solid color-mix(in srgb,var(--c1) 18%,var(--border-color))!important;color:var(--text-main)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how .gx-st::before{background:linear-gradient(135deg,var(--c1),var(--c2))!important;color:#fff!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how .gx-st.done{border-color:var(--c2)!important}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how .gx-prog{color:var(--c1)}
+#gateScreen#gateScreen#gateScreen#gateScreen .gx-how .gx-ans{background:transparent!important;text-align:right!important;padding:2px 2px 0!important;font-size:1rem!important;line-height:1.95}
+@media(min-width:760px){#gateScreen#gateScreen#gateScreen#gateScreen #gxHow,#gateScreen#gateScreen#gateScreen#gateScreen #gxFaq{column-count:2}}
+@media(min-width:1100px){#gateScreen#gateScreen#gateScreen#gateScreen #gxHow{column-count:3}#gateScreen#gateScreen#gateScreen#gateScreen #gxFaq{column-count:2}}
 </style>
 </body>
 </html>
