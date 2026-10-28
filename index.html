@@ -8649,13 +8649,14 @@ window.__gmShellRun = function () {
     if (!row.support) maybeImportLegacy(NS, g, row.role);
     installFirebaseShim(g.id, state.userId);
     applyOnboarding(g.id);
-    window.__GYM = { id: g.id, name: g.name, role: row.role, canWrite: sub.write, layout: g.layout_mode || 'split', support: !!row.support };
+    window.__GYM = { id: g.id, name: g.name, slug: g.slug, role: row.role, canWrite: sub.write, layout: g.layout_mode || 'split', support: !!row.support };
     document.title = g.name;
     document.body.classList.add('gym-running');
     runAppScripts();
     patchRoleGate(row);
     setupTeamTab(row);
     try { bootstrapGymApplication(); } catch (e) { console.error(e); }
+    try { if (window.__gmUndoInit) { window.__gmUndoInit(); setTimeout(window.__gmUndoInit, 1500); } } catch (e) { console.error(e); }
     setupLayoutCard(row); try { setupMemberPortal(row); } catch (e) { console.error(e); } try { setupFullExit(row); } catch (e) { console.error(e); } if (g.layout_mode === 'mixed') adaptGate();
     autoEnterSection(row);
     var rb = $('shRibbon');
@@ -9332,6 +9333,17 @@ window.__gmShellRun = function () {
       var b = el('button', 'btn-submit', 'نسخ الرابط'); b.type = 'button';
       b.onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText(link()) : Promise.reject()).then(function () { b.textContent = 'تم النسخ ✅'; }, function () { prompt('انسخ الرابط:', link()); }); };
       c.appendChild(t); c.appendChild(b); var slot = $('contactPortalSlot'); if (slot) slot.appendChild(c); else lc.parentNode.insertBefore(c, lc.nextSibling);
+    }
+    // كارت رابط تثبيت البرنامج باسم ولوجو الجيم
+    if (lc && !$('installLinkCard')) {
+      var ilink = function () { return location.origin + location.pathname + '?g=' + encodeURIComponent(slug); };
+      var ik = el('div', 'layout-card'); ik.id = 'installLinkCard';
+      var it2 = el('div', 'layout-txt'); it2.appendChild(el('b', '', '📲 رابط تثبيت البرنامج')); it2.appendChild(el('p', '', 'ثبّت البرنامج من الرابط ده على موبايلك أو موبايل الكباتن: هيتثبت باسم ولوجو جيمك.'));
+      var iu = el('p', '', ilink()); iu.dir = 'ltr'; iu.style.wordBreak = 'break-all'; iu.style.fontWeight = '700'; it2.appendChild(iu);
+      var ib = el('button', 'btn-submit', 'نسخ الرابط'); ib.type = 'button';
+      ib.onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText(ilink()) : Promise.reject()).then(function () { ib.textContent = 'تم النسخ ✅'; }, function () { prompt('انسخ الرابط:', ilink()); }); };
+      ik.appendChild(it2); ik.appendChild(ib);
+      var pcard = $('portalLinkCard'); if (pcard && pcard.parentNode) pcard.parentNode.insertBefore(ik, pcard.nextSibling); else lc.parentNode.insertBefore(ik, lc.nextSibling);
     }
     // زرار الكارنيه في بروفايل المشترك
     var _l = window.launchDetailedProfileModal;
@@ -10487,6 +10499,34 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
     return c.toDataURL('image/png');
   }
 
+  var PWA_FN = 'https://wvekeoemprxbxjklbaig.supabase.co/functions/v1/pwa', SLUGRE = /^[a-z0-9-]{1,64}$/, HEXRE = /^#[0-9a-fA-F]{6}$/;
+  /* هوية الجيم للتثبيت: من الرابط ?g=slug (بتتحفظ على الجهاز) أو من الجيم اللي سجّل دخول */
+  function gymSlug() {
+    var s = '';
+    try { s = (new URLSearchParams(location.search).get('g') || '').toLowerCase(); } catch (e) {}
+    if (SLUGRE.test(s)) { setLS('gm_pwa_slug', s); return s; }
+    var G = window.__GYM;
+    if (G && G.slug && !G.support && SLUGRE.test(G.slug)) { setLS('gm_pwa_slug', G.slug); return G.slug; }
+    s = ls('gm_pwa_slug'); return SLUGRE.test(s) ? s : '';
+  }
+  function dataToBlob(d) {
+    var b = atob(d.split(',')[1]), u = new Uint8Array(b.length), i; for (i = 0; i < b.length; i++) u[i] = b.charCodeAt(i);
+    return new Blob([u], { type: 'image/png' });
+  }
+  /* صاحب الجيم/المدير بس: يرفع أيقونات الجيم (PNG) عشان الـ manifest يقدمها */
+  function uploadIcons(icons) {
+    try {
+      var G = window.__GYM, sb = window.__gmSb;
+      if (!G || G.support || (G.role !== 'owner' && G.role !== 'manager') || !sb || !sb.storage) return;
+      var sig = [icons.i192, icons.i512, icons.m512].map(function (x) { return x.length + ':' + x.slice(-60); }).join('|'), k = 'gm_pwa_up_' + G.id;
+      if (ls(k) === sig) return;
+      var files = [['icon-192.png', icons.i192], ['icon-512.png', icons.i512], ['maskable-512.png', icons.m512]];
+      Promise.all(files.map(function (f) {
+        return sb.storage.from('pwa-icons').upload(G.id + '/' + f[0], dataToBlob(f[1]), { upsert: true, contentType: 'image/png', cacheControl: '300' }).then(function (r) { if (r && r.error) throw r.error; });
+      })).then(function () { setLS(k, sig); }).catch(function (e) { console.warn('pwa icon upload', e); });
+    } catch (e) { console.warn('pwa icon upload', e); }
+  }
+
   function setLink(rel, attrs) {
     var el = document.querySelector('link[rel="' + rel + '"]' + (attrs.sizes ? '[sizes="' + attrs.sizes + '"]' : ''));
     if (!el) { el = document.createElement('link'); el.rel = rel; document.head.appendChild(el); }
@@ -10526,11 +10566,19 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
         { src: icons.m512, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
       ]
     };
-    var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-    var url = URL.createObjectURL(blob);
-    setLink('manifest', { href: url });
-    if (manifestURL) URL.revokeObjectURL(manifestURL);
-    manifestURL = url;
+    var sl = gymSlug(), url;
+    if (sl) {   /* جيم معروف: الـ manifest والأيقونات بتتقدّم من رابط https حقيقي (Edge Function: pwa) عشان كروم يعمل تثبيت حقيقي */
+      url = PWA_FN + '?g=' + sl + '&o=' + encodeURIComponent(location.origin) + '&p=' + encodeURIComponent(location.pathname) + (HEXRE.test(bg) ? '&bg=' + encodeURIComponent(bg) : '') + (HEXRE.test(theme) ? '&t=' + encodeURIComponent(theme) : '');
+      setLink('manifest', { href: url });
+      if (manifestURL) { URL.revokeObjectURL(manifestURL); manifestURL = null; }
+      uploadIcons(icons);
+    } else {
+      var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+      url = URL.createObjectURL(blob);
+      setLink('manifest', { href: url });
+      if (manifestURL) URL.revokeObjectURL(manifestURL);
+      manifestURL = url;
+    }
     setLink('icon', { href: icons.i192, type: 'image/png' });
     setLink('apple-touch-icon', { href: icons.a180 });
     setMeta('theme-color', theme);
@@ -10567,7 +10615,7 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
   function build() {
     if (building) return;
     var B = brandInfo(), src = B.logo, name = B.name;
-    var key = src.length + ':' + src.slice(-40) + '|' + name + '|' + B.sig;
+    var key = src.length + ':' + src.slice(-40) + '|' + name + '|' + B.sig + '|' + gymSlug() + '|' + (window.__GYM ? window.__GYM.id : '');
     if (key === lastKey) return;
     lastKey = key; building = true;
     onBrand(B);
@@ -12609,6 +12657,7 @@ function cancelAttendanceRecord(ts, captainId) {
     wrap('cancelAttendanceRecord', function (ts, cid) { var r = (typeof attLoad === 'function' ? attLoad() : []).find(function (x) { return Number(x.ts) === Number(ts) && String(x.captainId) === String(cid); }); return 'حضور ' + nm(r, 'name'); });
     wrap('resolveDeleteRequest', function () { return 'العنصر المطلوب حذفه'; }, function (id, approved) { return approved === true; });
   }
+  window.__gmUndoInit = init;   /* البرنامج بيتحمل بعد تسجيل الدخول، فبنعيد التغليف وقتها */
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   window.addEventListener('pagehide', function () { if (pending) { pending = null; window.__gmSyncHoldUntil = 0; } });
 })();
@@ -13012,6 +13061,53 @@ html.gm-adm-first #gmAdmHint{display:block}
 .gx-where{background:color-mix(in srgb,var(--primary,#6a2bdc) 14%,transparent)}
 #gmNews .nw-card{background:linear-gradient(160deg,color-mix(in srgb,var(--ac) 11%,var(--bg-card,#fff)),color-mix(in srgb,var(--ac) 4%,var(--bg-card,#fff)))}
 #gmNews .nw-card.feat{background:linear-gradient(135deg,color-mix(in srgb,var(--ac) 18%,var(--bg-card,#fff)),color-mix(in srgb,var(--ac) 6%,var(--bg-card,#fff)) 75%)}
+</style>
+<style id="gate-extra-v3">
+/* ===== واجهة هادية: لون واحد (لون الثيم) + أسطح نضيفة + مسافات واسعة ===== */
+#gateScreen#gateScreen .gate-extra{--xa:var(--primary,#6a2bdc);--xl:color-mix(in srgb,var(--text-main,#1b1050) 9%,transparent);--soft:color-mix(in srgb,var(--xa) 9%,transparent)}
+#gateScreen#gateScreen .gx-sep{color:var(--text-muted)}
+#gateScreen#gateScreen .gx-sep::before,#gateScreen#gateScreen .gx-sep::after{background:var(--xl)}
+#gateScreen#gateScreen .gx-sep span{background:transparent;border:0;font-weight:700;letter-spacing:.2px}
+#gateScreen#gateScreen .gx-panel{padding:22px 14px 24px;border-radius:28px;background:color-mix(in srgb,var(--text-main,#1b1050) 2.5%,var(--bg-main));border:1px solid var(--xl);box-shadow:none}
+#gateScreen#gateScreen .gx-panel::before{display:none}
+#gateScreen#gateScreen .gx-tip{color:var(--text-main);background:var(--bg-card);border:1px solid var(--xl);box-shadow:none;border-radius:22px}
+#gateScreen#gateScreen .gx-tip::after{display:none}
+#gateScreen#gateScreen .gx-tip-label{background:var(--soft);color:var(--xa)}
+#gateScreen#gateScreen .gx-tip-text{font-weight:700;font-size:1.02rem;line-height:1.9}
+#gateScreen#gateScreen .gx-title{margin:34px 2px 14px;font-size:1rem;font-weight:800}
+#gateScreen#gateScreen .gx-title::before{width:7px;height:7px;border-radius:50%;background:var(--xa)}
+#gateScreen#gateScreen .gx-title::after{background:var(--xl)}
+#gateScreen#gateScreen .gx-feat{gap:12px}
+#gateScreen#gateScreen .gx-fact,#gateScreen#gateScreen .gx-ft{background:var(--bg-card);border:1px solid var(--xl);box-shadow:none;border-radius:20px;padding:16px;transition:border-color .15s,transform .15s}
+#gateScreen#gateScreen .gx-ft:hover,#gateScreen#gateScreen .gx-ft:active{border-color:color-mix(in srgb,var(--xa) 45%,transparent);transform:translateY(-1px)}
+#gateScreen#gateScreen .gx-fact-ic,#gateScreen#gateScreen .gx-ft-ic{background:var(--soft);border-radius:13px}
+#gateScreen#gateScreen .gx-ft b{font-weight:800}
+#gateScreen#gateScreen .gx-ft small{font-weight:600;opacity:.85}
+#gateScreen#gateScreen .gx-q{background:var(--bg-card);border:1px solid var(--xl);box-shadow:none}
+#gateScreen#gateScreen .gx-q:focus{border-color:color-mix(in srgb,var(--xa) 55%,transparent);outline:0}
+#gateScreen#gateScreen .gx-how{background:var(--bg-card);border:1px solid var(--xl);box-shadow:none;border-radius:18px}
+#gateScreen#gateScreen .gx-how.open{background:var(--bg-card);border-color:color-mix(in srgb,var(--xa) 40%,transparent)}
+#gateScreen#gateScreen .gx-how-h>span:first-child{background:var(--soft);border-radius:11px}
+#gateScreen#gateScreen .gx-how-h{font-weight:800}
+#gateScreen#gateScreen .gx-st,#gateScreen#gateScreen .gx-ans{background:color-mix(in srgb,var(--text-main,#1b1050) 3%,var(--bg-main));border:1px solid var(--xl)}
+#gateScreen#gateScreen .gx-st.done{background:color-mix(in srgb,#22a06b 9%,var(--bg-main));border-color:color-mix(in srgb,#22a06b 40%,transparent)}
+#gateScreen#gateScreen .gx-wa{background:color-mix(in srgb,#22a06b 8%,var(--bg-card));border:1px solid color-mix(in srgb,#22a06b 28%,transparent);box-shadow:none;border-radius:20px}
+#gateScreen#gateScreen .gx-wa-ic{box-shadow:none;background:#22a06b}
+.gx-sp{background:var(--bg-card)}.gx-sp::before{display:none}
+.gx-where{background:color-mix(in srgb,var(--primary,#6a2bdc) 10%,transparent)}
+#gmNews .nw-card,#gmNews .nw-card.feat{background:var(--bg-card);border:1px solid color-mix(in srgb,var(--text-main,#1b1050) 9%,transparent);box-shadow:none}
+/* الفوتر: نفس الهدوء */
+#gxFooter .gf-card{border-radius:26px;box-shadow:none;border-color:color-mix(in srgb,var(--text-main,#1b1050) 9%,transparent)}
+#gxFooter .gf-card::before{display:none}
+#gxFooter .gf-brand{background:color-mix(in srgb,var(--primary,#6a2bdc) 5%,transparent)}
+#gxFooter .gf-logo-wrap{box-shadow:none;border:1px solid color-mix(in srgb,var(--text-main,#1b1050) 8%,transparent)}
+#gxFooter .gf-btn{background:var(--primary,#6a2bdc);color:var(--on-primary,#fff);box-shadow:none}
+#gxFooter .gf-pj{background:var(--bg-main);box-shadow:none}
+#gxFooter a.gf-pj:hover{box-shadow:none;border-color:color-mix(in srgb,var(--primary,#6a2bdc) 45%,transparent)}
+#gxFooter .gf-ic,#gxFooter .gf-pj-ic{background:var(--primary,#6a2bdc)}
+#gxFooter .gf-hi{background:color-mix(in srgb,var(--primary,#6a2bdc) 9%,transparent);border:0}
+#gxFooter .gf-pj-ar,#gxFooter .gf-links a::after{color:var(--text-muted,#6a6590)}
+#gxFooter .gf-bar{background:transparent}
 </style>
 </body>
 </html>
