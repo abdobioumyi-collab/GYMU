@@ -10606,7 +10606,17 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
 
   var PWA_FN = 'https://wvekeoemprxbxjklbaig.supabase.co/functions/v1/pwa', SLUGRE = /^[a-z0-9-]{1,64}$/, HEXRE = /^#[0-9a-fA-F]{6}$/;
   /* هوية الجيم للتثبيت: من الرابط ?g=slug (بتتحفظ على الجهاز) أو من الجيم اللي سجّل دخول */
+  /* جلسة المنصة (الكينج أو الدعم): التثبيت دايماً «GYM U» العام، مش هوية أي جيم متخزنة على الجهاز */
+  function platformSession() {
+    try {
+      var k = document.getElementById('shKing'), G = window.__GYM;
+      if ((k && !k.hidden && !document.body.classList.contains('gym-running')) || (G && G.support)) { setLS('gm_pwa_plat', '1'); return true; }
+      if (G && !G.support) { setLS('gm_pwa_plat', '0'); return false; }
+      return ls('gm_pwa_plat') === '1';
+    } catch (e) { return false; }
+  }
   function gymSlug() {
+    if (platformSession()) return '';
     var s = '';
     try { s = (new URLSearchParams(location.search).get('g') || '').toLowerCase(); } catch (e) {}
     if (SLUGRE.test(s)) { setLS('gm_pwa_slug', s); return s; }
@@ -10697,7 +10707,7 @@ html.lg-tone.lg-custom #mainContentArea>.brand-container>.brand-logo-img{width:m
   /* هوية التطبيق: لحد ما الجيم يرفع لوجو أو يسمّي نفسه = «GYM U» بلوجو GYM U. بعدها = اسمه ولوجوه */
   function sigHash(t) { var h = 5381, i; for (i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) >>> 0; return h.toString(36); }
   function brandInfo() {
-    var logo = ls(LS_LOGO), nm = ls(LS_NAME).trim(), gym = (window.__GYM && window.__GYM.name) || '';
+    var plat = platformSession(), logo = plat ? '' : ls(LS_LOGO), nm = plat ? '' : ls(LS_NAME).trim(), gym = plat ? '' : ((window.__GYM && window.__GYM.name) || '');
     var custom = !!logo || (nm && !/^gym\s*u$/i.test(nm));
     var name = custom ? (nm || gym || 'GYM U') : 'GYM U';
     var g = document.querySelector('img.gm-gate');
