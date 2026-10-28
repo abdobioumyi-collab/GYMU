@@ -9068,6 +9068,8 @@ window.__gmShellRun = function () {
     if (state.current) {
       if (state.current.support) return false;
       if (state.current.role !== 'owner') return false;
+      /* المالك فاتح قسم الإدارة (أدخل رقمه السري فعلاً) → مفيش داعي يطلبه تاني عند الخروج */
+      if (window.__captain && window.__captain.id === 'owner') return false;
       return curPinSet() || curHasData();
     }
     return state.rows.some(function (r) { return r.role === 'owner'; });
@@ -13753,7 +13755,8 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
   window.__gmKingCard = openKingCard;
   function avatarAction() {
     var d = S.cur; if (!d) return;
-    if (d.mode === 'gate') return; /* صفحة اختيار القسم: البار للعرض بس، ممنوع الخروج منه */
+    /* صفحة اختيار القسم: البار نفسه ملوش وظايف، بس صورته بتفتح كارت الحساب. الخروج هنا محتاج الرقم السري للمالك */
+    if (d.mode === 'gate') { closePanel(); if (typeof window.gmOpenAccount === 'function') window.gmOpenAccount(); return; }
     if ((d.mode === 'captain' || d.mode === 'owner') && window.__captain) return openCaptainCard(d);
     if (d.mode === 'king') {
       return openKingCard();
