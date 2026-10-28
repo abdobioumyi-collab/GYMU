@@ -1533,7 +1533,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 </button>
             </div>
             <button class="gate-admin-btn" onclick="openGatePasswordPrompt('OWNER')">
-                <span class="ico" data-i="fa-vault"></span> الخزنة والإدارة
+                <span class="ico" data-i="fa-vault"></span><span class="gab-tx"><b>قسم الإدارة</b><small>الخزنة · التقارير · الإعدادات</small></span>
             </button>
             <div class="gate-deco" aria-hidden="true"><span></span><span></span><span></span></div>
             <!-- ===== منطقة السكرول تحت الأقسام: نصيحة اليوم + حقائق سريعة ===== -->
@@ -2306,6 +2306,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 <div class="nav-group">الإعدادات</div>
                 <button class="tab-btn" data-tab="identity" onclick="switchAdminView('identity')"><span class="ico" data-i="fa-dumbbell"></span> هوية الجيم</button>
                 <button class="tab-btn" data-tab="settings" onclick="switchAdminView('settings')"><span class="ico" data-i="fa-palette"></span> المظهر والألوان</button>
+                <button class="tab-btn" data-tab="homemenu" onclick="switchAdminView('homemenu')"><span class="ico" data-i="fa-vault"></span> التحكم في القائمة الرئيسية</button>
                 <button class="tab-btn" data-tab="dock" onclick="switchAdminView('dock')"><span class="ico" data-i="fa-palette"></span> شكل البار العائم</button>
                 <button class="tab-btn" data-tab="contact" onclick="switchAdminView('contact')"><span class="ico" data-i="fa-whatsapp"></span> التواصل وبوابة المشتركين</button>
                 <button class="tab-btn" data-tab="account" onclick="switchAdminView('account')"><span class="ico" data-i="fa-gear"></span> الجيم والحساب</button>
@@ -2777,6 +2778,11 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
 
         </div>
 
+        <div id="adminViewHomemenu" class="admin-view-panel">
+            <div class="panel-head"><span class="ph-ico"><span class="ico" data-i="fa-vault"></span></span><div><h2>التحكم في القائمة الرئيسية</h2><p>الشاشة الرئيسية فيها قسم الرجالي وقسم البنات وقسم الإدارة (الزر الأسود). قسم الإدارة ثابت، وتقدر تخفيه لو حبيت.</p></div></div>
+            <div id="hmHost"></div>
+        </div>
+
         <!-- ===== التواصل وبوابة المشتركين ===== -->
         <div id="adminViewContact" class="admin-view-panel">
             <div class="panel-head"><span class="ph-ico"><span class="ico" data-i="fa-whatsapp"></span></span><div><h2>التواصل وبوابة المشتركين</h2><p>رابط البوابة، جروبات الواتساب والفيسبوك، ومواعيد وأرقام الجيم.</p></div></div>
@@ -3033,7 +3039,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             const COLLECTION = "gymData";
             const SYNC_KEYS = [
                 'gym_pro_members_v3', 'gym_pro_financials_v3', 'gym_pro_daily_sessions_v1',
-                'gym_pro_activity_log_v1', 'gym_pro_deleted_tombstones_v1', 'gym_pro_captains_v1', 'gym_pro_onboarding_v1', 'gym_pro_admin_guide_v1',
+                'gym_pro_activity_log_v1', 'gym_pro_deleted_tombstones_v1', 'gym_pro_captains_v1', 'gym_pro_onboarding_v1', 'gym_pro_admin_guide_v1', 'gym_pro_admin_btn_hidden_v1',
                 'gym_pro_sales_v1', 'gym_pro_sale_products_v1', 'gym_pro_delete_requests_v1', 'gym_pro_admin_notices_v1',
                 'gym_pro_expenses_v1', 'gym_pro_expense_categories_v1',
                 'gym_pro_sub_plans_men_v1', 'gym_pro_sub_plans_women_v1', 'gym_pro_sub_plans_v1',
@@ -9637,7 +9643,7 @@ var mix = g.layout_mode === 'mixed';
     hero.appendChild(lg); hero.appendChild(el('h1', '', 'لوحة صاحب المنصة')); hero.appendChild(el('span', 'kg-mail', '👑 ' + state.email));
     var acts = el('div', 'kg-actions');
     function abtn(t, fn, c) { var x = el('button', 'kg-btn' + (c ? ' ' + c : ''), t); x.type = 'button'; x.onclick = fn; acts.appendChild(x); }
-    abtn('+ جيم جديد', createDlg, 'gold'); abtn('🔔 إشعارات الدخول', kgPushEnable); abtn('تحديث', kgLoad); abtn('خروج', function () { if (confirm('تسجيل الخروج من حساب جوجل؟')) window.__shSignOut(); }, 'danger');
+    abtn('+ جيم جديد', createDlg, 'gold'); abtn('🔔 إشعارات الدخول', kgPushEnable); abtn('تحديث', kgLoad); abtn('خروج', function () { if (typeof window.__gmKingCard === 'function') window.__gmKingCard(); else if (confirm('تسجيل الخروج من حساب جوجل؟')) window.__shSignOut(); }, 'danger');
     hero.appendChild(acts); w.appendChild(hero);
     var tabs = el('div', 'kg-tabs');
     [['gyms', '🏋️ الجيمات'], ['site', '🧩 الفوتر والمنظومة'], ['log', '🕘 سجل دخولي'], ['dock', '🫧 البار العائم']].forEach(function (t) {
@@ -12953,7 +12959,7 @@ html.gm-adm-first #gmAdmHint{display:block}
     if (s.stage !== 'practice') rmBanner();
     if (busy) return;
     if (s.stage === 'caps' && vis('adminDashboardArea')) { busy = true; setTimeout(function () { capsDialog(function () { set({ stage: 'hide' }); busy = false; }); }, 900); }
-    else if (s.stage === 'hide' && vis('adminDashboardArea')) { busy = true; hideDialog(); }
+    else if (s.stage === 'hide') { set({ stage: 'done' }); }
     else if (s.stage === 'practice') {
       if (vis('gateScreen')) showBanner(); else rmBanner();
       var cm = $('capModal');
@@ -13398,6 +13404,7 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
         feat('clock', 'حضور الكباتن', 'مواعيد دخول الفريق', A('attendance'), { cur: adminAct('attendance'), tone: 2 });
         feat('list', 'سجل النشاطات', 'كل اللي حصل في البرنامج', A('activity'), { cur: adminAct('activity'), tone: 3 });
         feat('grid', 'شكل البار', 'لون وحجم وأزرار البار العائم', A('dock'), { cur: adminAct('dock'), tone: 4 });
+        feat('grid', 'التحكم في القائمة الرئيسية', 'إظهار وإخفاء زر الإدارة', A('homemenu'), { cur: adminAct('homemenu'), tone: 2 });
       } else if (d.area === 'work') {
         dock('userPlus', 'تسجيل', W('main'), act('tabBtnMain')); dock('qr', 'حضور', W('checkin'), act('tabBtnCheckin'));
         dock('search', 'بحث', doSearch); dock('bank', 'الخزنة', function () { call('backToAdminDashboard'); });
@@ -13549,14 +13556,29 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
     ov.appendChild(card); document.body.appendChild(ov);
     document.addEventListener('keydown', avEsc, true);
   }
+  function openKingCard() {
+    closeAvCard(); closePanel();
+    var m = document.querySelector('.kg-mail'), email = m ? m.textContent.replace('👑', '').trim() : '';
+    var ov = el('div'); ov.id = 'gmAvOv'; ov.onclick = closeAvCard;
+    var card = el('div'); card.id = 'gmAvCard'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.onclick = function (e) { e.stopPropagation(); };
+    var hd = el('div', 'hd'); hd.appendChild(el('div', 'ph', '👑'));
+    var tx = el('div', 'tx'); tx.appendChild(el('b', '', 'صاحب المنصة')); var sm = el('small', '', email || 'حساب جوجل'); sm.style.direction = 'ltr'; sm.style.textAlign = 'right'; tx.appendChild(sm); hd.appendChild(tx);
+    var x = el('button', 'x', '✕'); x.type = 'button'; x.setAttribute('aria-label', 'إغلاق'); x.onclick = closeAvCard; hd.appendChild(x);
+    card.appendChild(hd);
+    var out = el('button', 'out', '🚪 تسجيل الخروج'); out.type = 'button';
+    out.onclick = function () { closeAvCard(); if (typeof window.__shSignOut === 'function') window.__shSignOut(); };
+    card.appendChild(out);
+    card.appendChild(el('p', 'ft', 'هيتسجّل خروج حساب جوجل من المنصة.'));
+    ov.appendChild(card); document.body.appendChild(ov);
+    document.addEventListener('keydown', avEsc, true);
+  }
+  window.__gmKingCard = openKingCard;
   function avatarAction() {
     var d = S.cur; if (!d) return;
     if (d.mode === 'gate') return; /* صفحة اختيار القسم: البار للعرض بس، ممنوع الخروج منه */
     if ((d.mode === 'captain' || d.mode === 'owner') && window.__captain) return openCaptainCard(d);
     if (d.mode === 'king') {
-      var bs = document.querySelectorAll('.kg-btn');
-      for (var i = 0; i < bs.length; i++) if (bs[i].textContent.indexOf('خروج') > -1) { bs[i].click(); return; }
-      return;
+      return openKingCard();
     }
     /* مالك / صاحب الجيم / شاشة الأقسام: خروج كامل من المنصة وحساب جوجل */
     closePanel();
@@ -14417,5 +14439,489 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
 })();
 </script>
 
+
+
+
+<style id="gm-home-lux">
+/* ===== الصفحة الرئيسية: بنفسجي بيومي إكس + كروت أكبر + حركة هادية ===== */
+#gateScreen#gateScreen#gateScreen .gate-extra{--xa:#6d28d9;--xb:#8b5cf6;--xc:#a78bfa;--xl:rgba(109,40,217,.16);--soft:rgba(109,40,217,.09);--vi:#5b21b6;--ease:cubic-bezier(.2,.7,.2,1)}
+#gateScreen#gateScreen#gateScreen .gx-panel{padding:26px 14px 24px;border-radius:34px;background:radial-gradient(120% 60% at 50% 0%,rgba(139,92,246,.12),transparent 70%),color-mix(in srgb,#6d28d9 3%,var(--bg-card));border:1px solid var(--xl);box-shadow:0 30px 60px -36px rgba(91,33,182,.45)}
+#gateScreen#gateScreen#gateScreen .gx-panel::before{background:linear-gradient(90deg,#4c1d95,#6d28d9,#a855f7,#6d28d9,#4c1d95)}
+#gateScreen#gateScreen#gateScreen .gx-tip{text-align:center;padding:26px 22px;border-radius:28px;background:linear-gradient(145deg,#3b1a8a,#6d28d9 58%,#8b5cf6);box-shadow:0 24px 44px -22px rgba(91,33,182,.7)}
+#gateScreen#gateScreen#gateScreen .gx-tip-text{font-size:1.15rem;line-height:1.9}
+#gateScreen#gateScreen#gateScreen .gx-title{justify-content:center;margin:38px 2px 18px;font-size:1.08rem;font-weight:900;color:var(--vi)}
+#gateScreen#gateScreen#gateScreen .gx-title::before,#gateScreen#gateScreen#gateScreen .gx-title::after{content:"";flex:1;width:auto;height:1px;border-radius:0}
+#gateScreen#gateScreen#gateScreen .gx-title::before{background:linear-gradient(90deg,transparent,var(--xl))}
+#gateScreen#gateScreen#gateScreen .gx-title::after{background:linear-gradient(270deg,transparent,var(--xl))}
+#gateScreen#gateScreen#gateScreen .gx-title small{display:block}
+#gateScreen#gateScreen#gateScreen .gx-q{text-align:center;border-radius:20px;padding:15px 18px;border:1px solid var(--xl);background:var(--bg-card);box-shadow:0 10px 24px -18px rgba(91,33,182,.5)}
+#gateScreen#gateScreen#gateScreen .gx-feat{gap:14px}
+#gateScreen#gateScreen#gateScreen .gx-ft,#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){--k:#6d28d9;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;min-height:176px;padding:24px 14px 22px;border-radius:26px;background:linear-gradient(165deg,var(--bg-card),color-mix(in srgb,#8b5cf6 9%,var(--bg-card)));border:1px solid var(--xl);box-shadow:0 18px 34px -24px rgba(91,33,182,.55);transition:transform .35s var(--ease),box-shadow .35s var(--ease),border-color .35s}
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){grid-column:1/-1;min-height:150px;background:linear-gradient(135deg,#3b1a8a,#6d28d9 60%,#8b5cf6);border-color:transparent;color:#fff}
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd) b,#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd) small{color:#fff;padding:0}
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd) .gx-ft-ic{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.28)}
+#gateScreen#gateScreen#gateScreen .gx-ft::before{left:50%;top:-40px;margin-left:-60px;width:120px;height:120px}
+#gateScreen#gateScreen#gateScreen .gx-ft::after{display:none}
+#gateScreen#gateScreen#gateScreen .gx-ft-ic,#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd) .gx-ft-ic{display:grid;place-items:center;width:64px;height:64px;margin:0 0 8px;border-radius:21px;font-size:1.9rem;background:linear-gradient(145deg,rgba(139,92,246,.2),rgba(109,40,217,.08));border:1px solid var(--xl);box-shadow:0 10px 20px -12px rgba(109,40,217,.6)}
+#gateScreen#gateScreen#gateScreen .gx-ft b{font-size:1.04rem;font-weight:900;color:var(--vi)}
+#gateScreen#gateScreen#gateScreen .gx-ft small{font-size:.8rem;font-weight:700;line-height:1.6;color:var(--text-muted)}
+#gateScreen#gateScreen#gateScreen .gx-ft:hover{transform:translateY(-4px);box-shadow:0 26px 44px -24px rgba(91,33,182,.7);border-color:rgba(109,40,217,.4)}
+#gateScreen#gateScreen#gateScreen .gx-ft:active{transform:scale(.97)}
+#gateScreen#gateScreen#gateScreen .gx-how{border-radius:24px;margin-bottom:12px;background:linear-gradient(165deg,var(--bg-card),color-mix(in srgb,#8b5cf6 6%,var(--bg-card)));border:1px solid var(--xl);box-shadow:0 14px 28px -24px rgba(91,33,182,.55);transition:box-shadow .35s var(--ease),border-color .35s,transform .35s var(--ease)}
+#gateScreen#gateScreen#gateScreen .gx-how:hover{transform:translateY(-2px)}
+#gateScreen#gateScreen#gateScreen .gx-how-h{padding:18px 16px;min-height:72px;gap:12px}
+#gateScreen#gateScreen#gateScreen .gx-how-h b{text-align:center;font-size:1rem;font-weight:900;color:var(--vi)}
+#gateScreen#gateScreen#gateScreen .gx-how-h>span:first-child{width:46px;height:46px;border-radius:15px;font-size:1.3rem;background:linear-gradient(145deg,rgba(139,92,246,.2),rgba(109,40,217,.08));border:1px solid var(--xl)}
+#gateScreen#gateScreen#gateScreen .gx-how-h i{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:rgba(109,40,217,.1);color:#6d28d9;transition:transform .35s var(--ease)}
+#gateScreen#gateScreen#gateScreen .gx-how.open{border-color:rgba(109,40,217,.5);box-shadow:0 22px 40px -24px rgba(91,33,182,.7)}
+#gateScreen#gateScreen#gateScreen .gx-how.open .gx-how-b{animation:gmFadeDown .4s var(--ease)}
+#gateScreen#gateScreen#gateScreen .gx-how-b{text-align:center}
+#gateScreen#gateScreen#gateScreen .gx-st,#gateScreen#gateScreen#gateScreen .gx-ans{text-align:right}
+#gateScreen#gateScreen#gateScreen .gx-wa{justify-content:center;text-align:center;margin-top:28px;padding:18px;border-radius:26px;color:#fff;border:0;background:linear-gradient(135deg,#3b1a8a,#6d28d9 60%,#8b5cf6);box-shadow:0 22px 40px -22px rgba(91,33,182,.75);transition:transform .3s var(--ease)}
+#gateScreen#gateScreen#gateScreen .gx-wa:active{transform:scale(.98)}
+#gateScreen#gateScreen#gateScreen .gx-wa b{color:#fff;font-size:1.05rem}#gateScreen#gateScreen#gateScreen .gx-wa small{color:#fff;opacity:.85}
+#gateScreen#gateScreen#gateScreen .gx-wa-ic{background:#25d366;border-radius:17px;width:52px;height:52px;box-shadow:0 10px 20px -8px rgba(0,0,0,.35)}
+@keyframes gmFadeDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes gmUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes gmPop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.gm-rv{opacity:0;transform:translateY(16px) scale(.985)}
+.gm-in{opacity:1;transform:none;transition:opacity .6s var(--ease,ease) var(--d,0s),transform .6s var(--ease,ease) var(--d,0s),box-shadow .35s,border-color .35s}
+.modal{animation:gmPop .28s cubic-bezier(.2,.7,.2,1)}
+.modal-overlay{animation:gmFade .2s ease-out}
+@keyframes gmFade{from{opacity:0}to{opacity:1}}
+.stat-card{animation:gmUp .5s cubic-bezier(.2,.7,.2,1) both}
+.stat-card:nth-child(2){animation-delay:.05s}.stat-card:nth-child(3){animation-delay:.1s}.stat-card:nth-child(4){animation-delay:.15s}.stat-card:nth-child(5){animation-delay:.2s}.stat-card:nth-child(n+6){animation-delay:.25s}
+@media (prefers-reduced-motion:reduce){.gm-rv{opacity:1;transform:none}.stat-card,.modal,.modal-overlay{animation:none!important}}
+</style>
+<script id="gm-home-lux-js">
+(function(){
+  if(!('IntersectionObserver' in window)) return;
+  var SEL='#gateExtra .gx-ft,#gateExtra .gx-how,#gateExtra .gx-fact,#gateExtra .gx-title,#gateExtra .gx-tip,#gateExtra .gx-wa,#gateExtra .gx-q', n=0, t=null;
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(!e.isIntersecting) return; var el=e.target; io.unobserve(el); el.style.setProperty('--d',(Math.min(n++%4,3)*0.07)+'s'); requestAnimationFrame(function(){ el.classList.add('gm-in'); }); });
+  },{threshold:.12,rootMargin:'0px 0px -6% 0px'});
+  function scan(){ document.querySelectorAll(SEL).forEach(function(el){ if(el.__gmRv) return; el.__gmRv=1; el.classList.add('gm-rv'); io.observe(el); }); }
+  setInterval(scan,700); scan();
+})();
+</script>
+<style id="gm-polish-css">
+/* طبقة تحسين بصري: بتستخدم ألوان الثيم الحالي (--primary) فمش بتكسر الثيمات */
+:root{--gm-r:18px;--gm-r-sm:12px;--gm-sh:0 10px 30px -14px color-mix(in srgb,var(--primary,#5b2ad0) 45%,transparent),0 2px 6px rgba(20,10,50,.06);--gm-ring:0 0 0 3px color-mix(in srgb,var(--primary,#5b2ad0) 28%,transparent)}
+html{-webkit-tap-highlight-color:transparent;scroll-behavior:smooth}
+.stat-card{border-radius:var(--gm-r)!important;box-shadow:var(--gm-sh)!important;border:1px solid color-mix(in srgb,var(--primary,#5b2ad0) 10%,var(--border-color,#e5e7eb))!important;transition:transform .18s ease,box-shadow .18s ease}
+.stat-card:active{transform:scale(.98)}
+.modal{border-radius:24px!important;box-shadow:0 30px 80px -20px rgba(20,10,50,.5)!important}
+.modal-overlay{-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{border-radius:var(--gm-r-sm)!important;transition:border-color .15s,box-shadow .15s}
+input:not([type=checkbox]):not([type=radio]):not([type=range]):focus,select:focus,textarea:focus{outline:none!important;border-color:var(--primary,#5b2ad0)!important;box-shadow:var(--gm-ring)!important}
+button,.btn-submit,.btn-primary,.btn-action,[class^="btn-"],[class*=" btn-"]{transition:transform .12s ease,box-shadow .18s ease,filter .18s ease;-webkit-user-select:none;user-select:none}
+button:not(:disabled):active{transform:scale(.97)}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:none;box-shadow:var(--gm-ring)}
+.btn-submit,.btn-primary{border-radius:14px!important;box-shadow:0 10px 22px -12px color-mix(in srgb,var(--primary,#5b2ad0) 80%,transparent)}
+.btn-del,.btn-logout-section{border-radius:14px!important}
+.panel-head{border-radius:var(--gm-r)!important}
+::selection{background:color-mix(in srgb,var(--primary,#5b2ad0) 28%,transparent)}
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--primary,#5b2ad0) 35%,transparent) transparent}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--primary,#5b2ad0) 30%,transparent);border-radius:99px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style id="gm-dlg-css">
+#gmDlgOv{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:18px;background:rgba(15,8,35,.45);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);direction:rtl;font-family:'Cairo',Tahoma,sans-serif;animation:gmDlgIn .16s ease-out}
+@keyframes gmDlgIn{from{opacity:0}to{opacity:1}}
+@keyframes gmDlgPop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+#gmDlg{width:min(360px,100%);box-sizing:border-box;padding:22px 20px 16px;border-radius:26px;background:var(--bg-card,#fff);color:var(--text-main,#1b1233);box-shadow:0 28px 70px -14px rgba(20,10,50,.55);border:1px solid color-mix(in srgb,var(--primary,#5b2ad0) 16%,transparent);text-align:center;animation:gmDlgPop .2s ease-out}
+#gmDlg .ic{width:54px;height:54px;margin:0 auto 12px;border-radius:50%;display:grid;place-items:center;font-size:1.6rem;background:color-mix(in srgb,var(--primary,#5b2ad0) 12%,transparent)}
+#gmDlg.dg .ic{background:var(--danger-light,#fee2e2)}
+#gmDlg .m{font-weight:800;font-size:1rem;line-height:1.7;white-space:pre-line;word-break:break-word;margin-bottom:18px;max-height:50vh;overflow:auto}
+#gmDlg .b{display:flex;gap:10px}
+#gmDlg button{flex:1;border:0;border-radius:15px;padding:13px;font:900 .98rem 'Cairo',Tahoma,sans-serif;cursor:pointer}
+#gmDlg button:active{transform:scale(.97)}
+#gmDlg .ok{background:linear-gradient(135deg,var(--primary,#5b2ad0),color-mix(in srgb,var(--primary,#5b2ad0) 68%,#000));color:#fff}
+#gmDlg.dg .ok{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;box-shadow:0 8px 18px -8px rgba(220,38,38,.7)}
+#gmDlg .no{background:color-mix(in srgb,var(--text-main,#1b1233) 8%,transparent);color:inherit}
+</style>
+<script id="gm-dlg-js">
+(function(){
+  var nativeConfirm=window.confirm.bind(window), nativeAlert=window.alert.bind(window);
+  var inClick=false, lastTarget=null, approved=[], DG=/🚨|⚠️|حذف|تحذف|مسح|إلغاء وحذف|خروج|الخروج|رفض|تحظر|إيقاف|نهائي/;
+  document.addEventListener('click',function(e){ if(e.__gmRe) return; inClick=true; lastTarget=e.target; setTimeout(function(){inClick=false;},0); },true);
+  function open(msg,opt,cb){
+    var old=document.getElementById('gmDlgOv'); if(old) old.remove();
+    var ov=document.createElement('div'); ov.id='gmDlgOv';
+    var d=document.createElement('div'); d.id='gmDlg'; d.setAttribute('role','dialog'); d.setAttribute('aria-modal','true'); if(opt.danger) d.className='dg';
+    var ic=document.createElement('div'); ic.className='ic'; ic.textContent=opt.danger?'⚠️':(opt.confirm?'❓':'ℹ️');
+    var m=document.createElement('div'); m.className='m'; m.textContent=String(msg).replace(/^(🚨|⚠️)\s*/,'');
+    var b=document.createElement('div'); b.className='b';
+    function done(v){ document.removeEventListener('keydown',kd,true); ov.remove(); cb(v); }
+    var ok=document.createElement('button'); ok.type='button'; ok.className='ok'; ok.textContent=opt.confirm?(opt.danger?'تأكيد':'موافق'):'تمام'; ok.onclick=function(){done(true);};
+    b.appendChild(ok);
+    if(opt.confirm){ var no=document.createElement('button'); no.type='button'; no.className='no'; no.textContent='إلغاء'; no.onclick=function(){done(false);}; b.appendChild(no); }
+    d.appendChild(ic); d.appendChild(m); d.appendChild(b); ov.appendChild(d);
+    ov.onclick=function(e){ if(e.target===ov) done(false); };
+    function kd(e){ if(e.key==='Escape'){e.stopPropagation(); done(false);} }
+    document.addEventListener('keydown',kd,true);
+    document.body.appendChild(ov); setTimeout(function(){ try{(opt.confirm?b.lastChild:ok).focus();}catch(e){} },30);
+  }
+  window.confirm=function(msg){
+    msg=String(msg==null?'':msg);
+    var i=approved.indexOf(msg); if(i>-1){ approved.splice(i,1); return true; }
+    if(!inClick||!lastTarget||!document.contains(lastTarget)) return nativeConfirm(msg);
+    var t=lastTarget;
+    open(msg,{confirm:true,danger:DG.test(msg)},function(v){
+      if(!v) return;
+      approved.push(msg);
+      var ev=new MouseEvent('click',{bubbles:true,cancelable:true,view:window}); ev.__gmRe=true;
+      try{ t.dispatchEvent(ev); }catch(e){}
+      setTimeout(function(){ approved=[]; },0);
+    });
+    return false;
+  };
+  window.alert=function(msg){ if(!document.body) return nativeAlert(msg); open(msg==null?'':msg,{confirm:false},function(){}); };
+})();
+</script>
+<style id="gm-home-lux-v2">
+/* ===== v2: فخامة بنفسجية بيومي إكس — توسيط + لمعة + حركة هادية ===== */
+#gateScreen#gateScreen#gateScreen .gate-extra{--vg:linear-gradient(135deg,#3b1a8a,#6d28d9 58%,#8b5cf6);--vs:0 22px 44px -26px rgba(91,33,182,.6);--bez:cubic-bezier(.22,.8,.25,1)}
+/* شريط علوي بيلمع بهدوء */
+#gateScreen#gateScreen#gateScreen .gx-panel::before{background:linear-gradient(90deg,#4c1d95,#8b5cf6,#c4b5fd,#8b5cf6,#4c1d95);background-size:220% 100%;animation:gmSheen 6s linear infinite}
+@keyframes gmSheen{from{background-position:0 0}to{background-position:-220% 0}}
+/* نصيحة اليوم: ليبل واضح + لمعة ماشية */
+#gateScreen#gateScreen#gateScreen .gx-tip{position:relative;overflow:hidden}
+#gateScreen#gateScreen#gateScreen .gx-tip-label{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.28);padding:5px 14px}
+#gateScreen#gateScreen#gateScreen .gx-tip-text{color:#fff}
+#gateScreen#gateScreen#gateScreen .gx-tip::after{display:block;content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.22),transparent);transform:skewX(-18deg);animation:gmSweep 5.5s var(--bez) infinite;border-radius:0}
+@keyframes gmSweep{0%,55%{left:-60%}100%{left:130%}}
+/* حقائق سريعة: توسيط */
+#gateScreen#gateScreen#gateScreen .gx-fact{text-align:center;display:flex;flex-direction:column;align-items:center;border-radius:24px;background:linear-gradient(165deg,var(--bg-card),color-mix(in srgb,#8b5cf6 8%,var(--bg-card)));border:1px solid var(--xl);box-shadow:0 14px 28px -22px rgba(91,33,182,.55)}
+#gateScreen#gateScreen#gateScreen .gx-fact::before{background:linear-gradient(90deg,#6d28d9,#a78bfa);opacity:1}
+#gateScreen#gateScreen#gateScreen .gx-fact-ic{width:52px;height:52px;border-radius:17px;background:linear-gradient(145deg,rgba(139,92,246,.2),rgba(109,40,217,.07));border:1px solid var(--xl);margin:0 auto 10px}
+#gateScreen#gateScreen#gateScreen .gx-swipe{text-align:center;color:#6d28d9;opacity:.8;margin-top:2px}
+/* كروت المميزات: أيقونة طافية + لمعة عند اللمس */
+#gateScreen#gateScreen#gateScreen .gx-ft{overflow:hidden;isolation:isolate}
+#gateScreen#gateScreen#gateScreen .gx-ft-ic{animation:gmBob 4.2s ease-in-out infinite}
+#gateScreen#gateScreen#gateScreen .gx-ft:nth-child(2n) .gx-ft-ic{animation-delay:-1.4s}
+#gateScreen#gateScreen#gateScreen .gx-ft:nth-child(3n) .gx-ft-ic{animation-delay:-2.6s}
+@keyframes gmBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+#gateScreen#gateScreen#gateScreen .gx-ft::after{display:block;content:"";position:absolute;top:0;bottom:0;left:-70%;width:45%;background:linear-gradient(100deg,transparent,rgba(139,92,246,.16),transparent);transform:skewX(-18deg);transition:left .8s var(--bez);pointer-events:none;z-index:0;background-color:transparent;border-radius:0}
+#gateScreen#gateScreen#gateScreen .gx-ft:hover::after,#gateScreen#gateScreen#gateScreen .gx-ft:active::after{left:130%}
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd)::after{background:linear-gradient(100deg,transparent,rgba(255,255,255,.22),transparent)}
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){animation:gmGlow 4s ease-in-out infinite}
+@keyframes gmGlow{0%,100%{box-shadow:0 18px 34px -22px rgba(91,33,182,.6)}50%{box-shadow:0 22px 44px -16px rgba(139,92,246,.85)}}
+#gateScreen#gateScreen#gateScreen .gx-ft b,#gateScreen#gateScreen#gateScreen .gx-ft small,#gateScreen#gateScreen#gateScreen .gx-ft-ic{position:relative;z-index:1}
+/* إزاي أعمل + الأسئلة: الكلام في النص، الأيقونة يمين والسهم شمال */
+#gateScreen#gateScreen#gateScreen .gx-how-h{display:grid;grid-template-columns:46px 1fr 34px;align-items:center;gap:12px}
+#gateScreen#gateScreen#gateScreen .gx-how-h b{text-align:center;padding:0 2px}
+#gateScreen#gateScreen#gateScreen .gx-how-h>span:first-child{justify-self:start}
+#gateScreen#gateScreen#gateScreen .gx-how-h i{justify-self:end}
+#gateScreen#gateScreen#gateScreen .gx-how{overflow:hidden}
+#gateScreen#gateScreen#gateScreen .gx-how.open .gx-how-h{background:linear-gradient(180deg,rgba(139,92,246,.09),transparent)}
+#gateScreen#gateScreen#gateScreen .gx-how.open .gx-how-h i{background:var(--vg);color:#fff;box-shadow:0 8px 16px -8px rgba(91,33,182,.8)}
+#gateScreen#gateScreen#gateScreen .gx-st{border-radius:16px;transition:transform .25s var(--bez),border-color .25s,background .25s}
+#gateScreen#gateScreen#gateScreen .gx-st:active{transform:scale(.98)}
+#gateScreen#gateScreen#gateScreen .gx-st::before{background:var(--vg);color:#fff;box-shadow:0 6px 12px -6px rgba(91,33,182,.7)}
+#gateScreen#gateScreen#gateScreen .gx-ans{text-align:center;border-radius:16px;line-height:1.95}
+/* البحث */
+#gateScreen#gateScreen#gateScreen .gx-q:focus{border-color:#8b5cf6;box-shadow:0 0 0 5px rgba(139,92,246,.18),0 14px 28px -16px rgba(91,33,182,.6)}
+/* واتساب المساعدة: نبضة هادية للأيقونة */
+#gateScreen#gateScreen#gateScreen .gx-wa{position:relative;overflow:hidden;gap:14px}
+#gateScreen#gateScreen#gateScreen .gx-wa>span:last-child{flex:1;text-align:center}
+#gateScreen#gateScreen#gateScreen .gx-wa-ic{animation:gmPulse 2.6s ease-out infinite}
+@keyframes gmPulse{0%{box-shadow:0 0 0 0 rgba(37,211,102,.55)}70%,100%{box-shadow:0 0 0 14px rgba(37,211,102,0)}}
+/* إصلاح كارت "للمالك فقط" (آخر كارت فردي) + توسيط الوصف */
+#gateScreen#gateScreen#gateScreen .gx-ft small{padding:0!important;text-align:center}
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){display:flex!important;flex-direction:column;align-items:center;justify-content:center;text-align:center;grid-template-areas:none;grid-template-columns:none}
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd) .gx-ft-ic,#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd) b,#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd) small{grid-area:auto;align-self:center;text-align:center;margin-inline:auto}
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd) .gx-ft-ic{margin-bottom:8px}
+/* ظهور متتابع ناعم بدل الظهور المفاجئ */
+.gm-rv{transform:translateY(22px) scale(.97);filter:blur(3px)}
+.gm-in{filter:none;transition:opacity .7s var(--ease,ease) var(--d,0s),transform .7s cubic-bezier(.22,.8,.25,1) var(--d,0s),filter .7s var(--d,0s),box-shadow .35s,border-color .35s}
+@media (prefers-reduced-motion:reduce){#gateScreen .gx-ft-ic,#gateScreen .gx-wa-ic,#gateScreen .gx-ft,#gateScreen .gx-panel::before,#gateScreen .gx-tip::after{animation:none!important}.gm-rv{filter:none}}
+</style>
+
+<style id="gm-motion-v3">
+/* ===== v3: حركة هادية ومريحة في كل البرنامج + كروت أكبر وأرقى ===== */
+:root{--gm-ease:cubic-bezier(.22,.8,.25,1);--gm-t1:.16s;--gm-t2:.28s;--gm-t3:.42s}
+
+/* ---- 1) تهدئة الحركات المستمرة (من غير لف ولا نط) ---- */
+#gateScreen#gateScreen#gateScreen .gx-ft-ic,
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd),
+#gateScreen#gateScreen#gateScreen .gx-panel::before{animation:none!important}
+#gateScreen#gateScreen#gateScreen .gx-tip::after{animation-duration:9s}
+#gateScreen#gateScreen#gateScreen .gx-wa-ic{animation-duration:4.5s}
+@keyframes gmPulse{0%{box-shadow:0 0 0 0 rgba(37,211,102,.35)}70%,100%{box-shadow:0 0 0 10px rgba(37,211,102,0)}}
+
+/* ---- 2) تنقّل الأقسام: ظهور ناعم قصير ---- */
+@keyframes gmView{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.view-panel,.admin-view-panel{animation:gmView var(--gm-t3) var(--gm-ease) both}
+.stat-card{animation-duration:.4s}
+
+/* ---- 3) الشاشة الرئيسية: دخول متتابع هادي مرة واحدة ---- */
+@keyframes gmRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+#gateScreen .gate-header-block{animation:gmRise .55s var(--gm-ease) both}
+#gateScreen .gate-main-grid>*:nth-child(1){animation:gmRise .55s var(--gm-ease) .08s both}
+#gateScreen .gate-main-grid>*:nth-child(2){animation:gmRise .55s var(--gm-ease) .16s both}
+#gateScreen .gate-extra{animation:gmRise .6s var(--gm-ease) .26s both}
+
+/* كروت الأقسام (رجالي/بنات): أكبر وأرحب */
+#gateScreen#gateScreen .gate-big-btn.gate-big-men,#gateScreen#gateScreen .gate-big-btn.gate-big-women{padding:22px 22px;border-radius:26px;column-gap:18px;transition:transform var(--gm-t2) var(--gm-ease),box-shadow var(--gm-t2) var(--gm-ease),border-color var(--gm-t2)}
+#gateScreen#gateScreen .gate-big-btn .gate-ic{width:68px;height:68px}
+#gateScreen#gateScreen .gate-big-btn .gate-ic svg{width:32px;height:32px}
+#gateScreen#gateScreen .gate-big-btn .gate-lbl{font-size:1.32rem}
+#gateScreen#gateScreen .gate-big-btn .gate-sub{font-size:.9rem}
+#gateScreen#gateScreen .gate-big-btn::after{transition:transform var(--gm-t2) var(--gm-ease),opacity var(--gm-t2)}
+@media(hover:hover){#gateScreen#gateScreen .gate-big-btn:hover::after{transform:translateX(-4px);opacity:1}}
+
+/* ---- 4) كروت "ركن الكابتن": أكبر + مريحة ---- */
+#gateScreen#gateScreen#gateScreen .gx-panel{padding:28px 16px 28px}
+#gateScreen#gateScreen#gateScreen .gx-feat{gap:16px}
+#gateScreen#gateScreen#gateScreen .gx-ft,#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){min-height:210px;padding:30px 16px 26px;border-radius:28px;gap:8px;transition:transform var(--gm-t2) var(--gm-ease),box-shadow var(--gm-t2) var(--gm-ease),border-color var(--gm-t2)}
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){min-height:180px}
+#gateScreen#gateScreen#gateScreen .gx-ft-ic,#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd) .gx-ft-ic{width:78px;height:78px;border-radius:25px;font-size:2.3rem;margin-bottom:10px}
+#gateScreen#gateScreen#gateScreen .gx-ft b{font-size:1.14rem;line-height:1.5}
+#gateScreen#gateScreen#gateScreen .gx-ft small{font-size:.9rem;line-height:1.7}
+#gateScreen#gateScreen#gateScreen .gx-ft:hover{transform:translateY(-3px)}
+#gateScreen#gateScreen#gateScreen .gx-ft:active{transform:scale(.98)}
+#gateScreen#gateScreen#gateScreen .gx-fact{flex:0 0 82%;max-width:300px;padding:22px 18px 24px;border-radius:26px}
+#gateScreen#gateScreen#gateScreen .gx-fact p{font-size:1rem;line-height:1.9}
+#gateScreen#gateScreen#gateScreen .gx-fact-ic{width:58px;height:58px;font-size:1.7rem}
+#gateScreen#gateScreen#gateScreen .gx-tip{padding:30px 22px}
+#gateScreen#gateScreen#gateScreen .gx-q{padding:17px 20px;font-size:1rem}
+/* إزاي أعمل + الأسئلة */
+#gateScreen#gateScreen#gateScreen .gx-how{margin-bottom:14px;border-radius:26px}
+#gateScreen#gateScreen#gateScreen .gx-how-h{grid-template-columns:56px 1fr 38px;min-height:88px;padding:18px 18px;gap:14px}
+#gateScreen#gateScreen#gateScreen .gx-how-h>span:first-child{width:56px;height:56px;border-radius:18px;font-size:1.5rem}
+#gateScreen#gateScreen#gateScreen .gx-how-h b{font-size:1.08rem;line-height:1.6}
+#gateScreen#gateScreen#gateScreen .gx-how-h i{width:38px;height:38px}
+#gateScreen#gateScreen#gateScreen .gx-how-b{padding:2px 16px 18px}
+#gateScreen#gateScreen#gateScreen .gx-st{padding:13px 14px;font-size:.96rem;margin-bottom:10px}
+#gateScreen#gateScreen#gateScreen .gx-ans{padding:16px;font-size:.96rem}
+#gateScreen#gateScreen#gateScreen .gx-wa{padding:22px 18px;border-radius:28px;margin-top:30px}
+#gateScreen#gateScreen#gateScreen .gx-wa-ic{width:58px;height:58px;font-size:1.7rem}
+#gateScreen#gateScreen#gateScreen .gx-wa b{font-size:1.12rem}
+/* فتح/قفل الإجابات بحركة سلسة بدل ظهور مفاجئ */
+#gateScreen#gateScreen#gateScreen .gx-how.open .gx-how-b{animation:gmFadeDown .38s var(--gm-ease)}
+#gateScreen#gateScreen#gateScreen .gx-how-h i{transition:transform var(--gm-t2) var(--gm-ease),background var(--gm-t2),color var(--gm-t2)}
+
+/* ---- 5) نظام حركة موحّد لباقي البرنامج (هادي، بدون مبالغة) ---- */
+button,.btn-submit,.btn-primary,.btn-action,.tab-btn,.menu-btn,.gate-big-btn,.stat-card,[class^="btn-"],[class*=" btn-"]{transition-timing-function:var(--gm-ease)}
+.tab-btn{transition:background var(--gm-t2),color var(--gm-t2),box-shadow var(--gm-t2),transform var(--gm-t1)}
+@media(hover:hover){
+  .stat-card:hover{transform:translateY(-3px);box-shadow:0 18px 34px -20px color-mix(in srgb,var(--primary,#5b2ad0) 55%,transparent)!important}
+  .btn-submit:hover,.btn-primary:hover,.menu-btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+  tbody tr{transition:background var(--gm-t1)}
+  tbody tr:hover{background:color-mix(in srgb,var(--primary,#5b2ad0) 5%,transparent)}
+}
+/* مودالات ونوافذ: دخول أنعم */
+@keyframes gmPop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes modalSlide{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+.modal{animation-duration:.3s;animation-timing-function:var(--gm-ease)}
+.modal-overlay{animation-duration:.22s}
+#gmDlg{animation-duration:.24s}
+/* حقول الإدخال */
+input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{transition:border-color var(--gm-t1),box-shadow var(--gm-t2),background var(--gm-t1)}
+/* ظهور العناصر وهي بتدخل الشاشة: أخف (من غير blur) */
+.gm-rv{transform:translateY(14px);filter:none}
+.gm-in{transition:opacity .5s var(--gm-ease) var(--d,0s),transform .5s var(--gm-ease) var(--d,0s),box-shadow var(--gm-t2),border-color var(--gm-t2)}
+/* احترام إعداد تقليل الحركة */
+@media (prefers-reduced-motion:reduce){
+  .view-panel,.admin-view-panel,#gateScreen .gate-header-block,#gateScreen .gate-main-grid>*,#gateScreen .gate-extra,.gx-how.open .gx-how-b{animation:none!important}
+  *{scroll-behavior:auto!important}
+}
+</style>
+
+<style id="gm-homemenu-css">
+/* ===== زر "قسم الإدارة" الأسود: ظاهر دايمًا إلا لو صاحب الجيم أخفاه ===== */
+html:not(.gm-adm-hide) #gateScreen#gateScreen .gate-admin-btn,
+html:not(.gm-adm-hide) #gateScreen#gateScreen.gate-mixed-pin .gate-admin-btn{display:flex!important;flex-direction:row;align-items:center;justify-content:center;gap:16px;width:100%!important;max-width:460px;box-sizing:border-box;margin:16px auto 0!important;padding:20px 22px!important;border-radius:26px!important;background:linear-gradient(160deg,#2c2c31,#0b0b0d 72%)!important;color:#fff!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 18px 36px -18px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.09)!important;font-family:'Cairo',Tahoma,sans-serif!important;cursor:pointer;text-align:start;animation:gmRise .55s var(--gm-ease,ease) .22s backwards!important;transition:transform .28s var(--gm-ease,ease),box-shadow .28s var(--gm-ease,ease)!important}
+html.gm-adm-hide #gateScreen#gateScreen .gate-admin-btn{display:none!important}
+#gateScreen#gateScreen .gate-admin-btn .ico{flex:none;width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);color:#fff}
+#gateScreen#gateScreen .gate-admin-btn .ico svg{width:27px;height:27px}
+#gateScreen#gateScreen .gate-admin-btn .gab-tx{display:flex;flex-direction:column;gap:3px;text-align:start}
+#gateScreen#gateScreen .gate-admin-btn .gab-tx b{font-size:1.22rem;font-weight:900;color:#fff}
+#gateScreen#gateScreen .gate-admin-btn .gab-tx small{font-size:.84rem;font-weight:700;color:rgba(255,255,255,.66)}
+@media(hover:hover){html:not(.gm-adm-hide) #gateScreen#gateScreen .gate-admin-btn:hover{transform:translateY(-3px);box-shadow:0 24px 40px -18px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.12)!important}}
+html:not(.gm-adm-hide) #gateScreen#gateScreen .gate-admin-btn:active{transform:scale(.985)}
+#gmAdmHint{display:none!important}
+
+/* ===== تبويب التحكم في القائمة الرئيسية ===== */
+#hmHost{direction:rtl;font-family:'Cairo',Tahoma,sans-serif}
+.hm-wrap{display:grid;gap:18px;max-width:560px;margin:0 auto}
+.hm-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:26px;padding:22px 18px;text-align:center}
+.hm-card h3{margin:0 0 6px;font-size:1.1rem;font-weight:900;color:var(--text-main)}
+.hm-card p{margin:0;color:var(--text-muted);font-weight:700;font-size:.92rem;line-height:1.8}
+.hm-chip{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:99px;font-weight:900;font-size:.88rem;margin-bottom:12px}
+.hm-chip.on{background:rgba(34,160,107,.13);color:#17845a}.hm-chip.off{background:rgba(109,40,217,.1);color:#5b21b6}
+.hm-phone{width:min(300px,100%);margin:14px auto 0;padding:16px 14px 18px;border-radius:30px;background:linear-gradient(180deg,#f7f4ff,#ede8fd);border:6px solid #1b1b20;box-shadow:0 24px 40px -26px rgba(20,10,50,.6);text-align:center}
+.hm-title{font-weight:900;font-size:.92rem;color:#3b1a8a;margin-bottom:4px}
+.hm-sec{display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:17px;margin-top:10px;font-weight:900;color:#fff;font-size:.95rem;text-align:start}
+.hm-sec .n{flex:none;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.25);display:grid;place-items:center;font-size:.78rem}
+.hm-men{background:linear-gradient(135deg,#3b82f6,#1d4ed8)}.hm-women{background:linear-gradient(135deg,#ec4899,#be185d)}
+.hm-adm{background:linear-gradient(160deg,#2c2c31,#0b0b0d)}
+.hm-adm.hl{outline:3px solid #f59e0b;outline-offset:3px;animation:hmRing 2.4s ease-in-out infinite}
+@keyframes hmRing{50%{outline-color:rgba(245,158,11,.35)}}
+.hm-arrow{margin-top:10px;padding:9px 12px;border-radius:14px;background:#fff7e0;color:#8a5a00;font-weight:900;font-size:.86rem;line-height:1.6;border:1px solid #f5d27a}
+.hm-ghost{margin-top:10px;padding:13px;border-radius:17px;border:2px dashed #a78bfa;color:#5b21b6;font-weight:800;font-size:.84rem;line-height:1.75}
+.hm-sw{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;padding:16px 18px;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font:900 1rem 'Cairo',sans-serif;cursor:pointer;text-align:start;transition:border-color .2s,background .2s}
+.hm-sw small{display:block;margin-top:3px;font-weight:700;font-size:.8rem;color:var(--text-muted)}
+.hm-knob{flex:none;position:relative;width:54px;height:32px;border-radius:99px;background:#c9c5d6;transition:background .28s cubic-bezier(.22,.8,.25,1)}
+.hm-knob::after{content:"";position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.25);transition:transform .28s cubic-bezier(.22,.8,.25,1)}
+.hm-sw[aria-checked="true"] .hm-knob{background:#17a36b}.hm-sw[aria-checked="true"] .hm-knob::after{transform:translateX(-22px)}
+.hm-tap{margin-top:12px;padding:26px 14px;border-radius:20px;border:2px dashed var(--border-color);color:var(--text-muted);font-weight:800;line-height:1.8;cursor:pointer;user-select:none;-webkit-user-select:none;transition:background .2s,border-color .2s}
+.hm-tap.ok{background:rgba(34,160,107,.1);border-color:#17a36b;color:#17845a}
+.hm-tap b{display:block;font-size:1.3rem;color:var(--text-main)}
+#hmDlgOv{position:fixed;inset:0;z-index:2147483100;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto;background:rgba(15,8,35,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);direction:rtl;font-family:'Cairo',Tahoma,sans-serif;animation:gmFade .2s ease-out}
+#hmDlg{width:min(400px,100%);margin:auto;box-sizing:border-box;padding:22px 18px 16px;border-radius:28px;background:var(--bg-card,#fff);color:var(--text-main,#1b1233);box-shadow:0 30px 70px -16px rgba(20,10,50,.6);border:1px solid var(--border-color);animation:gmPop .28s cubic-bezier(.22,.8,.25,1)}
+#hmDlg h3{margin:0 0 6px;text-align:center;font-size:1.25rem;font-weight:900}
+#hmDlg .sub{margin:0 0 12px;text-align:center;color:var(--text-muted);font-weight:700;font-size:.92rem;line-height:1.8}
+#hmDlg .lbl{margin:14px 0 4px;text-align:center;font-weight:900;font-size:.9rem;color:#5b21b6}
+#hmDlg .how{margin-top:12px;padding:13px 14px;border-radius:16px;background:rgba(109,40,217,.07);border:1px solid rgba(109,40,217,.18);font-weight:800;font-size:.9rem;line-height:1.85;text-align:center}
+#hmDlg .row{display:flex;flex-direction:column;gap:9px;margin-top:16px}
+#hmDlg button{padding:14px;border-radius:16px;border:0;font:900 1rem 'Cairo',sans-serif;cursor:pointer;transition:transform .15s}
+#hmDlg button:active{transform:scale(.97)}
+#hmDlg .go{background:#111;color:#fff}#hmDlg .no{background:rgba(109,40,217,.1);color:#5b21b6}
+.hm-toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:2147483200;padding:12px 20px;border-radius:99px;background:#111;color:#fff;font:800 .92rem 'Cairo',sans-serif;box-shadow:0 14px 30px rgba(0,0,0,.4);animation:gmPop .25s ease-out;direction:rtl;max-width:90vw;text-align:center}
+</style>
+
+<script id="gm-homemenu-js">
+/* التحكم في القائمة الرئيسية: إظهار/إخفاء زر الإدارة الأسود (الإدارة ثابتة إلا لو صاحب الجيم قرر يخفيها) */
+(function () {
+  var KEY = 'gym_pro_admin_btn_hidden_v1';
+  function hidden() { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; } }
+  function apply() { document.documentElement.classList.toggle('gm-adm-hide', hidden()); }
+  function setHidden(v) { try { localStorage.setItem(KEY, v ? '1' : '0'); } catch (e) {} apply(); }
+  apply(); setInterval(apply, 2000); window.addEventListener('storage', apply);
+  function h(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function toast(m) { var o = document.querySelector('.hm-toast'); if (o) o.remove(); var t = h('div', 'hm-toast', m); document.body.appendChild(t); setTimeout(function () { t.remove(); }, 2800); }
+  function sec(cls, n, ic, tx) { var s = h('div', 'hm-sec ' + cls); s.appendChild(h('span', 'n', n)); s.appendChild(h('span', '', ic + ' ' + tx)); return s; }
+  function preview(on, hl) {
+    var p = h('div', 'hm-phone');
+    p.appendChild(h('div', 'hm-title', 'اختار القسم اللي عايز تدخله'));
+    p.appendChild(sec('hm-men', '1', '🚹', 'قسم الرجالي'));
+    p.appendChild(sec('hm-women', '2', '🚺', 'قسم البنات'));
+    if (on) {
+      p.appendChild(sec('hm-adm' + (hl ? ' hl' : ''), '3', '🔐', 'قسم الإدارة'));
+      if (hl) p.appendChild(h('div', 'hm-arrow', '☝️ ده زر الإدارة: الزر الأسود اللي تحت الرجالي والبنات'));
+    } else p.appendChild(h('div', 'hm-ghost', 'زر الإدارة مخفي. تدخل الإدارة بـ 4 ضغطات سريعة على أي مكان فاضي في الشاشة.'));
+    return p;
+  }
+  function confirmHide() {
+    var old = document.getElementById('hmDlgOv'); if (old) old.remove();
+    var ov = h('div'); ov.id = 'hmDlgOv'; var d = h('div'); d.id = 'hmDlg'; ov.appendChild(d);
+    d.appendChild(h('h3', '', '🔐 هتخفي زر الإدارة؟'));
+    d.appendChild(h('p', 'sub', 'الشاشة الرئيسية دلوقتي فيها 3 أقسام زي ما قدامك. الزر الأسود (رقم 3) هو اللي هيتخفى.'));
+    d.appendChild(preview(true, true));
+    d.appendChild(h('div', 'how', 'بعد الإخفاء تدخل الإدارة بـ 4 ضغطات سريعة على أي مكان فاضي في شاشة الأقسام (مش على زرار)، وبعدها تكتب رقمك السري.'));
+    d.appendChild(h('div', 'lbl', 'الشكل بعد الإخفاء'));
+    d.appendChild(preview(false, false));
+    var row = h('div', 'row');
+    var go = h('button', 'go', 'أيوه، أخفي زر الإدارة'), no = h('button', 'no', 'لأ، سيبه ظاهر');
+    go.type = no.type = 'button';
+    function close() { ov.remove(); document.removeEventListener('keydown', esc, true); }
+    function esc(e) { if (e.key === 'Escape') close(); }
+    go.onclick = function () { close(); setHidden(true); render(); toast('اتخفى زر الإدارة. ادخل بـ 4 ضغطات سريعة'); };
+    no.onclick = close; ov.onclick = function (e) { if (e.target === ov) close(); };
+    document.addEventListener('keydown', esc, true);
+    row.appendChild(go); row.appendChild(no); d.appendChild(row);
+    document.body.appendChild(ov);
+  }
+  function render() {
+    var host = document.getElementById('hmHost'); if (!host) return;
+    host.textContent = '';
+    var hid = hidden(), w = h('div', 'hm-wrap');
+    var c1 = h('div', 'hm-card');
+    c1.appendChild(h('div', 'hm-chip ' + (hid ? 'off' : 'on'), hid ? '🙈 زر الإدارة مخفي' : '✅ زر الإدارة ظاهر'));
+    c1.appendChild(h('h3', '', 'شكل الشاشة الرئيسية دلوقتي'));
+    c1.appendChild(h('p', '', hid ? 'الكباتن بيشوفوا قسمين بس.' : 'الزر الأسود (قسم الإدارة) ظاهر تحت الرجالي والبنات.'));
+    c1.appendChild(preview(!hid, !hid));
+    w.appendChild(c1);
+    var c2 = h('div', 'hm-card');
+    var sw = h('button', 'hm-sw'); sw.type = 'button'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', hid ? 'false' : 'true');
+    var tx = h('span'); tx.appendChild(document.createTextNode('إظهار زر قسم الإدارة')); tx.appendChild(h('small', '', hid ? 'مقفول: بتدخل بـ 4 ضغطات سريعة' : 'شغّال: الزر الأسود ظاهر دايمًا'));
+    sw.appendChild(tx); sw.appendChild(h('span', 'hm-knob'));
+    sw.onclick = function () { if (hidden()) { setHidden(false); render(); toast('رجع زر الإدارة الأسود'); } else confirmHide(); };
+    c2.appendChild(sw);
+    w.appendChild(c2);
+    if (hid) {
+      var c3 = h('div', 'hm-card');
+      c3.appendChild(h('h3', '', 'جرّب الضغطات'));
+      c3.appendChild(h('p', '', 'دي نفس الحركة اللي بتفتح بيها الإدارة من الشاشة الرئيسية.'));
+      var tap = h('div', 'hm-tap'); var n = 0, t = null;
+      var b = h('b', '', '0 / 4'); tap.appendChild(b); tap.appendChild(document.createTextNode('اضغط هنا 4 مرات بسرعة'));
+      tap.onclick = function () { n++; clearTimeout(t); t = setTimeout(function () { n = 0; b.textContent = '0 / 4'; tap.classList.remove('ok'); }, 1500); b.textContent = Math.min(n, 4) + ' / 4'; if (n >= 4) { n = 0; tap.classList.add('ok'); b.textContent = '✅ برافو'; } };
+      c3.appendChild(tap); w.appendChild(c3);
+    }
+    host.appendChild(w);
+  }
+  /* البرنامج الرئيسي بيتحمّل بعد الدخول، فبنراقب فتح التبويب بدل ما نلفّ switchAdminView */
+  var pn = document.getElementById('adminViewHomemenu');
+  if (pn && window.MutationObserver) {
+    new MutationObserver(function () { if (pn.classList.contains('active')) render(); }).observe(pn, { attributes: true, attributeFilter: ['class'] });
+  }
+})();
+</script>
+
+<style id="gm-admin-menace">
+/* ===== زر الإدارة: بعرض القسمين، شكل مجرم أسمر خطير ===== */
+@keyframes gmMenaceSweep{0%{transform:translateX(-130%) skewX(-18deg)}55%,100%{transform:translateX(330%) skewX(-18deg)}}
+html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn,
+html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen.gate-mixed-pin .gate-admin-btn{
+  position:relative;overflow:hidden;isolation:isolate;
+  width:100%!important;max-width:none!important;margin:16px 0 0!important;
+  padding:26px 24px 24px!important;border-radius:22px!important;
+  border:1px solid rgba(255,255,255,.06)!important;
+  background:
+    repeating-linear-gradient(45deg,rgba(255,255,255,.028) 0 2px,transparent 2px 6px),
+    radial-gradient(120% 140% at 12% 0%,#2a1210 0%,transparent 55%),
+    linear-gradient(165deg,#1a1a1d 0%,#050506 70%)!important;
+  box-shadow:0 22px 44px -16px rgba(0,0,0,.9),0 0 0 1px rgba(255,40,40,.4),0 0 26px -4px rgba(255,30,30,.45),inset 0 1px 0 rgba(255,255,255,.07),inset 0 -26px 40px -24px rgba(200,0,0,.55)!important;
+  contain:paint;
+  gap:18px!important;
+}
+/* شريط تحذير مائل أعلى الزر */
+html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn::before{
+  content:"";position:absolute;inset:0 0 auto 0;height:9px;z-index:0;
+  background:repeating-linear-gradient(-45deg,#f5c400 0 12px,#0a0a0a 12px 24px);opacity:.92}
+/* لمعة مسح بتعدّي على الزر */
+html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn::after{
+  content:"";position:absolute;top:0;bottom:0;left:0;width:34%;z-index:0;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  will-change:transform;animation:gmMenaceSweep 4.2s ease-in-out infinite}
+html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn>*{position:relative;z-index:1}
+#gateScreen#gateScreen#gateScreen .gate-admin-btn .ico{
+  width:64px;height:64px;border-radius:16px;
+  background:linear-gradient(160deg,#c40d0d,#5a0000);
+  border:1px solid rgba(255,120,120,.45);color:#fff;
+  box-shadow:0 0 22px rgba(255,30,30,.45),inset 0 1px 0 rgba(255,255,255,.25)}
+#gateScreen#gateScreen#gateScreen .gate-admin-btn .ico svg{width:30px;height:30px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx{flex:1;gap:5px}
+#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx b{
+  font-size:1.5rem;font-weight:900;letter-spacing:.5px;color:#fff;
+  text-shadow:0 2px 0 #000,0 0 18px rgba(255,40,40,.45)}
+#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx small{
+  font-size:.86rem;font-weight:800;color:rgba(255,255,255,.62)}
+/* شارة "منطقة محظورة" */
+#gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx small::before{
+  content:"● ";color:#ff2b2b}
+@media(hover:hover){
+  html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn:hover{
+    transform:translateY(-3px) scale(1.008);border-color:rgba(255,60,60,.5)!important}
+}
+html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn:active{transform:scale(.982)}
+@media(max-width:420px){
+  html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn{padding:24px 18px 22px!important;gap:14px!important}
+  #gateScreen#gateScreen#gateScreen .gate-admin-btn .gab-tx b{font-size:1.3rem}
+}
+@media(prefers-reduced-motion:reduce){
+  html:not(.gm-adm-hide) #gateScreen#gateScreen#gateScreen .gate-admin-btn::after{animation:none!important}
+
+}
+</style>
+<style id="gm-scroll-perf">
+/* ===== أداء السكرول: حركات لا نهائية كانت بتحرّك left / box-shadow (بتعمل إعادة رسم كل فريم) ===== */
+@keyframes gmSweep{0%,55%{transform:translateX(0) skewX(-18deg)}100%{transform:translateX(475%) skewX(-18deg)}}
+@keyframes gdSheen{0%,55%{transform:translateX(0) skewX(-20deg)}100%{transform:translateX(475%) skewX(-20deg)}}
+#gateScreen#gateScreen#gateScreen .gx-ft:last-child:nth-child(odd){animation:none!important}
+#gateScreen#gateScreen#gateScreen .gx-tip::after,#gateScreen .gate-deco span::after{will-change:transform}
+</style>
 </body>
 </html>
