@@ -8338,15 +8338,16 @@ window.__gmShellRun = function () {
         c.style.display = 'inline-flex';
       }
     }
-    function leave(silent) {
-      if (!silent && !confirm('هل تريد تبديل الكابتن والعودة لشاشة الأقسام؟')) return;
-      var c = window.__captain; try { if (c) logActivity('🔒 خرج ' + c.name + (silent ? ' (قفل تلقائي بعد خمول)' : ''), 'fa-lock'); } catch (e) {}
+    function leave(silent, manual) {
+      if (!silent && !manual && !confirm('هل تريد تبديل الكابتن والعودة لشاشة الأقسام؟')) return;
+      var c = window.__captain; try { if (c) logActivity('🔒 خرج ' + c.name + (silent && !manual ? ' (قفل تلقائي بعد خمول)' : ''), 'fa-lock'); } catch (e) {}
       window.__captain = null; chip(); stopIdle(); currentAppMode = null;
       var sb = $('sidebar'); if (sb) sb.classList.remove('open');
       $('mainContentArea').style.display = 'none'; $('adminDashboardArea').style.display = 'none'; $('gateScreen').style.display = 'flex';
       try { inlineSetup(); var gi = $('gatePinInput'); if (gi && isMixed()) { gi.value = ''; $('gatePinMsg').textContent = ''; focusLater('gatePinInput'); } } catch (e) {}
     }
     window.exitToGateScreen = function () { leave(false); };
+    window.__captainLeaveNow = function () { leave(true, true); };
     function touch() { last = Date.now(); }
     ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(function (e) { document.addEventListener(e, touch, { passive: true, capture: true }); });
     function startIdle() { stopIdle(); iv = setInterval(function () { if (window.__captain && Date.now() - last > IDLE_MS) leave(true); }, 15000); }
@@ -13249,6 +13250,35 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
 @media(prefers-reduced-motion:reduce){#gmTB,#gmTB *,#gmPanel{animation:none!important;transition-duration:.01s!important}}
 @media print{#gmTB,#gmPanel,#gmToast{display:none!important}body.gm-tb-on{padding-top:0}}
 </style>
+<style id="gm-avcard-css">
+#gmAvOv{position:fixed;inset:0;z-index:5200;background:rgba(15,8,35,.38);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);direction:rtl;font-family:'Cairo',Tahoma,sans-serif;animation:gmAvIn .18s ease-out}
+#gmAvCard{position:absolute;top:calc(env(safe-area-inset-top,0px) + 82px);left:max(10px,calc(50vw - 500px));width:min(330px,calc(100vw - 20px));box-sizing:border-box;padding:16px;border-radius:24px;background:var(--bg-card,#fff);color:var(--text-main,#1b1233);box-shadow:0 24px 60px -12px rgba(20,10,50,.45);border:1px solid color-mix(in srgb,var(--primary,#5b2ad0) 16%,transparent)}
+#gmAvCard .hd{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+#gmAvCard .ph{flex:none;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.3rem;color:#fff;background:linear-gradient(135deg,var(--primary,#5b2ad0),color-mix(in srgb,var(--primary,#5b2ad0) 68%,#000))}
+#gmAvCard .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+#gmAvCard .tx b{font-size:1.05rem;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#gmAvCard .tx small{opacity:.65;font-weight:700}
+#gmAvCard .x{flex:none;border:0;background:color-mix(in srgb,var(--text-main,#1b1233) 8%,transparent);color:inherit;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:.9rem}
+#gmAvCard .bd{border-radius:16px;background:color-mix(in srgb,var(--primary,#5b2ad0) 6%,transparent);padding:4px 12px;margin-bottom:12px}
+#gmAvCard .r{display:flex;justify-content:space-between;gap:10px;padding:9px 0;font-size:.92rem}
+#gmAvCard .r+.r{border-top:1px dashed color-mix(in srgb,var(--text-main,#1b1233) 14%,transparent)}
+#gmAvCard .r .k{opacity:.65;font-weight:700}
+#gmAvCard .out{width:100%;border:1px dashed var(--danger,#dc2626);background:var(--danger-light,#fee2e2);color:var(--danger,#dc2626);font:900 .98rem 'Cairo',Tahoma,sans-serif;padding:13px;border-radius:16px;cursor:pointer}
+#gmAvCard .out:active{transform:scale(.98)}
+#gmAvCard .ft{margin:10px 2px 0;font-size:.78rem;opacity:.6;text-align:center}
+#gmAvCard .qa{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+#gmAvCard .q{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border:0;border-radius:18px;cursor:pointer;color:var(--text-main,#1b1233);font:800 .82rem 'Cairo',Tahoma,sans-serif;background:color-mix(in srgb,var(--primary,#5b2ad0) 9%,transparent);transition:transform .15s,background .2s}
+#gmAvCard .q:first-child{background:linear-gradient(135deg,var(--primary,#5b2ad0),color-mix(in srgb,var(--primary,#5b2ad0) 68%,#000));color:#fff}
+#gmAvCard .q:active{transform:scale(.95)}
+#gmAvCard .q .i{width:26px;height:26px;display:grid;place-items:center}
+#gmAvCard .q svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#gmAvCard .q em{position:absolute;top:6px;left:8px;font-style:normal;background:#ef4444;color:#fff;font-size:.68rem;font-weight:900;padding:1px 6px;border-radius:99px}
+#gmAvCard .sw{width:100%;border:0;background:color-mix(in srgb,var(--text-main,#1b1233) 7%,transparent);color:inherit;font:800 .9rem 'Cairo',Tahoma,sans-serif;padding:11px;border-radius:14px;cursor:pointer;margin-bottom:8px}
+#gmAv .dot.hot{background:#ef4444;animation:gmDotHot 1.1s ease-in-out infinite}
+@keyframes gmDotHot{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.6)}50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}}
+@keyframes gmAvIn{from{opacity:0}to{opacity:1}}
+@media print{#gmAvOv{display:none!important}}
+</style>
 <script id="gm-topbar-js">
 (function () {
   if (window.__gmTopBar) return; window.__gmTopBar = true;
@@ -13425,10 +13455,18 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
   }
   function loadKingLog() {
     var sb = window.__gmSb; if (!sb || !sb.from || sb.__stub) return;
-    var now = Date.now(); if (now - S.logAt < 90000) return; S.logAt = now;
+    var now = Date.now(); if (now - S.logAt < 20000) return; S.logAt = now;
     function go() {
       sb.from('platform_access_log').select('gym_id, action, created_at').order('created_at', { ascending: false }).limit(6).then(function (r) {
         var rows = (r && r.data) || [], seen = +(localStorage.getItem(S.seenKey) || 0), nw = 0;
+        var mx = 0, fresh = []; rows.forEach(function (x) { var t = new Date(x.created_at).getTime(); if (t > mx) mx = t; if (S.kingBase != null && t > S.kingBase) fresh.push(x); });
+        if (S.kingBase == null) S.kingBase = mx; else if (mx > S.kingBase) S.kingBase = mx;
+        if (fresh.length) {
+          var nmz = fresh.map(function (x) { return '«' + (S.names[x.gym_id] || 'جيم') + '»'; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).slice(0, 2).join(' و ');
+          toastMsg('🔔 صاحب جيم دخل دلوقتي: ' + nmz);
+          var bl = $('gmBell'); if (bl) { bl.classList.add('ring'); setTimeout(function () { bl.classList.remove('ring'); }, 1600); }
+          try { if (navigator.vibrate) navigator.vibrate([120, 60, 120]); } catch (e) {}
+        }
         S.kingItems = rows.map(function (x) { var t = new Date(x.created_at).getTime(); if (t > seen) nw++; return { ic: 'login', t: 'دخول على «' + (S.names[x.gym_id] || 'جيم') + '»', s: new Date(x.created_at).toLocaleString('ar-EG'), hot: t > seen }; });
         S.kingNew = nw; S.sig = ''; 
       }, function () {});
@@ -13437,14 +13475,77 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
   }
 
   /* ---------- البناء ---------- */
+
+  /* ---------- صورة البار: كارت الكابتن / خروج المالك ---------- */
+  function closeAvCard() { var o = $('gmAvOv'); if (o) o.remove(); document.removeEventListener('keydown', avEsc, true); }
+  function avEsc(e) { if (e.key === 'Escape') closeAvCard(); }
+  function avRow(k, v) { var r = el('div', 'r'); r.appendChild(el('span', 'k', k)); r.appendChild(el('b', 'v', v)); return r; }
+  function capAttendance(c) {
+    try {
+      if (typeof attLoad !== 'function' || typeof attDayKey !== 'function') return '';
+      var day = attDayKey(new Date()), rec = attLoad().filter(function (r) { return r.day === day && r.captainId === c.id; }).sort(function (a, b) { return a.ts - b.ts; })[0];
+      return rec ? new Date(rec.ts).toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }) : '';
+    } catch (e) { return ''; }
+  }
+  function goWork(fn) { if (shown('adminDashboardArea')) { call('openMembersWorkspaceFromAdmin'); setTimeout(fn, 550); } else fn(); }
+  function qrNow() { goWork(function () { call('switchView', 'checkin'); setTimeout(function () { var bx = $('ckCamBox'); if (!bx || getComputedStyle(bx).display === 'none') call('gmCkCam'); }, 220); }); }
+  function newMemberNow() { goWork(function () { call('switchView', 'main'); setTimeout(function () { var i = $('fieldMemberName'); if (i) { try { i.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} i.focus(); } }, 220); }); }
+  function openCaptainCard(d) {
+    closeAvCard(); closePanel();
+    var c = window.__captain, g = window.__GYM || {}, isOwner = c.id === 'owner', women = c.section === 'WOMEN', men = c.section === 'MEN';
+    var nm = String(c.name || '').trim().replace(/^كابتن(ة)?\s+/, '');
+    var secTxt = men ? 'القسم الرجالي' : women ? 'قسم البنات' : 'كل الأقسام';
+    var ov = el('div'); ov.id = 'gmAvOv'; ov.onclick = closeAvCard;
+    var card = el('div'); card.id = 'gmAvCard'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.onclick = function (e) { e.stopPropagation(); };
+    var hd = el('div', 'hd'); hd.appendChild(el('div', 'ph', isOwner ? '👑' : (nm.charAt(0) || '👤')));
+    var tx = el('div', 'tx'); tx.appendChild(el('b', '', isOwner ? (nm || 'مالك الجيم') : ((women ? 'كابتنة ' : 'كابتن ') + nm))); tx.appendChild(el('small', '', isOwner ? 'مالك الجيم' : secTxt)); hd.appendChild(tx);
+    var x = el('button', 'x', '✕'); x.type = 'button'; x.setAttribute('aria-label', 'إغلاق'); x.onclick = closeAvCard; hd.appendChild(x);
+    card.appendChild(hd);
+    /* اختصارات سريعة */
+    var qa = el('div', 'qa');
+    function tile(ic, lb, fn, n) { var b = el('button', 'q'); b.type = 'button'; b.appendChild(el('span', 'i')); b.firstChild.innerHTML = svg(ic); b.appendChild(el('b', '', lb)); if (n) b.appendChild(el('em', '', n > 99 ? '99+' : String(n))); b.onclick = function () { closeAvCard(); fn(); setTimeout(tick, 250); }; qa.appendChild(b); }
+    tile('qr', 'كاميرا QR', qrNow); tile('userPlus', 'مشترك جديد', newMemberNow);
+    if (isOwner) { tile('bank', 'الخزنة والإدارة', function () { call('backToAdminDashboard'); }); tile('inbox', 'طلبات المشتركين', function () { var p = $('mrPill'); if (p) p.click(); else toastMsg('مفيش طلبات متاحة هنا'); }, S.req || 0); }
+    else { tile('search', 'بحث عن مشترك', function () { goWork(function () { var s = $('sidebar'); if (s) s.classList.add('open'); var i = $('searchInput'); if (i) { i.focus(); try { i.select(); } catch (e) {} } }); }); tile('clock', 'الحصص اليومية', function () { goWork(function () { call('switchView', 'daily'); }); }); }
+    card.appendChild(qa);
+    var bd = el('div', 'bd');
+    if (g.name) bd.appendChild(avRow('الجيم', g.name));
+    if (!isOwner) { bd.appendChild(avRow('القسم', secTxt)); var at = capAttendance(c); if (at) bd.appendChild(avRow('حضور النهارده', at)); }
+    if (bd.children.length) card.appendChild(bd);
+    if (isOwner) {
+      var sw = el('button', 'sw', '🔄 تبديل / رجوع للأقسام'); sw.type = 'button'; sw.onclick = function () { closeAvCard(); call('exitToGateScreen'); setTimeout(tick, 250); }; card.appendChild(sw);
+      var o2 = el('button', 'out', '🚪 تسجيل خروج من المنصة'); o2.type = 'button'; o2.onclick = function () { closeAvCard(); if (typeof window.__shSecureSignOut === 'function') window.__shSecureSignOut(); }; card.appendChild(o2);
+      card.appendChild(el('p', 'ft', 'الخروج هنا من المنصة كلها وحساب جوجل.'));
+    } else {
+      var out = el('button', 'out', '🔒 تسجيل خروج من ' + secTxt); out.type = 'button';
+      out.onclick = function () { closeAvCard(); if (typeof window.__captainLeaveNow === 'function') window.__captainLeaveNow(); else call('exitToGateScreen'); setTimeout(tick, 250); };
+      card.appendChild(out);
+      card.appendChild(el('p', 'ft', 'هترجع لقايمة الأقسام، ومش هتخرج من المنصة.'));
+    }
+    ov.appendChild(card); document.body.appendChild(ov);
+    document.addEventListener('keydown', avEsc, true);
+  }
+  function avatarAction() {
+    var d = S.cur; if (!d) return;
+    if ((d.mode === 'captain' || d.mode === 'owner') && window.__captain) return openCaptainCard(d);
+    if (d.mode === 'king') {
+      var bs = document.querySelectorAll('.kg-btn');
+      for (var i = 0; i < bs.length; i++) if (bs[i].textContent.indexOf('خروج') > -1) { bs[i].click(); return; }
+      return;
+    }
+    /* مالك / صاحب الجيم / شاشة الأقسام: خروج كامل من المنصة وحساب جوجل */
+    closePanel();
+    if (typeof window.__shSecureSignOut === 'function') window.__shSecureSignOut();
+  }
+
   function build() {
     bar = el('div'); bar.id = 'gmTB'; bar.className = 'top'; bar.setAttribute('role', 'banner');
     menuBtn = el('button'); menuBtn.id = 'gmMenu'; menuBtn.type = 'button'; menuBtn.setAttribute('aria-label', 'القائمة'); menuBtn.appendChild(el('i')); menuBtn.appendChild(el('i')); menuBtn.appendChild(el('i'));
     menuBtn.onclick = function (e) { e.stopPropagation(); toggle('feat'); };
-    avBtn = el('button'); avBtn.id = 'gmAv'; avBtn.type = 'button'; avBtn.setAttribute('aria-label', 'أعلى الصفحة');
+    avBtn = el('button'); avBtn.id = 'gmAv'; avBtn.type = 'button'; avBtn.setAttribute('aria-label', 'حسابي');
     avBtn.innerHTML = '<svg viewBox="0 0 44 44"><circle class="t" cx="22" cy="22" r="19"/><circle class="p" id="gmRing" cx="22" cy="22" r="19"/></svg>';
     avIm = el('span', 'im'); avDot = el('span', 'dot'); avBtn.appendChild(avIm); avBtn.appendChild(avDot);
-    avBtn.onclick = function () { window.scrollTo({ top: 0, behavior: 'smooth' }); var k = $('shKing'); if (k) k.scrollTo({ top: 0, behavior: 'smooth' }); };
+    avBtn.onclick = function (e) { e.stopPropagation(); avatarAction(); };
     main = el('div', 'g main'); isl = el('div', 'g isl');
     isl.onclick = function () { scr.open = true; setC(false); clearTimeout(scr.ot); scr.ot = setTimeout(function () { scr.open = false; setC(scr.col); }, 5000); };
     bar.appendChild(menuBtn); bar.appendChild(avBtn); bar.appendChild(main); bar.appendChild(isl);
@@ -13489,7 +13590,7 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
     // الأفاتار
     var logo = $('gateLogoImage'), has = logo && logo.getAttribute('src') && logo.style.display !== 'none';
     avIm.textContent = ''; if (has) { var im = el('img'); im.src = logo.src; im.alt = ''; avIm.appendChild(im); } else avIm.textContent = (d.name || 'G').trim().charAt(0).toUpperCase();
-    avDot.className = 'dot' + (navigator.onLine ? '' : ' off');
+    avDot.className = 'dot' + (navigator.onLine ? '' : ' off') + (d.mode === 'king' && S.kingNew > 0 ? ' hot' : '');
     var n = badgeCount(d), df = defs(d);
     // الأزرار الوسطى
     main.textContent = '';
