@@ -1534,6 +1534,207 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 <span class="ico" data-i="fa-vault"></span> الخزنة والإدارة
             </button>
             <div class="gate-deco" aria-hidden="true"><span></span><span></span><span></span></div>
+            <!-- ===== منطقة السكرول تحت الأقسام: نصيحة اليوم + حقائق سريعة ===== -->
+            <style>
+            #gateScreen .gate-extra{margin-top:44px;text-align:right;direction:rtl}
+            #gateScreen.gate-mixed-pin .gate-extra{display:none!important}
+            #gateScreen .gx-tip{position:relative;overflow:hidden;padding:22px 20px 20px;border-radius:26px;color:var(--on-primary,#fff);background:linear-gradient(155deg,color-mix(in srgb,var(--primary) 92%,#fff),color-mix(in srgb,var(--primary) 70%,#000));box-shadow:0 14px 34px color-mix(in srgb,var(--primary) 26%,transparent)}
+            #gateScreen .gx-tip::after{content:"";position:absolute;left:-40px;top:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.12)}
+            #gateScreen .gx-tip-label{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:99px;background:rgba(255,255,255,.2);font-weight:800;font-size:.8rem}
+            #gateScreen .gx-tip-text{position:relative;z-index:1;margin:14px 0 0;font-weight:800;font-size:1.12rem;line-height:1.85}
+            #gateScreen .gx-title{display:flex;align-items:center;gap:8px;margin:28px 2px 12px;font-weight:900;font-size:1.05rem;color:var(--text-main)}
+            #gateScreen .gx-title::after{content:"";flex:1;height:1px;background:var(--border-color)}
+            #gateScreen .gx-strip{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:4px 2px 14px;scrollbar-width:none}
+            #gateScreen .gx-strip::-webkit-scrollbar{display:none}
+            #gateScreen .gx-fact{flex:0 0 72%;max-width:250px;scroll-snap-align:start;padding:16px 16px 18px;border-radius:22px;background:var(--bg-card);border:1.5px solid var(--border-color);box-shadow:0 8px 22px rgba(0,0,0,.05)}
+            #gateScreen .gx-fact-ic{width:44px;height:44px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:color-mix(in srgb,var(--primary) 13%,transparent);margin-bottom:10px}
+            #gateScreen .gx-fact p{margin:0;font-weight:700;font-size:.93rem;line-height:1.8;color:var(--text-main)}
+            #gateScreen .gx-swipe{margin:0 2px;font-size:.78rem;font-weight:700;color:var(--text-muted)}
+            #gateScreen .gx-sep{display:flex;align-items:center;gap:12px;margin:0 4px 16px;color:var(--text-muted);font-weight:800;font-size:.85rem}
+            #gateScreen .gx-sep::before,#gateScreen .gx-sep::after{content:"";flex:1;height:1px;background:var(--border-color)}
+            #gateScreen .gx-sep span{padding:6px 16px;border-radius:99px;border:1.5px dashed var(--border-color)}
+            #gateScreen .gx-panel{padding:18px 14px 22px;border-radius:30px;background:color-mix(in srgb,var(--primary) 5%,var(--bg-card));border:1.5px solid var(--border-color);box-shadow:0 18px 50px rgba(0,0,0,.06)}
+            #gateScreen .gx-q{width:100%;box-sizing:border-box;margin-top:26px;padding:13px 16px;border-radius:16px;border:1.5px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font:700 .95rem 'Cairo',sans-serif}
+            #gateScreen .gx-q:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 18%,transparent)}
+            #gateScreen .gx-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+            #gateScreen .gx-ft{display:flex;flex-direction:column;gap:4px;text-align:right;padding:14px;border-radius:20px;background:var(--bg-card);border:1.5px solid var(--border-color);color:var(--text-main);font-family:inherit;cursor:pointer;transition:transform .15s,border-color .15s}
+            #gateScreen .gx-ft:active{transform:scale(.97)}#gateScreen .gx-ft:hover{border-color:var(--primary)}
+            #gateScreen .gx-ft-ic{font-size:1.5rem}#gateScreen .gx-ft b{font-size:.92rem;font-weight:900}#gateScreen .gx-ft small{font-size:.76rem;font-weight:700;color:var(--text-muted);line-height:1.6}
+            #gateScreen .gx-how{margin-bottom:10px;border-radius:20px;background:var(--bg-card);border:1.5px solid var(--border-color);overflow:hidden}
+            #gateScreen .gx-how-h{width:100%;display:flex;align-items:center;gap:10px;padding:14px;background:none;border:0;color:var(--text-main);font:900 .95rem 'Cairo',sans-serif;text-align:right;cursor:pointer}
+            #gateScreen .gx-how-h b{flex:1}#gateScreen .gx-how-h i{font-style:normal;transition:transform .2s;color:var(--text-muted)}
+            #gateScreen .gx-how.open{border-color:var(--primary)}#gateScreen .gx-how.open .gx-how-h i{transform:rotate(180deg)}
+            #gateScreen .gx-how-b{display:none;padding:0 14px 14px}#gateScreen .gx-how.open .gx-how-b{display:block}
+            #gateScreen .gx-how ol,.gx-sheet ol{list-style:none;margin:0;padding:0;counter-reset:s}
+            #gateScreen .gx-st{display:flex;gap:10px;align-items:flex-start;width:100%;margin-bottom:8px;padding:10px 12px;border-radius:14px;border:1.5px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font:700 .88rem/1.7 'Cairo',sans-serif;text-align:right;cursor:pointer}
+            #gateScreen .gx-st::before{counter-increment:s;content:counter(s);flex:0 0 24px;height:24px;border-radius:50%;background:color-mix(in srgb,var(--primary) 15%,transparent);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.8rem}
+            #gateScreen .gx-st.done{opacity:.6;text-decoration:line-through;border-color:var(--primary)}#gateScreen .gx-st.done::before{content:"✓";background:var(--primary);color:var(--on-primary,#fff)}
+            #gateScreen .gx-prog{font-size:.8rem;font-weight:800;color:var(--text-muted);text-align:center;margin-top:4px}
+            #gateScreen .gx-none{display:none;text-align:center;font-weight:800;color:var(--text-muted);padding:16px}
+            #gateScreen .gx-ans{margin:0;padding:12px 14px;border-radius:14px;background:var(--bg-main);font-weight:700;font-size:.88rem;line-height:1.8;color:var(--text-main)}
+            #gateScreen .gx-wa{display:flex;align-items:center;gap:12px;margin-top:20px;padding:14px 16px;border-radius:20px;background:#25d366;color:#fff;text-decoration:none;box-shadow:0 10px 24px rgba(37,211,102,.3)}
+            #gateScreen .gx-wa-ic{font-size:1.8rem}#gateScreen .gx-wa b{display:block;font-weight:900;font-size:1rem}#gateScreen .gx-wa small{font-weight:700;font-size:.8rem;opacity:.95}
+            .gx-sheet{display:none;position:fixed;inset:0;z-index:6000;background:rgba(8,12,22,.55);align-items:flex-end;direction:rtl;font-family:'Cairo',sans-serif}
+            .gx-sheet.open{display:flex}
+            .gx-sp{width:100%;max-width:560px;margin:0 auto;max-height:84vh;overflow:auto;box-sizing:border-box;padding:22px 18px calc(18px + env(safe-area-inset-bottom,0px));border-radius:28px 28px 0 0;background:var(--bg-card);color:var(--text-main);position:relative}
+            .gx-sp h3{margin:6px 0 4px;font-size:1.25rem;font-weight:900}.gx-sh-ic{font-size:2.2rem}
+            .gx-sh-s{margin:0 0 12px;color:var(--text-muted);font-weight:700;font-size:.9rem}
+            .gx-where{display:inline-block;margin-bottom:14px;padding:6px 14px;border-radius:99px;background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary);font-weight:800;font-size:.82rem}
+            .gx-sp ol{counter-reset:s}.gx-sp li{display:flex;gap:10px;margin-bottom:10px;font-weight:700;font-size:.92rem;line-height:1.8}
+            .gx-sp li::before{counter-increment:s;content:counter(s);flex:0 0 26px;height:26px;border-radius:50%;background:var(--primary);color:var(--on-primary,#fff);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.82rem}
+            .gx-x{position:absolute;left:14px;top:14px;width:36px;height:36px;border-radius:50%;border:0;background:var(--bg-main);color:var(--text-main);font-size:1rem;cursor:pointer}
+            .gx-nav{display:flex;align-items:center;justify-content:space-between;margin-top:16px;font-weight:800;font-size:.85rem;color:var(--text-muted)}
+            .gx-nav button{padding:10px 16px;border-radius:14px;border:1.5px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font:800 .85rem 'Cairo',sans-serif;cursor:pointer}
+            </style>
+            <section class="gate-extra" id="gateExtra" aria-label="ركن الكابتن"><div class="gx-sep"><span>⬇ ركن الكابتن</span></div><div class="gx-panel">
+                <div class="gx-tip">
+                    <span class="gx-tip-label">💡 نصيحة اليوم</span>
+                    <p class="gx-tip-text" id="gxTipText"></p>
+                </div>
+                <div class="gx-title">⚡ حقائق سريعة</div>
+                <div class="gx-strip" id="gxStrip"></div>
+                <div class="gx-swipe">اسحب لليسار لباقي الحقائق ←</div>
+                <input class="gx-q" id="gxQ" type="search" placeholder="🔎 عايز تعمل إيه؟ دوّر: تجديد، حضور، واتساب..." aria-label="بحث">
+                <div class="gx-title">🧰 مميزات GYM U <small style="font-weight:700;color:var(--text-muted)">· اضغط على أي ميزة</small></div>
+                <div class="gx-feat" id="gxFeat"></div>
+                <div class="gx-title">🧭 إزاي أعمل...</div>
+                <div id="gxHow"></div>
+                <div class="gx-title">❓ أسئلة شائعة</div>
+                <div id="gxFaq"></div>
+                <a class="gx-wa" id="gxWa" href="#" target="_blank" rel="noopener"><span class="gx-wa-ic">💬</span><span><b>محتاج مساعدة؟</b><small>كلّمنا على واتساب وهنرد عليك</small></span></a>
+                <div class="gx-none" id="gxNone">مفيش نتيجة، جرّب كلمة تانية 🙂</div>
+            </div></section>
+            <script>
+            (function(){
+              var F=[
+                ["🪪","ملفات المشتركين","بحث وبيانات كاملة","من زر «عرض المشتركين» فوق",["اضغط «عرض المشتركين» فوق.","اكتب الاسم أو الموبايل أو الـID في خانة البحث.","اضغط على المشترك، فتفتح بياناته وكل أزراره."]],
+                ["🔳","حضور بالـQR","مسح الكارنيه وخلاص","تبويب «تسجيل حضور (QR)»",["افتح تبويب «تسجيل حضور (QR)».","امسح الكارنيه بالسكانر أو شغّل الكاميرا، أو اكتب الكود أو الاسم.","بتتحسب حصة واحدة بس في اليوم، والنتيجة بتفضل قدامك."]],
+                ["📊","متابعة الحصص","شريط حصص لكل مشترك","تبويب «متابعة الاشتراكات بالحصص»",["افتح «متابعة الاشتراكات بالحصص».","هتلاقي لكل مشترك شريط بالحصص المستهلكة.","اضغط «إضافة حضور» لحصة جديدة، أو «تعديل يدوي» لو حصل غلط."]],
+                ["⏱️","الحصص اليومية","زوار اليوم بسعرهم","تبويب «الحصص اليومية»",["سجّل الزائر من «لوحة التسجيل» بباقة «حصة يوم واحد».","افتح «الحصص اليومية».","شوف عدد حصص اليوم وإجمالي التحصيل."]],
+                ["🟢","رسائل واتساب","جاهزة باسم المشترك","من بروفايل المشترك",["افتح بروفايل المشترك.","اختار: تذكير التجديد، أو الغياب، أو روابط الجيم، أو الكارنيه.","واتساب بيفتح برسالة جاهزة، اضغط إرسال."]],
+                ["🎫","الكارنيه","إظهار وطباعة وإرسال","من بروفايل المشترك",["افتح بروفايل المشترك.","اضغط «إظهار الكارت» أو «طباعة الكارت».","أو «إرسال الكارنيه واتساب» للمشترك على طول."]],
+                ["🛒","المبيعات","عصائر ومنتجات","تبويب «قسم المبيعات»",["افتح «قسم المبيعات».","اختار الصنف والكمية.","اضغط «تسجيل عملية بيع»، والمبلغ بيدخل خزينة القسم."]],
+                ["🌐","بوابة المشترك","يتابع اشتراكه بنفسه","رابطها عند صاحب الجيم",["اطلب من صاحب الجيم رابط البوابة.","ابعته للمشترك، يدخل برقم موبايله وكوده.","يشوف كارنيهه واشتراكه، ويرفع صورته، ويطلب تجديد أو تجميد."]],
+                ["🔐","للمالك فقط","خزنة وتقارير وباقات","بوابة «الخزنة والإدارة»",["الخزنة والتقارير والباقات وحسابات الكباتن بتتفتح من «الخزنة والإدارة».","الدخول بكلمة سر المالك.","محتاج حاجة منها؟ اطلبها من صاحب الجيم."]]
+              ];
+              var H=[
+                ["➕","أسجّل مشترك جديد",["افتح «لوحة التسجيل والمؤشرات».","اكتب الاسم ورقم الواتساب.","اختار الباقة والنوع (شاب أو بنت).","اكتب المبلغ المدفوع، وأي مديونية متبقية.","راجع التاريخ ورقم المشترك، واضغط «حفظ واعتماد البيانات»."]],
+                ["🔁","أجدد اشتراك",["اضغط «عرض المشتركين» وابحث عن المشترك.","اضغط عليه لفتح بروفايله.","اضغط «تجديد شهر تلقائي».","راجع تاريخ الانتهاء الجديد في بياناته."]],
+                ["✅","أسجّل حضور",["لو بالـQR: افتح «تسجيل حضور (QR)» وامسح الكارنيه.","لو بالحصص: افتح «متابعة الاشتراكات بالحصص».","اضغط «إضافة حضور» على كارت المشترك."]],
+                ["🚶","أسجّل زائر يوم واحد",["افتح «لوحة التسجيل والمؤشرات».","اختار باقة «حصة يوم واحد» واكتب بياناته.","اضغط «حفظ واعتماد البيانات».","هيظهر في «الحصص اليومية» وبيتحسب في تحصيل اليوم."]],
+                ["💵","أسدّد مديونية",["افتح بروفايل المشترك وشوف «المديونية المالية الحالية».","استلم الفلوس منه.","اضغط «تم تأكيد سداد المديونية بالكامل»."]],
+                ["✏️","أعدّل بيانات مشترك",["افتح بروفايل المشترك.","اضغط «تعديل المعلومات»، فالنموذج يتفتح ببياناته.","عدّل اللي محتاجه واحفظ، أو اضغط «إلغاء وضع التعديل»."]],
+                ["❄️","مشترك عايز يجمّد",["مفيش زر تجميد في شاشة الكابتن.","المشترك بيطلبه من بوابته بعد ما يدخل برقم موبايله وكوده.","الطلب بيوصل لصاحب الجيم يتابعه."]]
+              ];
+              var fe=document.getElementById('gxFeat'),ho=document.getElementById('gxHow'),cur=0;
+              function drawF(){fe.innerHTML=F.map(function(f,i){return '<button type="button" class="gx-ft" data-i="'+i+'"><span class="gx-ft-ic">'+f[0]+'</span><b>'+f[1]+'</b><small>'+f[2]+'</small></button>';}).join('');}drawF();
+              function drawH(){ho.innerHTML=H.map(function(h){return '<div class="gx-how"><button type="button" class="gx-how-h" aria-expanded="false"><span>'+h[0]+'</span><b>'+h[1]+'</b><i>⌄</i></button><div class="gx-how-b"><ol>'+h[2].map(function(t){return '<li><button type="button" class="gx-st">'+t+'</button></li>';}).join('')+'</ol><div class="gx-prog">اضغط على كل خطوة وانت بتنفذها</div></div></div>';}).join('');}drawH();
+              ho.addEventListener('click',function(e){
+                var st=e.target.closest('.gx-st'),hd=e.target.closest('.gx-how-h');
+                if(hd){var box=hd.parentNode,was=box.classList.contains('open');[].forEach.call(ho.children,function(c){c.classList.remove('open');});if(!was)box.classList.add('open');hd.setAttribute('aria-expanded',!was);}
+                else if(st){st.classList.toggle('done');var b=st.closest('.gx-how-b'),a=b.querySelectorAll('.gx-st'),d=b.querySelectorAll('.gx-st.done').length;b.querySelector('.gx-prog').textContent=d===a.length?'برافو 👏 كده عرفت تعملها':'خلصت '+d+' من '+a.length;}
+              });
+              var S={},LK=[];
+              function drawFoot(){var f=document.getElementById('gxFooter');if(!f||!Object.keys(S).length)return;
+                function $(i){return document.getElementById(i);}
+                function t(i,v){$(i).textContent=v||'';}
+                function row(id,v,href){var e=$(id);e.style.display=v?'':'none';if(href&&v)e.href=href;}
+                var br=S.footer_brand||'';
+                t('gfFollow',S.footer_follow);t('gfCopy',S.footer_copyright);t('gfSlogan',S.footer_slogan);t('gfTag',S.footer_tagline);
+                t('gfPhone',S.footer_phone);t('gfMail',S.footer_email);t('gfLoc',S.footer_location);
+                t('gfBrand',br);t('gfBrand2',br);t('gfBrand3',br);t('gfYear','© '+new Date().getFullYear()+' ');
+                var num=String(S.footer_whatsapp||S.footer_phone||'').replace(/\D/g,''),wu='https://wa.me/'+num;
+                row('gfWa',num,wu);row('gfWb',num,wu);
+                row('gfPhoneA',S.footer_phone,'tel:'+String(S.footer_phone||'').replace(/[^\d+]/g,''));
+                row('gfMailA',S.footer_email,'mailto:'+(S.footer_email||''));row('gfLocA',S.footer_location);
+                var ul=$('gfLinks');ul.textContent='';
+                LK.forEach(function(l){if(!/^https:\/\//i.test(l[1]))return;var a=document.createElement('a');a.href=l[1];a.target='_blank';a.rel='noopener noreferrer';a.textContent=l[0];ul.appendChild(a);});
+                $('gfLinksBox').style.display=ul.children.length?'':'none';
+                f.style.display='block';}
+              var SUPPORT='';/* رقم واتساب الدعم بالصيغة الدولية، مثال: 201012345678 */
+              var Q=[
+                ["نسيت الرقم السري، أعمل إيه؟","الأرقام السرية بيحددها صاحب الجيم من «الكباتن والأرقام السرية». كلّمه يديك رقم جديد."],
+                ["دخلت القسم الغلط، أرجع إزاي؟","اضغط «تبديل الكابتن / القسم» أعلى الشاشة، وترجع لبوابة الأقسام."],
+                ["سجّلت بيانات مشترك غلط","افتح بروفايل المشترك واضغط «تعديل المعلومات»، عدّل واحفظ."],
+                ["سجّلت حضور بالغلط","من «متابعة الاشتراكات بالحصص» اضغط «تعديل يدوي» على كارت المشترك وصحّح عدد الحصص."],
+                ["مش لاقي مشترك في البحث","اكتب جزء من الاسم أو آخر أرقام الموبايل أو الـID، وتأكد إنك في القسم الصح (رجالي أو بنات)."],
+                ["بياناتي بتضيع لو قفلت الصفحة؟","لا. البيانات محفوظة على السحابة في حساب الجيم، مش على جهازك."],
+                ["الصفحة بطيئة أو بتعلّق","اعمل تحديث للصفحة وتأكد من النت. لو المشكلة فضلت، كلّمنا على واتساب."]
+              ];
+              var fq=document.getElementById('gxFaq');
+              function drawQ(){fq.innerHTML=Q.map(function(q){return '<div class="gx-how"><button type="button" class="gx-how-h" aria-expanded="false"><span>💬</span><b>'+q[0]+'</b><i>⌄</i></button><div class="gx-how-b"><p class="gx-ans">'+q[1]+'</p></div></div>';}).join('');}drawQ();
+              fq.addEventListener('click',function(e){var hd=e.target.closest('.gx-how-h');if(!hd)return;var box=hd.parentNode,was=box.classList.contains('open');[].forEach.call(fq.children,function(c){c.classList.remove('open');});if(!was)box.classList.add('open');hd.setAttribute('aria-expanded',!was);});
+              var wa=document.getElementById('gxWa');function setWa(){wa.style.display=SUPPORT?'':'none';wa.href='https://wa.me/'+SUPPORT+'?text='+encodeURIComponent('أهلاً، محتاج مساعدة في برنامج GYM U');}setWa();
+              /* القائمة الرئيسية: المحتوى بييجي من جدول main_list في Supabase، ولو تعذّر بيفضل المحتوى المدمج */
+              try{fetch('https://wvekeoemprxbxjklbaig.supabase.co/rest/v1/main_list?select=*&active=eq.true&order=sort_order',{headers:{apikey:'sb_publishable_irn-GODoQ0YCFNOku8nZlQ_RQY9Z1xV',Authorization:'Bearer sb_publishable_irn-GODoQ0YCFNOku8nZlQ_RQY9Z1xV'}}).then(function(r){return r.ok?r.json():[];}).then(function(rows){var f=[],h=[],q=[];rows.forEach(function(r){var st=r.steps||[];if(r.kind==='feature')f.push([r.icon||'',r.title,r.sub||'',r.where_to||'',st]);else if(r.kind==='howto')h.push([r.icon||'',r.title,st]);else if(r.kind==='faq')q.push([r.title,r.body||'']);else if(r.kind==='setting'){S[r.title]=r.body||'';if(r.title==='support_whatsapp')SUPPORT=String(r.body||'').replace(/\D/g,'');}else if(r.kind==='link')LK.push([r.title,r.body||'']);});if(f.length){F=f;drawF();}if(h.length){H=h;drawH();}if(q.length){Q=q;drawQ();}setWa();drawFoot();}).catch(function(){});}catch(e){}
+              var sh=document.createElement('div');sh.className='gx-sheet';sh.innerHTML='<div class="gx-sp" role="dialog" aria-modal="true"></div>';document.body.appendChild(sh);
+              function show(i){var n=F.length;cur=(i+n)%n;var f=F[cur];sh.firstChild.innerHTML='<button class="gx-x" type="button" aria-label="إغلاق">✕</button><div class="gx-sh-ic">'+f[0]+'</div><h3>'+f[1]+'</h3><p class="gx-sh-s">'+f[2]+'</p><div class="gx-where">📍 '+f[3]+'</div><ol>'+f[4].map(function(t){return '<li>'+t+'</li>';}).join('')+'</ol><div class="gx-nav"><button type="button" data-n="-1">→ السابقة</button><span>'+(cur+1)+' / '+n+'</span><button type="button" data-n="1">التالية ←</button></div>';sh.classList.add('open');}
+              fe.addEventListener('click',function(e){var c=e.target.closest('.gx-ft');if(c)show(+c.getAttribute('data-i'));});
+              sh.addEventListener('click',function(e){if(e.target===sh||e.target.closest('.gx-x'))sh.classList.remove('open');var n=e.target.closest('[data-n]');if(n)show(cur+(+n.getAttribute('data-n')));});
+              document.addEventListener('keydown',function(e){if(e.key==='Escape')sh.classList.remove('open');});
+              document.getElementById('gxQ').addEventListener('input',function(){var q=this.value.trim(),any=false;
+                [].forEach.call(fe.children,function(c,i){var m=F[i].join(' ').indexOf(q)>-1;c.style.display=m?'':'none';any=any||m;});
+                [].forEach.call(ho.children,function(c,i){var m=(H[i][1]+' '+H[i][2].join(' ')).indexOf(q)>-1;c.style.display=m?'':'none';any=any||m;});
+                [].forEach.call(fq.children,function(c,i){var m=(Q[i][0]+' '+Q[i][1]).indexOf(q)>-1;c.style.display=m?'':'none';any=any||m;});
+                document.getElementById('gxNone').style.display=any?'none':'block';});
+            })();
+            </script>
+            <script>
+            (function(){
+              var tips=[
+                "اشرب ميّه قبل التمرين بساعة تقريباً، وكمّل شرب على فترات أثناءه.",
+                "الإحماء من 5 لـ 10 دقايق بيجهّز مفاصلك وعضلاتك وبيقلل احتمال الشد.",
+                "النوم من 7 لـ 9 ساعات هو الوقت اللي عضلاتك بتتعافى فيه وتتبني.",
+                "وزّع البروتين على وجباتك الرئيسية بدل ما تاخده في وجبة واحدة كبيرة.",
+                "3 مرات في الأسبوع بانتظام أحسن من أسبوع نار وبعده انقطاع.",
+                "ركّز على الأداء الصح للحركة قبل ما تزوّد الوزن.",
+                "إدّي العضلة راحة يوم أو يومين قبل ما تشتغل عليها تاني بتمرين تقيل.",
+                "تمدد خفيف بعد التمرين بيساعد جسمك يهدى ويرجع لطبيعته.",
+                "وجبة فيها بروتين وكربوهيدرات بعد التمرين بتساعد على الاستشفاء.",
+                "المشي كل يوم حتى لو 20 دقيقة بيفرق مع القلب والمزاج.",
+                "اتنفس صح: زفير وانت بتطلع الوزن، وشهيق وانت بتنزّله.",
+                "سجّل تمرينك في ورقة أو في الموبايل، اللي بيتقاس بيتحسّن.",
+                "ماتقارنش نفسك بغيرك، قارن نفسك بنفسك الشهر اللي فات.",
+                "الأكل المتوازن هو الأساس، والمكمّلات مجرد إضافة لو احتجتها.",
+                "لو حسّيت بألم حاد (مش تعب عضلة عادي) وقّف التمرين وكلّم الكابتن.",
+                "قلّل المشروبات الغازية والسكر المضاف، والميّه دايماً أحسن اختيار.",
+                "جهّز شنطة الجيم من الليلة اللي قبلها وشيل عن نفسك عذر الكسل.",
+                "تمارين الضهر والبطن بتحميك من وجع أسفل الضهر في حياتك اليومية.",
+                "خلّي الوجبة اللي قبل التمرين خفيفة، وكلها قبلها بساعة ونص أو ساعتين.",
+                "حسّ بالعضلة اللي بتشتغل وانت بتتمرن، الجودة قبل الكمية.",
+                "اسأل الكابتن لما تتلخبط، سؤال النهارده بيوفّر عليك أسابيع من الغلط.",
+                "الكارديو مش عدو العضلات، 20 دقيقة بعد التمرين كفاية للقلب.",
+                "زوّد الوزن أو التكرارات بالتدريج، خطوة صغيرة كل أسبوع أو اتنين.",
+                "ارتاح من دقيقة لدقيقتين بين مجموعات التمارين التقيلة.",
+                "النتيجة الواضحة غالباً بتبان بعد 8 لـ 12 أسبوع من الانتظام، فاصبر.",
+                "ماتتمرنش وانت جعان جداً ولا شبعان جداً.",
+                "املا نص طبقك خضار وفاكهة، فيهم الفيتامينات والألياف اللي جسمك محتاجها.",
+                "5 دقايق تنفّس عميق بعد الشغل بيخففوا التوتر ويرجّعوا تركيزك.",
+                "اكتب هدف واحد واضح للشهر ده وارجعله كل أسبوع.",
+                "سلّم على اللي جنبك، الجو الحلو بيخلّيك ترجع تاني."
+              ];
+              var facts=[
+                ["💪","العضلة بتتبني وانت بتستريح مش وانت بتتمرن، التمرين بس بيدّيها الإشارة."],
+                ["🫀","قلبك عضلة! الكارديو المنتظم بيخلّيه يضخ دم أكتر بمجهود أقل."],
+                ["💧","جسم الإنسان البالغ حوالي 60% ميّه، عشان كده شرب الميّه مهم للأداء."],
+                ["😴","قلة النوم بتبطّأ الاستشفاء وبتزوّد الإحساس بالجوع."],
+                ["🦴","تمارين المقاومة بتقوّي العظام مش العضلات بس."],
+                ["🔥","العضلة بتحرق سعرات حتى وانت قاعد أكتر من الدهون."],
+                ["🧠","التمرين بيزوّد تدفق الدم للمخ وبيحسّن التركيز والمزاج."],
+                ["🥚","البيضة الواحدة فيها حوالي 6 جرام بروتين."],
+                ["🤸","الإحماء بيرفع حرارة العضلات فتبقى أكتر مرونة وأقل عرضة للإصابة."],
+                ["🚶","المشي المنتظم من أبسط الطرق لتحسين اللياقة وتقليل التوتر."]
+              ];
+              try{
+                var day=Math.floor(Date.now()/864e5);
+                document.getElementById('gxTipText').textContent=tips[day%tips.length];
+                var strip=document.getElementById('gxStrip'),off=day%facts.length,h='';
+                for(var i=0;i<facts.length;i++){var f=facts[(i+off)%facts.length];
+                  h+='<div class="gx-fact"><div class="gx-fact-ic">'+f[0]+'</div><p>'+f[1]+'</p></div>';}
+                strip.innerHTML=h;
+              }catch(e){var x=document.getElementById('gateExtra');if(x)x.style.display='none';}
+            })();
+            </script>
 
             <!-- الجيم المختلط: مفيش بوابة أقسام، كلمة السر بس -->
             <div class="gate-pin" id="gatePinInline">
@@ -1550,6 +1751,35 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 <button type="button" class="gate-pin-link" id="gatePinSetup" hidden>👑 أول مرة؟ عيّن رقم المالك</button>
             </div>
         </div>
+    <footer class="gf" id="gxFooter" style="display:none">
+        <style>
+        #gxFooter{width:100%;max-width:760px;margin:0 auto;box-sizing:border-box;direction:rtl;text-align:center;font-family:'Cairo',Tahoma,sans-serif;color:var(--text-main)}
+        #gxFooter .gf-top{margin:0 8px;padding:20px 16px 18px;border-radius:30px;background:linear-gradient(160deg,#2a1170,#5b2cc4 70%,#7c4fe6);color:#fff;box-shadow:0 18px 40px rgba(60,20,140,.3)}
+        #gxFooter .gf-top b{display:block;font-size:1.15rem;font-weight:900}
+        #gxFooter .gf-wac{display:inline-grid;place-items:center;width:58px;height:58px;margin:12px 0 10px;border-radius:50%;background:#25d366;font-size:1.6rem;text-decoration:none}
+        #gxFooter .gf-btn{display:block;width:max-content;margin:0 auto 10px;padding:12px 28px;border-radius:16px;background:rgba(255,255,255,.18);color:#fff;font-weight:900;text-decoration:none}
+        #gxFooter .gf-cp{font-size:.78rem;font-weight:700;opacity:.7}
+        #gxFooter .gf-main{margin-top:22px;padding:24px 20px 6px;border-top:3px solid;border-image:linear-gradient(90deg,#6a2bdc,#ec4899,#e9a82b) 1;background:var(--bg-card)}
+        #gxFooter .gf-logo{font-size:2.3rem;font-weight:900;letter-spacing:-1px;color:#3b1d8f}#gxFooter .gf-logo i{font-style:normal;background:linear-gradient(135deg,#ec4899,#6a2bdc);-webkit-background-clip:text;background-clip:text;color:transparent}
+        #gxFooter .gf-slogan{margin:6px 0 4px;font-weight:700;font-size:1.05rem}#gxFooter .gf-tag{font-weight:800;color:var(--primary)}
+        #gxFooter h4{display:flex;align-items:center;gap:10px;margin:22px 0 10px;padding-top:18px;border-top:1px solid var(--border-color);font-size:1.05rem;font-weight:900}
+        #gxFooter .gf-links{display:flex;flex-direction:column;align-items:stretch;text-align:right}#gxFooter .gf-links a{padding:10px 4px;color:var(--text-main);font-weight:800;text-decoration:none}#gxFooter .gf-links a::after{content:"‹";float:left;color:#ec4899}
+        #gxFooter .gf-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;color:var(--text-main);font-weight:800;text-decoration:none;text-align:right}
+        #gxFooter .gf-ic{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,#6a2bdc,#8a55e8);flex:none}
+        #gxFooter .gf-bar{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:18px;padding:14px 4px;border-top:1px solid var(--border-color);font-size:.8rem;font-weight:700;color:var(--text-muted);direction:ltr}
+        </style>
+        <div class="gf-top"><b id="gfFollow"></b><a class="gf-wac" id="gfWa" target="_blank" rel="noopener" aria-label="واتساب">💬</a><a class="gf-btn" id="gfWb" target="_blank" rel="noopener">تواصل معنا</a><div class="gf-cp" id="gfCopy"></div></div>
+        <div class="gf-main">
+            <div class="gf-logo"><span id="gfBrand"></span></div>
+            <div class="gf-slogan" id="gfSlogan"></div><div class="gf-tag" id="gfTag"></div>
+            <div id="gfLinksBox"><h4>🔗 روابط سريعة</h4><div class="gf-links" id="gfLinks"></div></div>
+            <h4>📞 تواصل معنا</h4>
+            <a class="gf-row" id="gfPhoneA"><span class="gf-ic">📞</span><span id="gfPhone"></span></a>
+            <a class="gf-row" id="gfMailA"><span class="gf-ic">✉️</span><span id="gfMail"></span></a>
+            <div class="gf-row" id="gfLocA"><span class="gf-ic">📍</span><span id="gfLoc"></span></div>
+            <div class="gf-bar"><span><span id="gfYear"></span><span id="gfBrand2"></span>. All rights reserved.</span><span>Powered by <span id="gfBrand3"></span></span></div>
+        </div>
+    </footer>
     </div>
 
     <div class="modal-overlay" id="gatePasswordModal">
@@ -2752,7 +2982,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             const COLLECTION = "gymData";
             const SYNC_KEYS = [
                 'gym_pro_members_v3', 'gym_pro_financials_v3', 'gym_pro_daily_sessions_v1',
-                'gym_pro_activity_log_v1', 'gym_pro_deleted_tombstones_v1', 'gym_pro_captains_v1', 'gym_pro_onboarding_v1',
+                'gym_pro_activity_log_v1', 'gym_pro_deleted_tombstones_v1', 'gym_pro_captains_v1', 'gym_pro_onboarding_v1', 'gym_pro_admin_guide_v1',
                 'gym_pro_sales_v1', 'gym_pro_sale_products_v1', 'gym_pro_delete_requests_v1', 'gym_pro_admin_notices_v1',
                 'gym_pro_expenses_v1', 'gym_pro_expense_categories_v1',
                 'gym_pro_sub_plans_men_v1', 'gym_pro_sub_plans_women_v1', 'gym_pro_sub_plans_v1',
@@ -7917,6 +8147,17 @@ window.__gmShellRun = function () {
       fail('owner'); var w2 = wait('owner');
       return { ok: false, wrong: true, wait: w2, waitText: w2 ? fmt(w2) : '' };
     };
+    window.__capAddCaptain = async function (name, pin, section) {
+      pin = norm(pin); name = String(name || '').trim();
+      if (!validPin(pin)) return { err: 'pin' };
+      var dd = load();
+      if (dd.list.some(function (c) { return c.section === section && c.name === name; })) name = name + ' 2';
+      if (await pinTaken(pin, null)) return { taken: true };
+      var salt = rnd();
+      dd.list.push({ id: 'c' + Date.now().toString(36) + rnd().slice(0, 4), name: name, section: section, salt: salt, hash: await hash(pin, salt), active: true });
+      save(dd); note('👤 تمت إضافة الكابتن "' + name + '" ' + (section === 'ALL' ? 'للجيم' : 'لقسم ' + SEC[section]));
+      return { ok: true };
+    };
     window.__capOpen = function (target) {
       cur = { target: target, who: null }; $('capMsg').textContent = ''; $('capModal').setAttribute('data-t', target); $('capModal').style.display = 'flex';
       if (target === 'OWNER' && !load().owner) {
@@ -8299,7 +8540,7 @@ window.__gmShellRun = function () {
     if (!row.support) maybeImportLegacy(NS, g, row.role);
     installFirebaseShim(g.id, state.userId);
     applyOnboarding(g.id);
-    window.__GYM = { id: g.id, name: g.name, role: row.role, canWrite: sub.write, layout: g.layout_mode || 'split' };
+    window.__GYM = { id: g.id, name: g.name, role: row.role, canWrite: sub.write, layout: g.layout_mode || 'split', support: !!row.support };
     document.title = g.name;
     document.body.classList.add('gym-running');
     runAppScripts();
@@ -9244,7 +9485,7 @@ var mix = g.layout_mode === 'mixed';
     top.appendChild(lg); var tt = el('div', 'kg-tt'); tt.appendChild(el('h1', '', 'لوحة صاحب المنصة')); tt.appendChild(el('small', '', '👑 ' + state.email)); top.appendChild(tt);
     function tbtn(t, fn) { var x = el('button', 'kg-btn', t); x.type = 'button'; x.onclick = fn; top.appendChild(x); return x; }
     tbtn('+ جيم جديد', createDlg).classList.add('gold');
-    tbtn('سجل دخولي', logDlg); tbtn('تحديث', kgLoad); tbtn('خروج', function () { if (confirm('تسجيل الخروج من حساب جوجل؟')) window.__shSignOut(); });
+    tbtn('سجل دخولي', logDlg); tbtn('القائمة الرئيسية', mainDlg); tbtn('تحديث', kgLoad); tbtn('خروج', function () { if (confirm('تسجيل الخروج من حساب جوجل؟')) window.__shSignOut(); });
     w.appendChild(top);
     var G = kg.gyms, cnt = { all: G.length, trial: 0, active: 0, blocked: 0, req: 0 };
     G.forEach(function (g) { cnt[kgState(g).k]++; if (g.layout_request) cnt.req++; });
@@ -9267,7 +9508,22 @@ var mix = g.layout_mode === 'mixed';
     if (!list.length) { grid.appendChild(el('div', 'kg-muted', 'مفيش جيمات بالشكل ده.')); return; }
     list.forEach(function (g) { grid.appendChild(gymCard(g)); });
   }
-  function logDlg() {
+  function mainDlg() {
+var rows = [], LBL = {support_whatsapp:'رقم واتساب الدعم (صيغة دولية مثل 201012345678)',footer_follow:'الفوتر: جملة المتابعة',footer_whatsapp:'الفوتر: رقم واتساب زر «تواصل معنا» (لو فاضي بيستخدم رقم الموبايل)',footer_brand:'الفوتر: اسم البراند',footer_slogan:'الفوتر: الشعار بالإنجليزي',footer_tagline:'الفوتر: الجملة العربي',footer_phone:'الفوتر: رقم الموبايل',footer_email:'الفوتر: الإيميل',footer_location:'الفوتر: المكان',footer_copyright:'الفوتر: سطر الحقوق'};
+dlg('القائمة الرئيسية', function (b) {
+b.style.maxHeight = '60vh'; b.style.overflow = 'auto'; b.appendChild(el('div', 'kg-muted', 'جاري التحميل…'));
+sb.from('main_list').select('id,kind,title,body,sort_order').in('kind', ['setting', 'link']).order('kind', { ascending: false }).order('sort_order').then(function (r) {
+b.textContent = ''; rows = r.data || [];
+b.appendChild(el('div', 'kg-muted', 'الروابط لازم تبدأ بـ https:// ، والرابط الفاضي مش بيظهر في الفوتر.'));
+rows.forEach(function (x) { var link = x.kind === 'link', i = inp(link ? 'url' : 'text', link ? 'https://' : '', x.body); x.__i = i; b.appendChild(fld(link ? 'رابط: ' + x.title : (LBL[x.title] || x.title), i)); });
+});
+}, 'حفظ', function () {
+return Promise.all(rows.filter(function (x) { return x.__i && x.__i.value.trim() !== (x.body || ''); }).map(function (x) {
+return sb.from('main_list').update({ body: x.__i.value.trim(), updated_at: new Date().toISOString() }).eq('id', x.id).then(function (r) { if (r.error) throw new Error(r.error.message); });
+}));
+}, function () {});
+}
+function logDlg() {
     dlg('سجل دخولك على الجيمات', function (b) {
       b.appendChild(el('div', 'kg-muted', 'جاري التحميل…'));
       sb.from('platform_access_log').select('gym_id, action, created_at').order('created_at', { ascending: false }).limit(30).then(function (r) {
@@ -12244,6 +12500,250 @@ function gmSessionEmail() { try { var u = JSON.parse(localStorage.getItem('sh_ca
     var now = Date.now(); taps = taps.filter(function (t) { return now - t < 3000; }); taps.push(now);
     if (taps.length >= 5) { taps = []; window.gmOpenAccount(!(typeof currentAppMode !== 'undefined' && currentAppMode === 'OWNER')); }
   });
+})();
+</script>
+<style id="gmFirstRunCss">
+html.gm-adm-first #gateScreen .gate-admin-btn,
+html.gm-adm-first #gateScreen.gate-mixed-pin .gate-admin-btn{display:flex!important;align-items:center;justify-content:center;gap:10px;width:100%!important;max-width:460px;box-sizing:border-box;margin:22px auto 0!important;padding:18px 24px!important;border-radius:20px!important;background:linear-gradient(180deg,#3a2c1e,#0d0a07)!important;color:#fff!important;border:2px solid #f7c948!important;font:900 1.1rem 'Cairo',sans-serif!important;box-shadow:0 14px 34px rgba(0,0,0,.45);animation:gmAdmPulse 2s infinite}
+@keyframes gmAdmPulse{0%{box-shadow:0 14px 34px rgba(0,0,0,.45),0 0 0 0 rgba(247,201,72,.55)}70%{box-shadow:0 14px 34px rgba(0,0,0,.45),0 0 0 14px rgba(247,201,72,0)}100%{box-shadow:0 14px 34px rgba(0,0,0,.45),0 0 0 0 rgba(247,201,72,0)}}
+#gmAdmHint{display:none;max-width:460px;margin:8px auto 0;text-align:center;color:var(--text-muted,#8d93a0);font:700 .85rem/1.6 'Cairo',sans-serif}
+html.gm-adm-first #gmAdmHint{display:block}
+#gmFr{position:fixed;inset:0;z-index:2147483200;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,8,14,.74);backdrop-filter:blur(6px);font-family:'Cairo',Tahoma,sans-serif;direction:rtl;overflow:auto}
+#gmFr .fr-card{width:min(420px,100%);box-sizing:border-box;padding:24px 20px 18px;border-radius:26px;background:#101013;color:#fff;border:1px solid rgba(247,201,72,.4);box-shadow:0 30px 80px rgba(0,0,0,.6);margin:auto}
+#gmFr .fr-ic{font-size:34px;text-align:center}
+#gmFr h3{margin:4px 0 6px;font-size:20px;font-weight:900;text-align:center}
+#gmFr .fr-sub{margin:0 0 14px;color:#a3a9b5;font-size:14px;line-height:1.7;font-weight:700;text-align:center}
+#gmFr .fr-sec{margin:0 0 12px;padding:12px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+#gmFr .fr-sec b{display:block;margin-bottom:8px;font-size:15px}
+#gmFr input{width:100%;box-sizing:border-box;margin:0 0 8px;padding:12px;border-radius:12px;border:1.5px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font:700 15px 'Cairo',sans-serif}
+#gmFr input.pin{text-align:center;letter-spacing:.3em;font-weight:900;font-size:18px}
+#gmFr input:focus{outline:none;border-color:#f7c948}
+#gmFr .fr-msg{min-height:1.4em;margin:0 0 8px;color:#ff9a8f;font-weight:800;font-size:13.5px;text-align:center}
+#gmFr .fr-btns{display:flex;flex-direction:column;gap:8px}
+#gmFr button{padding:13px;border-radius:14px;font:900 15px 'Cairo',sans-serif;cursor:pointer;border:1.5px solid transparent}
+#gmFr .fr-go{background:linear-gradient(180deg,#f9d25c,#d9990a);color:#1b1403}
+#gmFr .fr-alt{background:transparent;color:#e8eaee;border-color:rgba(255,255,255,.25)}
+#gmFr button:disabled{opacity:.55}
+#gmFrBanner{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483100;width:min(440px,calc(100% - 24px));box-sizing:border-box;padding:12px 14px;border-radius:16px;background:#1b1403;border:1.5px solid #f7c948;color:#fff;text-align:center;font:800 14px/1.7 'Cairo',sans-serif;direction:rtl;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+#gmFrBanner button{margin-top:6px;border:0;background:none;color:#f7c948;font:800 12.5px 'Cairo',sans-serif;text-decoration:underline;cursor:pointer}
+</style>
+<script>
+/* ===== أول دخول لصاحب الجيم: زر الإدارة الأسمر ← رقم المالك ← أرقام الأقسام ← تجربة الإخفاء (4 ضغطات) ===== */
+(function () {
+  var KEY = 'gym_pro_admin_guide_v1', busy = false, tapN = 0, tapT = null, banner = null, hint = null;
+  var $ = function (i) { return document.getElementById(i); };
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function J(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+  function eligible() { var g = window.__GYM; return !!(g && g.role === 'owner' && !g.support && g.canWrite !== false); }
+  function ownerPin() { var d = J('gym_pro_captains_v1'); return !!(d && d.owner && d.owner.salt); }
+  function hasCap(sec) { var d = J('gym_pro_captains_v1'); return !!(d && (d.list || []).some(function (c) { return c.active !== false && (sec === 'ALL' ? true : c.section === sec); })); }
+  function vis(id) { var e = $(id); return !!e && getComputedStyle(e).display !== 'none'; }
+  function get() { return J(KEY); }
+  function set(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function btnOn(on) { document.documentElement.classList.toggle('gm-adm-first', !!on); }
+
+  function dlg(icon, title, sub, content, buttons) {
+    var old = $('gmFr'); if (old) old.remove();
+    var m = el('div'); m.id = 'gmFr'; var c = el('div', 'fr-card'); m.appendChild(c);
+    c.appendChild(el('div', 'fr-ic', icon)); c.appendChild(el('h3', '', title)); c.appendChild(el('p', 'fr-sub', sub));
+    if (content) c.appendChild(content);
+    var msg = el('div', 'fr-msg'); c.appendChild(msg);
+    var bs = el('div', 'fr-btns'); c.appendChild(bs);
+    var o = { close: function () { m.remove(); }, msg: function (t) { msg.textContent = t || ''; }, btns: [] };
+    buttons.forEach(function (b) { var x = el('button', b.cls, b.t); x.type = 'button'; x.onclick = function () { b.fn(o, x); }; bs.appendChild(x); o.btns.push(x); });
+    document.body.appendChild(m);
+    return o;
+  }
+
+  /* 1) أرقام الأقسام (اختياري ويتخطى) */
+  function capsDialog(done) {
+    var mixed = window.__GYM && window.__GYM.layout === 'mixed';
+    var rows = (mixed ? [['ALL', '👤', 'دخول الجيم', 'كابتن الجيم']] : [['MEN', '🚹', 'القسم الرجالي', 'كابتن الرجالي'], ['WOMEN', '🚺', 'قسم البنات', 'كابتنة البنات']]).filter(function (r) { return !hasCap(r[0]); });
+    if (!rows.length) return done();
+    var box = el('div'), refs = [];
+    rows.forEach(function (r) {
+      var s = el('div', 'fr-sec'); s.appendChild(el('b', '', r[1] + ' ' + r[2]));
+      var nm = el('input'); nm.placeholder = 'الاسم (اختياري): ' + r[3]; nm.maxLength = 40;
+      var pn = el('input', 'pin'); pn.type = 'password'; pn.inputMode = 'numeric'; pn.autocomplete = 'off'; pn.placeholder = '4 أرقام أو أكتر';
+      s.appendChild(nm); s.appendChild(pn); box.appendChild(s); refs.push({ sec: r[0], nm: nm, pn: pn, def: r[3], box: s });
+    });
+    var d = dlg('🔐', 'أرقام الدخول للأقسام', 'الكابتن بيدخل قسمه برقمه ده. تقدر تتخطى وتضيفهم بعدين من الإعدادات.', box, [
+      { t: 'حفظ', cls: 'fr-go', fn: async function (o, b) {
+        var todo = refs.filter(function (r) { return r.box.style.display !== 'none' && r.pn.value.trim(); });
+        if (!todo.length) { o.msg('اكتب رقم لقسم واحد على الأقل، أو اضغط تخطي.'); return; }
+        for (var i = 0; i < todo.length; i++) { if (!/^[0-9٠-٩]{4,}$/.test(todo[i].pn.value.trim())) { o.msg('الرقم لازم يكون 4 أرقام أو أكتر.'); return; } }
+        b.disabled = true; o.msg('');
+        for (var j = 0; j < todo.length; j++) {
+          var r = todo[j], res;
+          try { res = await window.__capAddCaptain(r.nm.value.trim() || r.def, r.pn.value, r.sec); } catch (e) { res = { err: 1 }; }
+          if (res && res.ok) { r.box.style.display = 'none'; continue; }
+          b.disabled = false; r.pn.value = '';
+          o.msg(res && res.taken ? 'الرقم ده مستخدم مع حد تاني (أو رقمك كمالك). اختار رقم مختلف.' : 'حصل خطأ، جرّب تاني.'); return;
+        }
+        o.close(); done();
+      } },
+      { t: 'تخطي دلوقتي', cls: 'fr-alt', fn: function (o) { o.close(); done(); } }
+    ]);
+    setTimeout(function () { try { refs[0].pn.focus(); } catch (e) {} }, 100);
+  }
+
+  /* 2) إخفاء الزر الأسمر */
+  function hideDialog() {
+    dlg('🙈', 'تخفي زر الإدارة؟', 'بدل الزر الأسمر، تدخل الإدارة بـ 4 ضغطات سريعة في أي مكان فاضي في شاشة الأقسام. محدش من الكباتن هيعرف.', null, [
+      { t: 'جرّبها الأول', cls: 'fr-go', fn: function (o) { o.close(); startPractice(); } },
+      { t: 'أخفيه دلوقتي', cls: 'fr-alt', fn: function (o) { o.close(); set({ stage: 'done' }); busy = false; } },
+      { t: 'سيبه ظاهر', cls: 'fr-alt', fn: function (o) { o.close(); set({ stage: 'done', keep: true }); busy = false; } }
+    ]);
+  }
+  function startPractice() {
+    set({ stage: 'practice' }); btnOn(false);
+    var oc = window.confirm; window.confirm = function () { window.confirm = oc; return true; };
+    try { if (typeof window.exitToGateScreen === 'function') window.exitToGateScreen(); } finally { window.confirm = oc; }
+    busy = false;
+  }
+  function practiceDone() {
+    dlg('✅', 'برافو، ظبطها!', 'ده بالظبط اللي هتعمله كل مرة. تخفي الزر الأسمر نهائياً؟', null, [
+      { t: 'تمام، أخفيه', cls: 'fr-go', fn: function (o) { o.close(); set({ stage: 'done' }); busy = false; } },
+      { t: 'جرّب تاني', cls: 'fr-alt', fn: function (o) { o.close(); busy = false; } },
+      { t: 'رجّع الزر', cls: 'fr-alt', fn: function (o) { o.close(); set({ stage: 'done', keep: true }); busy = false; } }
+    ]);
+  }
+
+  /* شريط التجربة فوق شاشة الأقسام */
+  function bannerTxt() { return '🎯 جرّب دلوقتي: اضغط 4 ضغطات سريعة في أي مكان فاضي (' + tapN + '/4)'; }
+  function showBanner() {
+    if (banner) return;
+    banner = el('div'); banner.id = 'gmFrBanner';
+    var t = el('div', '', bannerTxt()); t.id = 'gmFrBannerTxt'; banner.appendChild(t);
+    var b = el('button', '', 'مش عارف؟ رجّع الزر'); b.type = 'button'; b.onclick = function () { set({ stage: 'done', keep: true }); rmBanner(); };
+    banner.appendChild(b); document.body.appendChild(banner);
+  }
+  function rmBanner() { if (banner) { banner.remove(); banner = null; } tapN = 0; }
+  function updBanner() { var t = $('gmFrBannerTxt'); if (t) t.textContent = bannerTxt(); }
+  (function () {
+    var g = $('gateScreen'); if (!g) return;
+    g.addEventListener('click', function (e) {
+      if (!banner) return;
+      if (e.target.closest && e.target.closest('button, input, a, .gate-pin')) { tapN = 0; updBanner(); return; }
+      tapN++; clearTimeout(tapT); tapT = setTimeout(function () { tapN = 0; updBanner(); }, 1500); updBanner();
+    });
+  })();
+
+  function ensureHint() {
+    if (hint && hint.isConnected) return;
+    var b = document.querySelector('#gateScreen .gate-admin-btn'); if (!b) return;
+    hint = el('div', '', '👆 ده زر صاحب الجيم. اضغط عليه واعمل رقمك السري.'); hint.id = 'gmAdmHint';
+    b.insertAdjacentElement('afterend', hint);
+  }
+
+  function poll() {
+    if (!eligible()) { btnOn(false); rmBanner(); return; }
+    var s = get();
+    if (!s) { s = ownerPin() ? { stage: 'done' } : { stage: 'btn' }; set(s); }
+    btnOn(s.stage === 'btn' || s.stage === 'caps' || s.stage === 'hide' || (s.stage === 'done' && s.keep));
+    ensureHint();
+    if (s.stage === 'btn' && ownerPin()) { s = { stage: 'caps' }; set(s); }
+    if (s.stage !== 'practice') rmBanner();
+    if (busy) return;
+    if (s.stage === 'caps' && vis('adminDashboardArea')) { busy = true; setTimeout(function () { capsDialog(function () { set({ stage: 'hide' }); busy = false; }); }, 900); }
+    else if (s.stage === 'hide' && vis('adminDashboardArea')) { busy = true; hideDialog(); }
+    else if (s.stage === 'practice') {
+      if (vis('gateScreen')) showBanner(); else rmBanner();
+      var cm = $('capModal');
+      if (cm && cm.style.display === 'flex' && vis('gateScreen')) { busy = true; rmBanner(); try { $('capClose').click(); } catch (e) {} setTimeout(practiceDone, 250); }
+    }
+  }
+  setInterval(poll, 700);
+})();
+</script>
+<style id="gmNewsCss">
+#gateScreen#gateScreen{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}
+#gateScreen#gateScreen .gate-wrap{flex:none;position:relative;min-height:calc(100vh - 70px);min-height:calc(100dvh - 70px);display:flex;flex-direction:column;justify-content:center;margin:0 auto!important;padding-bottom:58px}
+.nw-hint{position:absolute;left:0;right:0;bottom:6px;margin:0 auto;width:max-content;display:none;align-items:center;gap:8px;padding:8px 18px;border-radius:99px;border:1px solid var(--border-color,#e2e8f0);background:var(--bg-card,#fff);color:var(--text-muted,#64748b);font:800 .85rem 'Cairo',sans-serif;cursor:pointer}
+.nw-hint span{display:inline-block;animation:nwBob 1.6s ease-in-out infinite}
+@keyframes nwBob{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
+#gmNews{width:100%;max-width:760px;margin:0 auto;padding:6px 2px 44px;box-sizing:border-box;direction:rtl;font-family:'Cairo',Tahoma,sans-serif;text-align:start}
+#gmNews .nw-head{display:flex;align-items:center;gap:10px;margin:0 2px 16px}
+#gmNews .nw-head h2{margin:0;font-size:1.25rem;font-weight:900;color:var(--text-main,#1e293b)}
+#gmNews .nw-head::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,color-mix(in srgb,var(--primary,#6a2bdc) 45%,transparent),transparent)}
+#gmNews .nw-live{width:9px;height:9px;border-radius:50%;background:var(--primary,#6a2bdc);box-shadow:0 0 0 0 color-mix(in srgb,var(--primary,#6a2bdc) 55%,transparent);animation:nwLive 2s infinite}
+@keyframes nwLive{70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
+#gmNews .nw-grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:640px){#gmNews .nw-grid{grid-template-columns:1fr 1fr}#gmNews .nw-card.feat{grid-column:1/-1}}
+#gmNews .nw-card{--ac:#6a2bdc;position:relative;overflow:hidden;box-sizing:border-box;padding:18px 18px 16px;border-radius:24px;background:var(--bg-card,#fff);border:1px solid color-mix(in srgb,var(--ac) 28%,var(--border-color,#e2e8f0));box-shadow:0 16px 36px -20px color-mix(in srgb,var(--ac) 65%,transparent);opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease,box-shadow .25s}
+#gmNews .nw-card.in{opacity:1;transform:none}
+#gmNews .nw-card:hover{box-shadow:0 22px 44px -18px color-mix(in srgb,var(--ac) 75%,transparent)}
+#gmNews .nw-card::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,var(--ac),color-mix(in srgb,var(--ac) 35%,#fff))}
+#gmNews .nw-card::after{content:"";position:absolute;top:-70px;inset-inline-end:-50px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--ac) 22%,transparent),transparent 68%);pointer-events:none}
+#gmNews .nw-card>*{position:relative;z-index:1}
+#gmNews .nw-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+#gmNews .nw-ic{flex:none;width:52px;height:52px;border-radius:17px;display:grid;place-items:center;font-size:26px;background:linear-gradient(145deg,color-mix(in srgb,var(--ac) 82%,#fff),var(--ac));box-shadow:0 10px 22px -8px var(--ac)}
+#gmNews .nw-meta{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+#gmNews .nw-badge{padding:2px 12px;border-radius:99px;font:800 12px 'Cairo',sans-serif;color:var(--ac);background:color-mix(in srgb,var(--ac) 13%,transparent);border:1px solid color-mix(in srgb,var(--ac) 35%,transparent)}
+#gmNews .nw-date{font-size:.76rem;font-weight:700;color:var(--text-muted,#64748b)}
+#gmNews .nw-card h3{margin:0 0 6px;font-size:1.1rem;font-weight:900;color:var(--text-main,#1e293b);line-height:1.5}
+#gmNews .nw-card p{margin:0;color:var(--text-muted,#64748b);font-size:.92rem;line-height:1.85;font-weight:600}
+#gmNews .nw-cta{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:10px 18px;border-radius:14px;background:var(--ac);color:#fff;font:900 .9rem 'Cairo',sans-serif;text-decoration:none;box-shadow:0 10px 22px -10px var(--ac)}
+#gmNews .nw-card.feat{padding:24px 22px 22px;background:linear-gradient(135deg,color-mix(in srgb,var(--ac) 15%,var(--bg-card,#fff)),var(--bg-card,#fff) 72%)}
+#gmNews .nw-card.feat h3{font-size:1.4rem}
+#gmNews .nw-card.feat p{font-size:1rem}
+#gmNews .nw-card.feat .nw-ic{width:64px;height:64px;font-size:32px;border-radius:21px}
+#gmNews .nw-foot{margin-top:22px;text-align:center;color:var(--text-muted,#64748b);font-size:.78rem;font-weight:700;opacity:.8}
+@media(prefers-reduced-motion:reduce){#gmNews .nw-card{transition:none;transform:none;opacity:1}.nw-hint span,#gmNews .nw-live{animation:none}}
+</style>
+<script>
+/* ===== أخبار GYM U أسفل شاشة الأقسام (من جدول platform_news في Supabase) ===== */
+(function () {
+  var CK = 'gm_news_cache_v1', ACC = { violet: '#6a2bdc', pink: '#ec4899', gold: '#d9990a', green: '#16a34a', blue: '#2563eb', red: '#e11d48', teal: '#0d9488' };
+  var $ = function (i) { return document.getElementById(i); }, last = 0, io = null, sig = '';
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  function gateUp() { var g = $('gateScreen'); return !!g && !!window.__GYM && g.getClientRects().length > 0; }
+  function ago(iso) {
+    var d = new Date(iso); if (isNaN(d)) return '';
+    var days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (days <= 0) return 'النهاردة'; if (days === 1) return 'امبارح'; if (days < 8) return 'من ' + days + ' أيام';
+    try { return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' }); } catch (e) { return ''; }
+  }
+  function card(n, feat, i) {
+    var c = el('article', 'nw-card' + (feat ? ' feat' : '')); c.style.setProperty('--ac', ACC[n.accent] || ACC.violet); c.style.transitionDelay = (i * 70) + 'ms';
+    var top = el('div', 'nw-top'); top.appendChild(el('div', 'nw-ic', n.icon || '✨'));
+    var meta = el('div', 'nw-meta'); meta.appendChild(el('span', 'nw-badge', n.badge || 'جديد')); var dt = ago(n.created_at); if (dt) meta.appendChild(el('span', 'nw-date', dt));
+    top.appendChild(meta); c.appendChild(top);
+    c.appendChild(el('h3', '', n.title || '')); if (n.body) c.appendChild(el('p', '', n.body));
+    if (n.cta_url && /^https:\/\//i.test(n.cta_url)) { var a = el('a', 'nw-cta', (n.cta_label || 'اعرف أكتر') + ' ←'); a.href = n.cta_url; a.target = '_blank'; a.rel = 'noopener noreferrer'; c.appendChild(a); }
+    return c;
+  }
+  function render(list) {
+    var g = $('gateScreen'); if (!g) return;
+    var s = JSON.stringify(list || []); if (s === sig && $('gmNews')) return; sig = s;
+    var old = $('gmNews'); if (old) old.remove(); var oh = $('gmNewsHint'); if (oh) oh.remove();
+    if (io) { io.disconnect(); io = null; }
+    if (!list || !list.length) return;
+    var sec = el('section'); sec.id = 'gmNews'; sec.setAttribute('aria-label', 'أخبار GYM U');
+    var h = el('div', 'nw-head'); h.appendChild(el('span', 'nw-live')); h.appendChild(el('h2', '', 'جديد في GYM U')); sec.appendChild(h);
+    var grid = el('div', 'nw-grid'); list.forEach(function (n, i) { grid.appendChild(card(n, i === 0 && list.length > 1, i)); }); sec.appendChild(grid);
+    sec.appendChild(el('div', 'nw-foot', 'GYM U · نظام إدارة الجيمات'));
+    sec.addEventListener('click', function (e) { e.stopPropagation(); });   /* الضغط على الكروت ما يتحسبش من ضغطات الإدارة */
+    var gf=g.querySelector('#gxFooter');if(gf)g.insertBefore(sec,gf);else g.appendChild(sec);
+    var wrap = g.querySelector('.gate-wrap');
+    if (wrap) { var hb = el('button', 'nw-hint'); hb.id = 'gmNewsHint'; hb.type = 'button'; hb.style.display = 'flex'; hb.appendChild(el('span', '', '⌄')); hb.appendChild(el('b', '', 'جديد في GYM U')); hb.onclick = function () { sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; wrap.appendChild(hb); }
+    var cards = sec.querySelectorAll('.nw-card');
+    if ('IntersectionObserver' in window) { io = new IntersectionObserver(function (es) { es.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { root: g, threshold: 0.12 }); cards.forEach(function (c) { io.observe(c); }); }
+    else cards.forEach(function (c) { c.classList.add('in'); });
+  }
+  function readCache() { try { return JSON.parse(localStorage.getItem(CK)) || []; } catch (e) { return []; } }
+  function fetchNews() {
+    var sb = window.__gmSb; if (!sb || !sb.from) return;
+    sb.from('platform_news').select('id,title,body,badge,icon,accent,cta_label,cta_url,pinned,created_at')
+      .order('pinned', { ascending: false }).order('sort_order', { ascending: true }).order('created_at', { ascending: false }).limit(9)
+      .then(function (r) { if (r && !r.error && Array.isArray(r.data)) { try { localStorage.setItem(CK, JSON.stringify(r.data)); } catch (e) {} render(r.data); } }, function () {});
+  }
+  function tick() {
+    if (!gateUp()) return;
+    if (!$('gmNews') && !sig) render(readCache());
+    if (Date.now() - last > 600000) { last = Date.now(); fetchNews(); }
+  }
+  setInterval(tick, 2000); setTimeout(tick, 1200);
 })();
 </script>
 </body>
