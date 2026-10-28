@@ -13715,6 +13715,7 @@ html.gm-adm-first #gmAdmHint{display:block}
 #gmTB .ttl small{display:block;font-weight:700;font-size:.68rem;opacity:.7}
 @media(max-width:540px){#gmTB .g.main .b small{display:none}#gmTB .g.main .b{height:44px;min-width:42px}#gmTB{--h:58px}}
 /* الهامبورجر + الأفاتار */
+#gmTB #gmMenu,#gmTB #gmAv{visibility:visible!important;opacity:1!important}
 #gmMenu,#gmAv{position:absolute;top:50%;transform:translateY(-50%);border:0;padding:0;cursor:pointer;transition:width .5s,height .5s,background .3s}
 #gmMenu{right:11px;width:42px;height:42px;border-radius:50%;background:color-mix(in srgb,var(--pa) 14%,rgba(255,255,255,.35));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 #gmMenu i{display:block;width:18px;height:2px;border-radius:2px;background:var(--ink);transition:.3s}
@@ -13806,6 +13807,8 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
 (function () {
   if (window.__gmTopBar) return; window.__gmTopBar = true;
   var P = {
+    back: '<path d="M5 12h14M12 5l7 7-7 7"/>',
+    home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
     bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
     search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
     userPlus: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>',
@@ -13934,7 +13937,58 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
       feat('refresh', 'تحديث', 'إعادة تحميل البيانات', kgBtn('تحديث'), { tone: 4 });
       feat('logout', 'خروج', 'تسجيل خروج حساب جوجل', kgBtn('خروج'), { dg: 1, div: 1 });
     }
-    return { dock: D, feat: F };
+    var homeFn = function () {
+      try {
+        if (d.mode === 'king') { kgTab('gyms')(); return; }
+        if (d.mode === 'gate') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        if ((d.mode === 'owner' || d.mode === 'kingGym') && d.area === 'admin') call('switchAdminView', 'finance'); else call('switchView', 'main');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e) {}
+    };
+    var backFn = function () {
+      var sb = $('sidebar'); if (sb && sb.classList.contains('open')) { sb.classList.remove('open'); return; }
+      var first = function () { toastMsg('إنت في أول شاشة'); };
+      if (d.mode === 'king') { if (!tabOn('gyms')) kgTab('gyms')(); else first(); return; }
+      if (d.mode === 'captain') { if (!act('tabBtnMain')) call('switchView', 'main'); else first(); return; }
+      if (d.mode === 'gate') { first(); return; }
+      if (d.area === 'work') { if (!act('tabBtnMain')) call('switchView', 'main'); else call('backToAdminDashboard'); return; }
+      if (!adminAct('finance')) call('switchAdminView', 'finance'); else first();
+    };
+    if (d.mode !== 'gate') { D.unshift({ ic: 'back', lb: 'رجوع', fn: backFn, es: 1 }, { ic: 'home', lb: 'الرئيسية', fn: homeFn, es: 1 }); }
+    F.unshift({ ic: 'home', lb: 'القائمة الرئيسية', sub: 'ارجع لأول شاشة', fn: homeFn, tone: 2, es: 1 }, { ic: 'back', lb: 'رجوع', sub: 'خطوة لورا', fn: backFn, tone: 3, es: 1 });
+    return { dock: D.filter(function (x) { return vis(x.lb, d); }), feat: F.filter(function (x) { return vis(x.lb, d); }) };
+  }
+
+  /* ---------- البار الذكي: أكتر 5 حاجات بتستخدمها + إظهار/إخفاء حسب الدور ---------- */
+  var ALIAS = { 'تسجيل': 'تسجيل مشترك', 'حضور': 'حضور بالـQR', 'الحصص': 'متابعة الحصص', 'بحث': 'بحث عن مشترك', 'مالية': 'نظرة مالية', 'مشتركين': 'إدارة المشتركين', 'مصروفات': 'الحسابات والمصروفات', 'طلبات': 'طلبات المشتركين', 'الخزنة': 'الخزنة والإدارة', 'إيصالات': 'إيصالات الدفع', 'هتخلص': 'هتخلص قريب', 'الفوتر': 'الفوتر والمنظومة', 'جيم': 'جيم جديد', 'سجلي': 'سجل دخولي' };
+  function role1(d) { return d.mode === 'captain' ? 'captain' : d.mode === 'king' ? 'king' : 'owner'; }
+  function vis(lb, d) { if (d.raw || lb === 'رجوع' || lb === 'القائمة الرئيسية' || lb === 'الرئيسية') return true; try { return window.__gmDockVis ? window.__gmDockVis(ALIAS[lb] || lb, d) : true; } catch (e) { return true; } }
+  window.__gmCatalog = function () {
+    var seen = {}, out = [];
+    [{ mode: 'captain', area: 'work', raw: 1 }, { mode: 'owner', area: 'admin', raw: 1 }, { mode: 'owner', area: 'work', raw: 1 }, { mode: 'king', raw: 1 }].forEach(function (d) {
+      var r = role1(d);
+      try { defs(d).feat.forEach(function (x) { if (x.dg || x.es) return; var o = seen[x.lb]; if (!o) { o = seen[x.lb] = { lb: x.lb, ic: x.ic, roles: [] }; out.push(o); } if (o.roles.indexOf(r) < 0) o.roles.push(r); }); } catch (e) {}
+    }); return out;
+  };
+  function uKey(d) { var c = window.__captain, g = (window.__gmCloud && window.__gmCloud.gymId) || ''; return 'gm_use_' + g + '_' + (d.mode || 'x') + (d.mode === 'captain' && c && c.id ? '_' + c.id : ''); }
+  function uGet(d) { try { return JSON.parse(localStorage.getItem(uKey(d)) || '{}') || {}; } catch (e) { return {}; } }
+  function uScore(e) { return e ? e.n * Math.pow(.5, (Date.now() - e.t) / (14 * 864e5)) : 0; }
+  function track(d, key) {
+    if (!key || !d || d.mode === 'gate') return;
+    try { var u = uGet(d); u[key] = { n: Math.round((uScore(u[key]) + 1) * 100) / 100, t: Date.now() }; localStorage.setItem(uKey(d), JSON.stringify(u)); S.sig = ''; } catch (e) {}
+  }
+  function shortLb(l) { var w = String(l).split(' '), s = w[0]; if (w[1] && (s + ' ' + w[1]).length <= 11) s += ' ' + w[1]; return s; }
+  function smartList(d, df) {
+    if (d.mode === 'gate') return null;
+    if (window.__gmDockSmartOn && !window.__gmDockSmartOn()) return null;
+    var u = uGet(d), c = [];
+    df.feat.forEach(function (x) { if (x.dg || x.es) return; var sc = uScore(u[x.lb]); if (sc >= 1.5) c.push({ x: x, s: sc }); });
+    if (!c.length) return null;
+    c.sort(function (a, b) { return b.s - a.s; });
+    var out = [], used = {};
+    c.slice(0, 5).forEach(function (o) { var x = o.x; used[x.lb] = 1; out.push({ ic: x.ic, lb: shortLb(x.lb), fn: x.fn, cur: x.cur, badge: x.n, key: x.lb }); });
+    df.dock.forEach(function (x) { if (x.es || out.length >= 5) return; var k = ALIAS[x.lb] || x.lb; if (used[k]) return; used[k] = 1; out.push({ ic: x.ic, lb: x.lb, fn: x.fn, cur: x.cur, badge: x.badge, key: k }); });
+    return df.dock.filter(function (x) { return x.es; }).concat(out);
   }
   function tabOn(k) { var b = document.querySelector('.kg-tab[data-k="' + k + '"]'); return !!b && b.classList.contains('on'); }
 
@@ -14154,10 +14208,10 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
     main.textContent = '';
     if (d.mode === 'gate') { var tt = el('div', 'ttl', d.name); tt.appendChild(el('small', '', d.sub)); main.appendChild(tt); }
     else {
-      df.dock.forEach(function (x) {
+      (smartList(d, df) || df.dock).forEach(function (x) {
         var b = el('button', 'b' + (x.cur ? ' on' : '')); b.type = 'button'; b.innerHTML = svg(x.ic); b.appendChild(el('small', '', x.lb));
         if (x.badge) { var bd = el('span', 'bd', x.badge > 99 ? '99+' : String(x.badge)); bd.style.display = 'block'; b.appendChild(bd); }
-        b.onclick = function (e) { e.stopPropagation(); closePanel(); x.fn(); setTimeout(tick, 250); }; main.appendChild(b);
+        b.onclick = function (e) { e.stopPropagation(); closePanel(); track(d, x.key || ALIAS[x.lb] || x.lb); x.fn(); setTimeout(tick, 250); }; main.appendChild(b);
       });
       var bell = el('button', 'b' + (panel.classList.contains('show') && tab === 'notif' ? ' on' : '')); bell.type = 'button'; bell.id = 'gmBell'; bell.innerHTML = svg('bell'); bell.appendChild(el('small', '', 'إشعارات'));
       if (n > 0) { var bd2 = el('span', 'bd', n > 99 ? '99+' : String(n)); bd2.style.display = 'block'; bell.appendChild(bd2); }
@@ -14166,7 +14220,7 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
     // الجزيرة المصغّرة
     isl.innerHTML = svg(d.icon || 'dumbbell'); isl.appendChild(el('span', 'nm', d.name));
     var cn = el('span', 'cnt', n > 99 ? '99+' : String(n)); if (n > 0) cn.style.display = 'block'; isl.appendChild(cn);
-    menuBtn.style.display = d.mode === 'gate' ? 'none' : '';
+    menuBtn.style.display = '';
     try { if (window.__gmDockPost) window.__gmDockPost({ main: main, isl: isl, d: d }); } catch (e) { console.error(e); }
   }
   function renderPanel() {
@@ -14187,7 +14241,7 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
         var i = el('span', 'gmq-ic' + (x.dg ? ' dg' : x.tone ? ' t' + x.tone : '')); i.innerHTML = svg(x.ic); r.appendChild(i);
         var tx = el('span', 'gmq-tx'); tx.appendChild(el('b', '', x.lb)); if (x.sub) tx.appendChild(el('small', '', x.sub)); r.appendChild(tx);
         if (x.n) r.appendChild(el('span', 'gmq-n', String(x.n)));
-        r.onclick = function () { closePanel(); x.fn(); setTimeout(tick, 250); }; body.appendChild(r);
+        r.onclick = function () { closePanel(); track(d, x.lb); x.fn(); setTimeout(tick, 250); }; body.appendChild(r);
       });
     } else {
       var items = notifItems(d);
@@ -14444,8 +14498,8 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
     pos: 'top', lk: '', pid: 'theme',
     c: { c1: '#3B1A8C', c2: '#6D3FD6', c3: '#8B5CF0', fg: '#ffffff', act: '#ffffff', actfg: '#4B2AA8', ang: 135, style: 'gradient', op: 90, top: 60, blur: 22, glow: 30, bw: 1, shape: 'pill' },
     z: { w: 1000, h: 62, ic: 100, lbl: 1, cw: 250, ch: 42, ci: 100 },
-    b: { ig: 0, igs: 100, igt: 12, col: 1, info: 'name', txt: '', hap: 1, anim: 1, sheen: 0 },
-    hide: [], cx: []
+    b: { ig: 0, igs: 100, igt: 12, col: 1, smart: 1, info: 'name', txt: '', hap: 1, anim: 1, sheen: 0 },
+    hide: [], hr: {}, cx: []
   };
 
   /* ---------- أدوات ---------- */
@@ -14465,7 +14519,7 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
     if (['gradient', 'glass', 'solid', 'outline', 'neon'].indexOf(s.style) < 0) s.style = 'gradient';
     if (['pill', 'round', 'square'].indexOf(s.shape) < 0) s.shape = 'pill';
     z.w = num(z.w, 260, 1400, 1000); z.h = num(z.h, 44, 160, 62); z.ic = num(z.ic, 70, 260, 100); z.lbl = z.lbl ? 1 : 0; z.cw = num(z.cw, 120, 700, 250); z.ch = num(z.ch, 30, 120, 42); z.ci = num(z.ci, 70, 260, 100);
-    ['ig', 'col', 'hap', 'anim', 'sheen'].forEach(function (k) { b[k] = b[k] ? 1 : 0; });
+    ['ig', 'col', 'hap', 'anim', 'sheen', 'smart'].forEach(function (k) { b[k] = b[k] ? 1 : 0; });
     b.igs = num(b.igs, 20, 100, 100); b.igt = num(b.igt, 0, 60, 12);
     if (['name', 'progress', 'clock', 'text', 'ring'].indexOf(b.info) < 0) b.info = 'name';
     b.txt = String(b.txt || '').slice(0, 30);
@@ -14473,6 +14527,7 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
     o.lk = (LK[o.pid] && LK[o.pid].lk) || '';
     if (o.pos !== 'bottom') o.pos = 'top';
     o.hide = (Array.isArray(o.hide) ? o.hide : []).filter(function (x) { return typeof x === 'string'; }).slice(0, 20);
+    var hh = {}; if (o.hr && typeof o.hr === 'object') Object.keys(o.hr).slice(0, 80).forEach(function (k) { var a = Array.isArray(o.hr[k]) ? o.hr[k].filter(function (q) { return ROLES.some(function (z) { return z[0] === q; }); }) : []; if (a.length) hh[k] = a; }); o.hr = hh;
     o.cx = (Array.isArray(o.cx) ? o.cx : []).slice(0, 16).map(function (x) {
       x = x || {}; var tt = TYPES.some(function (t) { return t[0] === x.t; }) ? x.t : 'link', vv = String(x.v || '').slice(0, 200);
       if (tt === 'act' && !actById(vv)) vv = 'expired';
@@ -14542,7 +14597,7 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
   function apply(cf) {
     var B = bar(); if (!B) return;
     var hadSig = CURSIG;
-    CUR = cf; CURSIG = cf ? JSON.stringify([cf.hide, cf.cx, cf.b.info, cf.b.txt]) : 'null';
+    CUR = cf; CURSIG = cf ? JSON.stringify([cf.hide, cf.hr, cf.cx, cf.b.info, cf.b.txt, cf.b.smart]) : 'null';
     (B._vk || []).forEach(function (k) { B.style.removeProperty(k); }); B._vk = [];
     Array.prototype.slice.call(B.classList).forEach(function (c) { if (/^lk-/.test(c)) B.classList.remove(c); });
     ['dk', 'cu', 'lk', 'lbl', 'invg', 'pos-b', 'noanim', 'sheen'].forEach(function (c) { B.classList.remove(c); });
@@ -14748,6 +14803,11 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
     try { a.fn(); } catch (e) { console.error(e); toast('حصل خطأ في الميزة'); }
   }
   window.__gmActs = { list: ACTS, run: runAct };
+  window.__gmDockVis = function (k, d) {
+    var rs = myRoles(d), g = G(), lists = [(CUR && CUR.hr && CUR.hr[k]) || [], (g && g.cfg && g.cfg.hr && g.cfg.hr[k]) || []];
+    return !lists.some(function (h) { return h.some(function (r) { return rs.indexOf(r) > -1; }); });
+  };
+  window.__gmDockSmartOn = function () { return CUR ? !!CUR.b.smart : true; };
 
   window.__gmDockPost = function (c) {
     var main = c.main, isl = c.isl, cf = CUR;
@@ -14824,8 +14884,13 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
   }
   function glass() { return chk('تفعيل (زجاج شفاف بيتلوّن عكس الخلفية)', 'b.ig') + rng('قوة عكس اللون %', 'b.igs', 20, 100) + rng('كثافة الزجاج %', 'b.igt', 0, 60) + rng('التغبيش (blur)', 'c.blur', 0, 40); }
   function btns() {
-    var h = '<div class="dknote">شيل العلامة من أي زرار عشان يختفي من البار (الأزرار اللي مش في شاشتك الحالية مش هتأثر).</div>' +
-      LABELS.map(function (l) { return '<label class="dkitem"><input type="checkbox" data-hide="' + esc(l) + '"' + (W.hide.indexOf(l) < 0 ? ' checked' : '') + '><b>' + esc(l) + '</b></label>'; }).join('');
+    var h = '<div class="dknote">كل ميزة جنبها 3 خانات: ✔ = بتظهر لصاحب الجيم / الكباتن / الكينج. شيل العلامة عشان تختفي عن الدور ده (الخانة الباهتة = الدور ده أصلاً مالوش الميزة دي).</div>' +
+      (window.__gmCatalog ? window.__gmCatalog() : []).map(function (c) {
+        return '<div class="dkitem" style="flex-wrap:wrap;gap:4px"><b style="flex:1;min-width:130px">' + esc(c.lb) + '</b>' + ROLES.map(function (ro) {
+          var can = c.roles.indexOf(ro[0]) > -1, hid = ((W.hr || {})[c.lb] || []).indexOf(ro[0]) > -1;
+          return '<label style="font-size:.72rem;margin-inline-start:8px;opacity:' + (can ? 1 : .35) + '"><input type="checkbox" data-hv="' + esc(c.lb) + '" data-role="' + ro[0] + '"' + (hid ? '' : ' checked') + (can ? '' : ' disabled') + '> ' + ro[1] + '</label>';
+        }).join('') + '</div>';
+      }).join('');
     h += '<div class="dkh">➕ أزرار مخصصة</div>' + W.cx.map(function (x, i) {
       return '<div class="dkcx"><div class="dkitem"><input type="checkbox" data-p="cx.' + i + '.on"' + (x.on ? ' checked' : '') + '><b>زر مخصص ' + (i + 1) + '</b><button type="button" class="dkbtn g2" data-a="dcx" data-i="' + i + '">حذف</button></div>' +
         txt('الاسم', 'cx.' + i + '.l', 'واتساب') + sel('الأيقونة', 'cx.' + i + '.i', ICONS) + sel('بيعمل إيه', 'cx.' + i + '.t', TYPES) +
@@ -14835,7 +14900,7 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
     return h;
   }
   function behav() {
-    return chk('يصغر مع السكرول (دايناميك آيلاند)', 'b.col') + sel('اللي يظهر في الحبّة الصغيرة', 'b.info', [['name', 'اسم الجيم'], ['progress', 'شريط تقدّم ونسبة'], ['clock', 'الساعة'], ['text', 'نص من عندي'], ['ring', 'أيقونة بس']]) +
+    return chk('🧠 بار ذكي: يعرض أكتر 5 حاجات بتستخدمها', 'b.smart') + chk('يصغر مع السكرول (دايناميك آيلاند)', 'b.col') + sel('اللي يظهر في الحبّة الصغيرة', 'b.info', [['name', 'اسم الجيم'], ['progress', 'شريط تقدّم ونسبة'], ['clock', 'الساعة'], ['text', 'نص من عندي'], ['ring', 'أيقونة بس']]) +
       txt('النص المخصص', 'b.txt', 'أهلاً بيك 💪') + chk('اهتزاز عند اللمس', 'b.hap') + chk('حركة الدخول', 'b.anim') + chk('لمعة متحركة', 'b.sheen');
   }
   function banner() {
@@ -14885,6 +14950,7 @@ html:root:root:root #gmTB.invg .g.isl .bar b{background:var(--ig-fg)!important}
     });
     host.addEventListener('change', function (e) {
       var t = e.target; if (!W) return;
+      if (t.dataset.hv != null) { W.hr = W.hr || {}; var hl = W.hr[t.dataset.hv] = W.hr[t.dataset.hv] || [], hi = hl.indexOf(t.dataset.role); if (!t.checked && hi < 0) hl.push(t.dataset.role); if (t.checked && hi > -1) hl.splice(hi, 1); if (!hl.length) delete W.hr[t.dataset.hv]; touch(); return; }
       if (t.dataset.cr != null) { var cxo = W.cx[+t.dataset.cr]; if (!cxo) return; cxo.r = cxo.r || []; var ri = cxo.r.indexOf(t.dataset.role); if (t.checked && ri < 0) cxo.r.push(t.dataset.role); if (!t.checked && ri > -1) cxo.r.splice(ri, 1); touch(); return; }
       if (t.dataset.hide) { var l = t.dataset.hide, i = W.hide.indexOf(l); if (t.checked) { if (i > -1) W.hide.splice(i, 1); } else if (i < 0) W.hide.push(l); touch(); }
     });
