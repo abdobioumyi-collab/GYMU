@@ -8051,7 +8051,7 @@ window.__gmShellRun = function () {
     if (g.status === 'cancelled') return { cls: 'bad', text: 'ملغي', write: false, note: 'الاشتراك ملغي. بياناتك محفوظة وتقدر تطّلع عليها فقط.' };
     if (now <= until) {
       var d = Math.ceil((until - now) / 86400000);
-      return { cls: d <= 5 ? 'warn' : 'ok', text: (g.status === 'trial' ? 'تجربة' : 'فعّال') + ' · باقي ' + d + ' يوم', write: true, note: d <= 3 ? 'الاشتراك قرّب يخلص (باقي ' + d + ' يوم). جدّده عشان ماتتوقفش الكتابة.' : '' };
+      return { cls: d <= 5 ? 'warn' : 'ok', text: (g.status === 'trial' ? 'تجربة' : 'فعّال') + ' · باقي ' + d + ' يوم', write: true, note: '', days: d };
     }
     if (now <= graceEnd) return { cls: 'warn', text: 'فترة سماح', write: true, note: 'الاشتراك انتهى وإنت في فترة السماح. جدّد دلوقتي.' };
     return { cls: 'bad', text: 'منتهي', write: false, note: 'الاشتراك منتهي. بياناتك محفوظة ومعروضة للاطلاع فقط لحد التجديد.' };
@@ -8766,10 +8766,118 @@ window.__gmShellRun = function () {
     Object.keys(m).forEach(function (k) { if (m[k]) localStorage.setItem(k, m[k]); });
     state.onboard = null;
   }
+  // ---------- شاشة التجديد: قفل كامل بعد الانتهاء + تحذير مرة واحدة قبل 5 أيام ----------
+  function shImgData(file, ok, fail) {
+    var fr = new FileReader();
+    fr.onload = function () {
+      var im = new Image();
+      im.onload = function () {
+        var r = Math.min(1, 1280 / Math.max(im.width, im.height)), cv = document.createElement('canvas');
+        cv.width = Math.round(im.width * r); cv.height = Math.round(im.height * r);
+        cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+        ok(cv.toDataURL('image/jpeg', 0.72));
+      };
+      im.onerror = fail; im.src = fr.result;
+    };
+    fr.onerror = fail; fr.readAsDataURL(file);
+  }
+  function shWaDigits(v) {
+    var d = String(v || '').replace(/\D/g, '');
+    if (d.indexOf('00') === 0) d = d.slice(2); else if (d.charAt(0) === '0') d = '20' + d.slice(1); else if (/^1\d{9}$/.test(d)) d = '20' + d;
+    return d.length >= 10 ? d : '';
+  }
+  function shRenew(row, mode, sub) {
+    var g = row.gyms, lock = mode === 'lock', old = document.getElementById('shRenewOv'); if (old) old.remove();
+    var blocked = g.status === 'suspended' || g.status === 'cancelled';
+    var ov = el('div'); ov.id = 'shRenewOv';
+    ov.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;overflow:auto;-webkit-overflow-scrolling:touch;background:' + (lock ? '#0b1020' : 'rgba(11,16,32,.8)') + ';display:flex;align-items:flex-start;justify-content:center;padding:16px 12px;direction:rtl;font-family:inherit';
+    var c = el('div'); c.style.cssText = 'background:#fff;color:#111827;border-radius:20px;max-width:460px;width:100%;padding:20px 16px;box-shadow:0 20px 60px rgba(0,0,0,.45);margin:auto 0';
+    ov.appendChild(c); document.body.appendChild(ov);
+    function t(tag, css, txt, parent) { var x = el(tag, '', txt); if (css) x.style.cssText = css; (parent || c).appendChild(x); return x; }
+    function btn(txt, bg, fg, fn, parent) { var b = t('button', 'border:0;border-radius:12px;padding:12px 14px;font-weight:800;font-size:15px;font-family:inherit;cursor:pointer;background:' + bg + ';color:' + fg, txt, parent); b.type = 'button'; if (fn) b.onclick = fn; return b; }
+    function link(txt, bg, href, parent) { var a = t('a', 'display:block;text-align:center;text-decoration:none;border-radius:12px;padding:12px 14px;font-weight:800;font-size:15px;background:' + bg + ';color:#fff', txt, parent); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; }
+    t('div', 'font-size:34px;text-align:center', blocked ? '⛔' : lock ? '🔒' : '⏳');
+    t('h2', 'text-align:center;margin:6px 0 4px;font-size:20px;font-weight:900;color:#111827', blocked ? 'حساب «' + g.name + '» موقوف' : lock ? 'اشتراك «' + g.name + '» انتهى' : 'اشتراكك هيخلص بعد ' + (sub && sub.days != null ? sub.days : '') + ' يوم');
+    t('p', 'text-align:center;margin:0 0 14px;color:#475569;line-height:1.7;font-size:14px', lock ? 'بياناتك ومشتركينك كلها محفوظة ومتتمسحش منها حاجة. جدّد وهيرجع كل حاجة شغالة فورًا.' : 'جدّد من هنا قبل ما يخلص عشان البرنامج مايقفش عندك.');
+    var body = t('div', ''), foot = t('div', 'display:grid;gap:8px;margin-top:14px');
+    t('div', 'color:#64748b;text-align:center', 'جاري تحميل الباقات…', body);
+    if (lock) {
+      btn('🔄 تحديث الحالة', '#0f766e', '#fff', function () { location.reload(); }, foot);
+      btn('تغيير الجيم', '#e2e8f0', '#111827', function () { try { sessionStorage.setItem('sh_force_picker', '1'); } catch (e) {} location.reload(); }, foot);
+      btn('خروج من الحساب', '#fee2e2', '#b91c1c', function () { window.__shSecureSignOut(); }, foot);
+    } else btn('إغلاق', '#e2e8f0', '#111827', function () { ov.remove(); }, foot);
+    Promise.resolve().then(function () { return sb.rpc('billing_info', { p_gym_id: g.id }); }).catch(function () { return { error: true }; }).then(function (r) {
+      body.textContent = '';
+      if (r.error || !r.data) { t('div', 'background:#fef3c7;color:#92400e;border-radius:12px;padding:12px;text-align:center', 'تعذّر تحميل الباقات. تواصل معانا واتساب أو اتصال.', body); return; }
+      var b = r.data, plans = b.plans || [], sel = plans[0] || null, wa = shWaDigits(b.wa || b.phone), ph = shWaDigits(b.phone || b.wa);
+      if (b.last_status === 'pending') t('div', 'background:#dbeafe;color:#1e40af;border-radius:12px;padding:10px;margin-bottom:10px;text-align:center;font-weight:700', '⏳ إيصالك لسه بيتراجع، هنفعّل اشتراكك أول ما نتأكد.', body);
+      if (b.last_status === 'rejected') t('div', 'background:#fee2e2;color:#991b1b;border-radius:12px;padding:10px;margin-bottom:10px;text-align:center;font-weight:700', 'آخر إيصال ما اتقبلش. ابعت صورة أوضح أو كلمنا.', body);
+      t('div', 'font-weight:800;margin:6px 0', '1) اختار الباقة', body);
+      var pl = t('div', 'display:grid;gap:8px', '', body), wl;
+      function drawPlans() {
+        pl.textContent = '';
+        plans.forEach(function (p) {
+          var on = sel && sel.code === p.code, d = t('div', 'display:flex;justify-content:space-between;align-items:center;gap:8px;border:2px solid ' + (on ? '#0f766e' : '#e2e8f0') + ';background:' + (on ? '#ecfdf5' : '#fff') + ';border-radius:14px;padding:12px;cursor:pointer', '', pl);
+          t('b', 'font-size:15px', (on ? '✅ ' : '') + p.name, d); t('b', 'color:#0f766e;font-size:16px', p.price + ' جنيه', d);
+          d.onclick = function () { sel = p; drawPlans(); setWa(); };
+        });
+      }
+      t('div', 'font-weight:800;margin:14px 0 6px', '2) حوّل المبلغ فودافون كاش', body);
+      var pay = t('div', 'background:#f8fafc;border-radius:14px;padding:12px;text-align:center', '', body);
+      if (b.vcash) {
+        t('div', 'color:#64748b;font-size:13px', 'الرقم', pay);
+        var nb = t('div', 'font-size:22px;font-weight:900;direction:ltr;letter-spacing:1px;margin:4px 0', b.vcash, pay);
+        var cp = btn('نسخ الرقم', '#e2e8f0', '#111827', null, pay); cp.style.marginTop = '4px';
+        cp.onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText(b.vcash) : Promise.reject()).then(function () { cp.textContent = 'اتنسخ ✅'; }, function () { prompt('انسخ الرقم:', b.vcash); }); };
+      } else t('div', 'color:#92400e', 'كلمنا على واتساب وهنبعتلك رقم التحويل.', pay);
+      t('div', 'font-weight:800;margin:14px 0 6px', '3) ابعت صورة التحويل', body);
+      var fi = t('input', 'width:100%;box-sizing:border-box;padding:10px;border:1px dashed #94a3b8;border-radius:12px;background:#fff', '', body); fi.type = 'file'; fi.accept = 'image/*';
+      var out = t('div', 'margin:8px 0;text-align:center;font-weight:700;min-height:18px', '', body);
+      var send = btn('إرسال الإيصال', '#0f766e', '#fff', null, body); send.style.cssText += ';width:100%';
+      send.onclick = function () {
+        if (!sel) { out.textContent = 'اختار الباقة الأول.'; return; }
+        if (!fi.files || !fi.files[0]) { out.textContent = 'اختار صورة التحويل الأول.'; return; }
+        send.disabled = true; out.style.color = '#475569'; out.textContent = 'جاري الإرسال…';
+        shImgData(fi.files[0], function (data) {
+          Promise.resolve().then(function () { return sb.rpc('billing_submit_receipt', { p_gym_id: g.id, p_image: data, p_plan_code: sel.code }); }).catch(function (e) { return { error: { message: 'offline' } }; }).then(function (x) {
+            if (x.error) { var m = x.error.message || ''; out.style.color = '#b91c1c'; out.textContent = /too_many_pending/.test(m) ? 'عندك إيصالات لسه بتتراجع. استنى لحد ما نراجعها.' : /bad_image/.test(m) ? 'الصورة مش مقبولة. جرّب صورة تانية.' : 'تعذّر الإرسال. جرّب تاني أو كلمنا واتساب.'; send.disabled = false; return; }
+            out.style.color = '#047857'; out.textContent = '✅ الإيصال وصلنا. هنراجعه ونفعّل اشتراكك في أقرب وقت.';
+          });
+        }, function () { out.style.color = '#b91c1c'; out.textContent = 'مقدرناش نقرا الصورة. جرّب صورة تانية.'; send.disabled = false; });
+      };
+      var wrap = t('div', 'display:grid;gap:8px;margin-top:12px', '', body); wl = wrap;
+      function setWa() {
+        wrap.textContent = '';
+        if (wa) {
+          var m = 'أهلاً، أنا صاحب جيم «' + g.name + '».\nأنا حولت ' + (sel ? sel.price + ' جنيه فودافون كاش لباقة «' + sel.name + '»' : 'مبلغ التجديد') + ' وبعت صورة التحويل. برجاء تفعيل الاشتراك. شكراً 🙏';
+          link('💬 أنا حولت — ابعت رسالة واتساب', '#16a34a', 'https://wa.me/' + wa + '?text=' + encodeURIComponent(m), wrap);
+        }
+        if (ph) link('📞 اتصل بينا', '#334155', 'tel:+' + ph, wrap);
+      }
+      drawPlans(); setWa();
+    });
+  }
+  function shWarn5(row, sub) {
+    var g = row.gyms;
+    if (row.support || !sub || !sub.write || sub.days == null || sub.days > 5 || sub.days < 0) return;
+    var key = 'sh_w5_' + g.id + '_' + String(g.access_until).slice(0, 10);
+    try { if (RawLS.get.call(localStorage, key)) return; RawLS.set.call(localStorage, key, '1'); } catch (e) {}
+    var ov = el('div'); ov.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:99990;background:rgba(11,16,32,.7);display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;font-family:inherit';
+    var c = el('div'); c.style.cssText = 'background:#fff;color:#111827;border-radius:20px;max-width:380px;width:100%;padding:22px 18px;text-align:center';
+    var h = el('div', '', '⏳'); h.style.fontSize = '36px'; c.appendChild(h);
+    var tt = el('h2', '', 'اشتراكك هيخلص بعد ' + sub.days + ' يوم'); tt.style.cssText = 'margin:6px 0;font-size:19px;font-weight:900'; c.appendChild(tt);
+    var p = el('p', '', 'جدّد من دلوقتي عشان البرنامج مايقفش عندك أنت وفريقك. بياناتك محفوظة في كل الأحوال.'); p.style.cssText = 'color:#475569;line-height:1.7;font-size:14px;margin:0 0 14px'; c.appendChild(p);
+    var go = el('button', '', 'تجديد دلوقتي'); go.type = 'button'; go.style.cssText = 'width:100%;border:0;border-radius:12px;padding:13px;font-weight:800;font-size:15px;background:#0f766e;color:#fff;margin-bottom:8px;font-family:inherit';
+    go.onclick = function () { ov.remove(); shRenew(row, 'soon', sub); };
+    var no = el('button', '', 'تمام'); no.type = 'button'; no.style.cssText = 'width:100%;border:0;border-radius:12px;padding:12px;font-weight:700;background:#e2e8f0;color:#111827;font-family:inherit';
+    no.onclick = function () { ov.remove(); };
+    c.appendChild(go); c.appendChild(no); ov.appendChild(c); document.body.appendChild(ov);
+  }
   function startGymNow(row) {
     var g = row.gyms, sub = subscription(g);
     if (!row.support && row.role !== 'owner') { alert('دخول الفريق بجوجل اتلغى. الكباتن بيدخلوا من كمبيوتر الجيم باسمهم ورقمهم السري، وصاحب الجيم بس هو اللي بيدخل بجوجل.'); window.__shSignOut(); return; }
     if (row.support) sub = { cls: 'ok', text: 'وضع صاحب المنصة', write: true, note: '' };
+    if (!sub.write && !row.support) { state.current = row; try { shRenew(row, 'lock', sub); } catch (e) { console.error(e); } return; }
     state.current = row;
     try { RawLS.set.call(localStorage, 'sh_last_gym', g.id); } catch (e) {}
     var NS = installStorageShim(g.id);
@@ -8794,6 +8902,7 @@ window.__gmShellRun = function () {
     }
     if (!sub.write) setTimeout(function () { alert(sub.note); }, 400);
     renderAccount();
+    try { shWarn5(row, sub); } catch (e) { console.error(e); }
   }
 
   // ---------- تبويب الفريق والحساب (داخل لوحة الإدارة) ----------
@@ -9794,14 +9903,17 @@ var mix = g.layout_mode === 'mixed';
     hero.appendChild(lg); hero.appendChild(el('h1', '', 'لوحة صاحب المنصة')); hero.appendChild(el('span', 'kg-mail', '👑 ' + state.email));
     var acts = el('div', 'kg-actions');
     function abtn(t, fn, c) { var x = el('button', 'kg-btn' + (c ? ' ' + c : ''), t); x.type = 'button'; x.onclick = fn; acts.appendChild(x); }
-    abtn('+ جيم جديد', createDlg, 'gold'); abtn('🔔 إشعارات الدخول', kgPushEnable); abtn('تحديث', kgLoad); abtn('خروج', function () { if (typeof window.__gmKingCard === 'function') window.__gmKingCard(); else if (confirm('تسجيل الخروج من حساب جوجل؟')) window.__shSignOut(); }, 'danger');
+    abtn('+ جيم جديد', createDlg, 'gold'); abtn('🔔 تفعيل الإشعارات (دخول + إيصالات)', kgPushEnable); abtn('تحديث', kgLoad); abtn('خروج', function () { if (typeof window.__gmKingCard === 'function') window.__gmKingCard(); else if (confirm('تسجيل الخروج من حساب جوجل؟')) window.__shSignOut(); }, 'danger');
     hero.appendChild(acts); w.appendChild(hero);
     var tabs = el('div', 'kg-tabs');
-    [['gyms', '🏋️ الجيمات'], ['site', '🧩 الفوتر والمنظومة'], ['log', '🕘 سجل دخولي'], ['dock', '🫧 البار العائم'], ['trash', '🗑️ سلة المهملات']].forEach(function (t) {
+    [['gyms', '🏋️ الجيمات'], ['soon', '⏳ هتخلص قريب'], ['done', '⛔ خلصت'], ['rc', '🧾 الإيصالات' + (kg.rcN ? ' (' + kg.rcN + ')' : '')], ['billing', '💳 الباقات والدفع'], ['site', '🧩 الفوتر والمنظومة'], ['log', '🕘 سجل دخولي'], ['dock', '🫧 البار العائم'], ['trash', '🗑️ سلة المهملات']].forEach(function (t) {
       var b = el('button', 'kg-tab' + (kg.tab === t[0] ? ' on' : ''), t[1]); b.type = 'button'; b.onclick = function () { kg.tab = t[0]; kgRender(); }; tabs.appendChild(b);
     });
     w.appendChild(tabs);
     var body = el('div', 'kg-body'); w.appendChild(body);
+    if (kg.tab === 'soon' || kg.tab === 'done') return kgExpiry(body, kg.tab);
+    if (kg.tab === 'rc') return kgReceipts(body);
+    if (kg.tab === 'billing') return kgBilling(body);
     if (kg.tab === 'site') return kgSite(body);
     if (kg.tab === 'log') return kgLog(body);
     if (kg.tab === 'dock') { if (window.__gmDockRender) window.__gmDockRender('king', body); return; }
@@ -9891,6 +10003,136 @@ var mix = g.layout_mode === 'mixed';
       drawItems(); msg.textContent = rows.length ? rows.length + ' عنصر في السلة' : '';
     }
     load();
+  }
+  /* ===== تبويبات التجديد: هتخلص قريب / خلصت / الباقات والدفع ===== */
+  function kgDigits(ph) {
+    var dg = String(ph || '').replace(/\D/g, '');
+    if (dg.indexOf('00') === 0) dg = dg.slice(2); else if (dg.charAt(0) === '0') dg = '20' + dg.slice(1); else if (/^1\d{9}$/.test(dg)) dg = '20' + dg;
+    return dg.length >= 10 ? dg : '';
+  }
+  function kgBillLoad(cb) {
+    if (kg.bill) return cb(kg.bill);
+    rpc('platform_get_billing').then(function (b) { kg.bill = b || {}; cb(kg.bill); }, function (e) { kg.bill = { err: e.message, plans: [] }; cb(kg.bill); });
+  }
+  function kgRenewMsg(g, mode, bill) {
+    var NUM = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'];
+    var until = new Date(g.access_until).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+    var plans = (bill.plans || []).map(function (p, i) { return (NUM[i] || (i + 1) + '-') + ' ' + p.name + ' — ' + p.price + ' جنيه'; }).join('\n');
+    var head = 'أهلاً يا كابتن 👋\nمعاك فريق GYM U.\n\n🏋️ الجيم: ' + g.name + '\n';
+    var mid = mode === 'soon'
+      ? '📅 اشتراكك هيخلص يوم: ' + until + '\n\nعشان البرنامج يفضل شغال معاك من غير توقف وبياناتك وبيانات مشتركينك تفضل محفوظة، يا ريت تجدد قبل التاريخ ده.'
+      : '⛔ اشتراكك انتهى والحفظ في البرنامج متوقف حاليًا.\n\nمتقلقش، بياناتك ومشتركينك كلها محفوظة ومتتمسحش منها حاجة، وبمجرد التجديد البرنامج يرجع شغال فورًا.';
+    var pay = '';
+    if (plans) pay += '\n\n📦 الباقات المتاحة:\n' + plans;
+    if (bill.vcash) pay += '\n\n💳 التحويل على كاش / انستا باي:\n' + bill.vcash;
+    var recv = bill.wa ? 'ابعت صورة الإيصال على واتساب: ' + bill.wa : 'ابعتلي صورة الإيصال هنا';
+    return head + mid + pay + '\n\n' + recv + ' وهنفعّل حسابك في نفس اللحظة ✅\nشكراً لثقتك 🙏';
+  }
+  function kgExpiry(w, mode) {
+    var soon = mode === 'soon';
+    var list = kg.gyms.filter(function (g) {
+      var st = kgState(g), d = daysLeft(g);
+      return soon ? (st.k !== 'blocked' && d <= 7) : st.k === 'blocked';
+    }).sort(function (a, b) { return daysLeft(a) - daysLeft(b); });
+    var p = el('section', 'kg-panel');
+    p.appendChild(el('h3', '', soon ? '⏳ هتخلص خلال أسبوع' : '⛔ الجيمات اللي خلصت أو اتوقفت'));
+    p.appendChild(el('p', '', soon ? 'الجيمات اللي باقي لها 7 أيام أو أقل، وكمان اللي في فترة السماح. ابعتلهم رسالة التذكير قبل ما يقفوا.' : 'منتهية بعد السماح، أو موقوفة، أو ملغية. بياناتهم محفوظة، ورسالة التجديد جاهزة.'));
+    var warn = el('div', 'kg-warn'); warn.style.display = 'none'; p.appendChild(warn); w.appendChild(p);
+    var grid = el('div', 'kg-grid'); w.appendChild(grid);
+    if (!list.length) { grid.appendChild(el('div', 'kg-muted', soon ? '✅ مفيش جيم هيخلص خلال أسبوع.' : '✅ مفيش جيمات منتهية.')); return; }
+    kgBillLoad(function (bill) {
+      if (bill.err || !(bill.plans || []).length || !bill.vcash) { warn.style.display = 'block'; warn.textContent = 'الرسالة ناقصة (باقات أو رقم كاش). ظبطها من تبويب «💳 الباقات والدفع».'; }
+      grid.textContent = '';
+      list.forEach(function (g) {
+        var st = kgState(g), d = daysLeft(g), grace = g.grace_days || 0;
+        var card = el('div', 'kg-card'), top = el('div', 'kg-ctop'), nb = el('div');
+        nb.appendChild(el('h3', '', g.name)); nb.appendChild(el('div', 'kg-muted', g.owner_email || 'بدون مالك')); top.appendChild(nb);
+        top.appendChild(el('span', 'kg-badge ' + st.c, st.t)); card.appendChild(top);
+        var note = d >= 0 ? 'باقي ' + d + ' يوم' : (st.k === 'blocked' ? (g.status === 'suspended' || g.status === 'cancelled' ? 'موقوف يدويًا' : 'منتهي من ' + (-d) + ' يوم') : 'هيتوقف بعد ' + (grace + d) + ' يوم');
+        card.appendChild(el('div', 'kg-muted', '📅 ' + note));
+        var s = kg.stats && kg.stats[g.id], ph = kgDigits(s && s.owner_phone);
+        card.appendChild(el('div', 'kg-muted', '📞 ' + ((s && s.owner_phone) || 'مفيش رقم متسجّل')));
+        var msg = kgRenewMsg(g, soon ? 'soon' : 'done', bill), ac = el('div', 'kg-acts');
+        if (ph) { var a = el('a', 'kg-btn wa', 'واتساب'); a.href = 'https://wa.me/' + ph + '?text=' + encodeURIComponent(msg); a.target = '_blank'; a.rel = 'noopener'; ac.appendChild(a); }
+        var cp = el('button', 'kg-btn', 'نسخ الرسالة'); cp.type = 'button';
+        cp.onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText(msg) : Promise.reject()).then(function () { cp.textContent = 'اتنسخت ✅'; }, function () { prompt('انسخ الرسالة:', msg); }); };
+        ac.appendChild(cp);
+        var rn = el('button', 'kg-btn gold', 'تجديد'); rn.type = 'button'; rn.onclick = function () { renewDlg(g); }; ac.appendChild(rn);
+        card.appendChild(ac); grid.appendChild(card);
+      });
+    });
+  }
+  function kgBilling(w) {
+    var p = el('section', 'kg-panel');
+    p.appendChild(el('h3', '', '💳 الباقات والدفع'));
+    p.appendChild(el('p', '', 'اللي تكتبه هنا بيدخل تلقائي في رسائل التذكير والتجديد.'));
+    w.appendChild(p);
+    kg.bill = null;
+    kgBillLoad(function (b) {
+      if (b.err) { p.appendChild(el('div', 'kg-warn', 'تعذّر التحميل: ' + b.err)); return; }
+      var f = el('div', 'kg-form'), wa = inp('tel', '01xxxxxxxxx', b.wa || ''), ph = inp('tel', '01xxxxxxxxx', b.phone || ''), vc = inp('tel', 'رقم محفظة كاش', b.vcash || '');
+      [wa, ph, vc].forEach(function (i) { i.dir = 'ltr'; });
+      f.appendChild(fld('واتساب استقبال الإيصالات', wa)); f.appendChild(fld('رقم الاتصال', ph)); f.appendChild(fld('رقم كاش / انستا باي', vc));
+      p.appendChild(f);
+      p.appendChild(el('h3', '', '📦 الباقات'));
+      var rows = el('div'), plans = (b.plans || []).map(function (x) { return { code: x.code, name: x.name, price: x.price, days: x.days }; });
+      p.appendChild(rows);
+      function draw() {
+        rows.textContent = '';
+        plans.forEach(function (x, i) {
+          var r = el('div', 'kg-form'), n = inp('text', 'اسم الباقة', x.name), pr = inp('number', 'السعر', x.price), dy = inp('number', 'عدد الأيام', x.days);
+          n.oninput = function () { x.name = n.value; }; pr.oninput = function () { x.price = Number(pr.value); }; dy.oninput = function () { x.days = parseInt(dy.value, 10); };
+          r.appendChild(fld('الاسم', n)); r.appendChild(fld('السعر (جنيه)', pr)); r.appendChild(fld('الأيام', dy));
+          var del = el('button', 'kg-btn danger', 'حذف'); del.type = 'button'; del.onclick = function () { plans.splice(i, 1); draw(); }; r.appendChild(del);
+          rows.appendChild(r);
+        });
+      }
+      draw();
+      var add = el('button', 'kg-btn', '+ باقة جديدة'); add.type = 'button';
+      add.onclick = function () { plans.push({ code: 'p' + Date.now().toString(36), name: '', price: 0, days: 30 }); draw(); }; p.appendChild(add);
+      var out = el('div', 'kg-muted'), save = el('button', 'kg-btn gold', 'حفظ'); save.type = 'button';
+      save.onclick = function () {
+        var clean = plans.filter(function (x) { return String(x.name || '').trim(); });
+        if (!clean.length) { out.textContent = 'ضيف باقة واحدة على الأقل.'; return; }
+        for (var i = 0; i < clean.length; i++) if (!(clean[i].price >= 0) || !(clean[i].days > 0)) { out.textContent = 'راجع السعر وعدد الأيام في «' + clean[i].name + '».'; return; }
+        clean = clean.map(function (x) { return { code: x.code, name: x.name.trim(), price: x.price, days: x.days, months: Math.max(1, Math.round(x.days / 30)) }; });
+        save.disabled = true; out.textContent = 'جاري الحفظ…';
+        rpc('platform_save_billing', { p_wa: wa.value.trim(), p_phone: ph.value.trim(), p_vcash: vc.value.trim(), p_plans: clean }).then(function () { kg.bill = null; out.textContent = '✅ اتحفظ. الرسائل اتحدّثت.'; save.disabled = false; }, function (e) { out.textContent = '⚠️ ' + e.message; save.disabled = false; });
+      };
+      p.appendChild(save); p.appendChild(out);
+    });
+  }
+  /* ===== تبويب الإيصالات: مراجعة تحويلات فودافون كاش ===== */
+  function kgReceipts(w) {
+    var p = el('section', 'kg-panel'); p.appendChild(el('h3', '', '🧾 إيصالات التحويل'));
+    p.appendChild(el('p', '', 'الإيصالات اللي أصحاب الجيمات رفعوها. اضغط «تفعيل» بعد ما تتأكد إن الفلوس وصلت، والاشتراك بيتمدد تلقائي.'));
+    var msg = el('div', 'kg-muted', 'جاري التحميل…'); p.appendChild(msg); w.appendChild(p);
+    var grid = el('div', 'kg-grid'); w.appendChild(grid);
+    rpc('platform_list_receipts', { p_status: 'pending' }).then(function (rows) {
+      rows = rows || []; kg.rcN = rows.length; msg.textContent = rows.length ? rows.length + ' إيصال بانتظار المراجعة' : '✅ مفيش إيصالات معلّقة.';
+      rows.forEach(function (r) {
+        var card = el('div', 'kg-card'), top = el('div', 'kg-ctop'), nb = el('div');
+        nb.appendChild(el('h3', '', r.gym_name)); nb.appendChild(el('div', 'kg-muted', r.email || '')); top.appendChild(nb);
+        top.appendChild(el('span', 'kg-badge warn', 'معلّق')); card.appendChild(top);
+        card.appendChild(el('div', 'kg-muted', '📦 ' + (r.plan_name || '—') + ' · ' + (r.amount != null ? r.amount + ' جنيه' : '') + ' · ' + (r.days || '?') + ' يوم'));
+        card.appendChild(el('div', 'kg-muted', '🕘 ' + new Date(r.created_at).toLocaleString('ar-EG')));
+        var ac = el('div', 'kg-acts'), img = el('img'); img.style.cssText = 'display:none;max-width:100%;border-radius:12px;margin-top:8px';
+        function b(tx, cls, fn) { var x = el('button', 'kg-btn ' + (cls || ''), tx); x.type = 'button'; x.onclick = fn; ac.appendChild(x); }
+        b('عرض الصورة', '', function () {
+          if (img.src) { img.style.display = img.style.display === 'none' ? 'block' : 'none'; return; }
+          rpc('platform_receipt_image', { p_id: r.id }).then(function (d) { img.src = d; img.style.display = 'block'; }, function (e) { alert(e.message); });
+        });
+        b('تفعيل', 'ok', function () {
+          var d = prompt('عدد أيام التفعيل لـ «' + r.gym_name + '»:', r.days || 30); if (d === null) return;
+          rpc('platform_review_receipt', { p_id: r.id, p_approve: true, p_days: parseInt(d, 10) || null, p_note: null }).then(kgLoad, function (e) { alert(e.message); });
+        });
+        b('رفض', 'danger', function () {
+          var n = prompt('سبب الرفض (اختياري):', ''); if (n === null) return;
+          rpc('platform_review_receipt', { p_id: r.id, p_approve: false, p_days: null, p_note: n || null }).then(kgLoad, function (e) { alert(e.message); });
+        });
+        card.appendChild(ac); card.appendChild(img); grid.appendChild(card);
+      });
+    }, function (e) { msg.textContent = 'تعذّر التحميل: ' + e.message; });
   }
   function kgGyms(w) {
     var G = kg.gyms, cnt = { all: G.length, trial: 0, active: 0, blocked: 0, req: 0 };
@@ -10018,7 +10260,8 @@ var mix = g.layout_mode === 'mixed';
   }
   function kgLoad() {
     var stP = rpc('platform_gym_stats').then(function (r) { var m = {}; (r || []).forEach(function (x) { m[x.gym_id] = x; }); return m; }, function () { return null; });
-    return rpc('platform_list_gyms').then(function (rows) { kg.gyms = rows || []; return stP.then(function (m) { if (m) kg.stats = m; kgRender(); show('shKing'); }); }, function (e) {
+    var rcP = rpc('platform_list_receipts', { p_status: 'pending' }).then(function (r) { kg.rcN = (r || []).length; }, function () {});
+    return rpc('platform_list_gyms').then(function (rows) { kg.gyms = rows || []; return Promise.all([stP, rcP]).then(function (a) { var m = a[0]; if (m) kg.stats = m; kgRender(); show('shKing'); }); }, function (e) {
       show('shKing'); $('kgWrap').textContent = ''; $('kgWrap').appendChild(el('div', 'kg-muted', 'تعذّر تحميل الجيمات: ' + e.message));
     });
   }
