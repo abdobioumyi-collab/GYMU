@@ -8,7 +8,17 @@ window.addEventListener('error', function (e) { try { window.__gmErrs.push(Strin
 window.addEventListener('unhandledrejection', function (e) { try { window.__gmErrs.push('promise: ' + String((e.reason && (e.reason.message || e.reason)) || '')); } catch (_) {} });
 </script>
     <meta charset="UTF-8">
-    <script>(function(){var si=window.setInterval;window.setInterval=function(f,ms){var a=[].slice.call(arguments);if(typeof f==="function"&&ms<5000){a[0]=function(){if(document.hidden)return;return f.apply(this,arguments)}}return si.apply(window,a)}})();</script>
+    <script>(function(){var si=window.setInterval;window.setInterval=function(f,ms){var a=[].slice.call(arguments);if(typeof f==="function"&&ms<5000){a[0]=function(){if(document.hidden||window.__gmScr)return;return f.apply(this,arguments)}}return si.apply(window,a)}})();</script>
+<style id="gm-adm-early">
+html #gateScreen#gateScreen#gateScreen#gateScreen#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn,
+html #gateScreen#gateScreen#gateScreen#gateScreen#gateScreen#gateScreen#gateScreen#gateScreen.gate-mixed-pin .gate-admin-btn,
+html.gm-adm-first #gateScreen#gateScreen#gateScreen#gateScreen#gateScreen#gateScreen#gateScreen#gateScreen .gate-admin-btn,
+html #gmAdmHint{display:none!important;visibility:hidden!important}
+</style>
+<script>(function(){document.documentElement.classList.add('gm-adm-hide');
+try{localStorage.setItem('gym_pro_admin_btn_hidden_v1','1')}catch(e){}
+var t=0;addEventListener('scroll',function(){window.__gmScr=1;clearTimeout(t);t=setTimeout(function(){window.__gmScr=0},160)},{passive:true,capture:true});})();</script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GYM U</title>
     <meta name="theme-color" content="#2a1585">
@@ -1669,12 +1679,12 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 else if(st){st.classList.toggle('done');var b=st.closest('.gx-how-b'),a=b.querySelectorAll('.gx-st'),d=b.querySelectorAll('.gx-st.done').length;b.querySelector('.gx-prog').textContent=d===a.length?'برافو 👏 كده عرفت تعملها':'خلصت '+d+' من '+a.length;}
               });
               var S={},LK=[],PJ=[];
-              function drawFoot(){var f=document.getElementById('gxFooter');if(!f||!Object.keys(S).length)return;
+              function drawFoot(){var f=document.getElementById('gxFooter');if(!f)return;
                 function $(i){return document.getElementById(i);}
                 function t(i,v){var e=$(i);e.textContent=v||'';e.style.display=v?'':'none';}
                 function row(id,v,href){var e=$(id);e.style.display=v?'':'none';if(href&&v)e.href=href;}
                 function mk(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
-                var br=S.footer_brand||'',yr=new Date().getFullYear(),https=/^https:\/\//i;
+                var br=S.footer_brand||'GYM U',yr=new Date().getFullYear(),https=/^https:\/\//i;
                 t('gfBrand',br);t('gfSlogan',S.footer_slogan);t('gfTag',S.footer_tagline);t('gfFollow',S.footer_follow);
                 $('gfBrand3').textContent=br;$('gfCopy').textContent=S.footer_copyright||('© '+yr+' '+br+'. All rights reserved.');
                 $('gfEcoT').textContent=S.footer_eco_title||'منظومة بيومي إكس';$('gfEcoS').textContent=S.footer_eco_sub||'برامجنا ومنصاتنا — اضغط وشوف شغلنا';
@@ -1710,7 +1720,10 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
               fq.addEventListener('click',function(e){var hd=e.target.closest('.gx-how-h');if(!hd)return;var box=hd.parentNode,was=box.classList.contains('open');[].forEach.call(fq.children,function(c){c.classList.remove('open');});if(!was)box.classList.add('open');hd.setAttribute('aria-expanded',!was);});
               var wa=document.getElementById('gxWa');function setWa(){wa.style.display=SUPPORT?'':'none';wa.href='https://wa.me/'+SUPPORT+'?text='+encodeURIComponent('أهلاً، محتاج مساعدة في برنامج GYM U');}setWa();
               /* القائمة الرئيسية: المحتوى بييجي من جدول main_list في Supabase، ولو تعذّر بيفضل المحتوى المدمج */
-              try{fetch('https://wvekeoemprxbxjklbaig.supabase.co/rest/v1/main_list?select=*&active=eq.true&order=sort_order',{headers:{apikey:'sb_publishable_irn-GODoQ0YCFNOku8nZlQ_RQY9Z1xV',Authorization:'Bearer sb_publishable_irn-GODoQ0YCFNOku8nZlQ_RQY9Z1xV'}}).then(function(r){return r.ok?r.json():[];}).then(function(rows){var f=[],h=[],q=[];rows.forEach(function(r){var st=r.steps||[];if(r.kind==='feature')f.push([r.icon||'',r.title,r.sub||'',r.where_to||'',st]);else if(r.kind==='howto')h.push([r.icon||'',r.title,st]);else if(r.kind==='faq')q.push([r.title,r.body||'']);else if(r.kind==='setting'){S[r.title]=r.body||'';if(r.title==='support_whatsapp')SUPPORT=String(r.body||'').replace(/\D/g,'');}else if(r.kind==='link')LK.push([r.title,r.body||'']);else if(r.kind==='project')PJ.push([r.title,r.body||'',r.sub||'',r.icon||'']);});if(f.length){F=f;drawF();}if(h.length){H=h;drawH();}if(q.length){Q=q;drawQ();}setWa();drawFoot();}).catch(function(){});}catch(e){}
+              function __gmApply(rows){S={};LK.length=0;PJ.length=0;var f=[],h=[],q=[];rows.forEach(function(r){var st=r.steps||[];if(r.kind==='feature')f.push([r.icon||'',r.title,r.sub||'',r.where_to||'',st]);else if(r.kind==='howto')h.push([r.icon||'',r.title,st]);else if(r.kind==='faq')q.push([r.title,r.body||'']);else if(r.kind==='setting'){S[r.title]=r.body||'';if(r.title==='support_whatsapp')SUPPORT=String(r.body||'').replace(/\D/g,'');}else if(r.kind==='link')LK.push([r.title,r.body||'']);else if(r.kind==='project')PJ.push([r.title,r.body||'',r.sub||'',r.icon||'']);});if(f.length){F=f;drawF();}if(h.length){H=h;drawH();}if(q.length){Q=q;drawQ();}setWa();drawFoot();}
+              var __ck='gm_main_list_cache_v1',__c=null;try{__c=JSON.parse(localStorage.getItem(__ck)||'null');}catch(e){}
+              if(__c&&__c.length){try{__gmApply(__c);}catch(e){drawFoot();}}else drawFoot();
+              try{fetch('https://wvekeoemprxbxjklbaig.supabase.co/rest/v1/main_list?select=*&active=eq.true&order=sort_order',{headers:{apikey:'sb_publishable_irn-GODoQ0YCFNOku8nZlQ_RQY9Z1xV',Authorization:'Bearer sb_publishable_irn-GODoQ0YCFNOku8nZlQ_RQY9Z1xV'}}).then(function(r){return r.ok?r.json():[];}).then(function(rows){if(rows&&rows.length){try{localStorage.setItem(__ck,JSON.stringify(rows));}catch(e){}try{__gmApply(rows);}catch(e){drawFoot();}}else drawFoot();}).catch(function(){drawFoot();});}catch(e){drawFoot();}
               var sh=document.createElement('div');sh.className='gx-sheet';sh.innerHTML='<div class="gx-sp" role="dialog" aria-modal="true"></div>';document.body.appendChild(sh);
               function show(i){var n=F.length;cur=(i+n)%n;var f=F[cur];sh.firstChild.innerHTML='<button class="gx-x" type="button" aria-label="إغلاق">✕</button><div class="gx-sh-ic">'+f[0]+'</div><h3>'+f[1]+'</h3><p class="gx-sh-s">'+f[2]+'</p><div class="gx-where">📍 '+f[3]+'</div><ol>'+f[4].map(function(t){return '<li>'+t+'</li>';}).join('')+'</ol><div class="gx-nav"><button type="button" data-n="-1">→ السابقة</button><span>'+(cur+1)+' / '+n+'</span><button type="button" data-n="1">التالية ←</button></div>';sh.classList.add('open');}
               fe.addEventListener('click',function(e){var c=e.target.closest('.gx-ft');if(c)show(+c.getAttribute('data-i'));});
@@ -15843,5 +15856,25 @@ html:root #gmTB{--dk-bl:10px;--lk-bl:10px}
   },{passive:true});
 })();
 </script>
+
+<style id="gm-perf-fix">
+/* ===== سرعة السكرول ===== */
+html,#gateScreen,#gateScreen *{scroll-behavior:auto!important}
+/* البلور الزجاجي على البار الثابت = أتقل حاجة وقت السكرول */
+#gmTB,html:root #gmTB,#gmTB *,html:root #gmTB.cu,html:root #gmTB.lk,html:root #gmTB.dk{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* مفيش أنيميشن مستمر ولا لمعات في الصفحة الرئيسية */
+#gateScreen *,#gateScreen *::before,#gateScreen *::after,#gmNews *,#gxFooter *{animation:none!important;will-change:auto!important;filter:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+#gateScreen .gate-header-block,#gateScreen .gate-main-grid>*,#gateScreen .gate-extra{animation:none!important;opacity:1!important;transform:none!important}
+/* ظهور العناصر تدريجيًا وقت السكرول بيتقل: بنظهرها جاهزة */
+.gm-rv{opacity:1!important;transform:none!important;filter:none!important;transition:none!important}
+/* ظلال خفيفة بدل الظلال الكبيرة المموّهة */
+#gateScreen .gate-extra *,#gmNews *,#gxFooter *{box-shadow:none!important;text-shadow:none!important}
+#gateScreen .gx-panel,#gmNews .nw-card,#gxFooter .gf-card,#gateScreen .gx-ft,#gateScreen .gx-how{box-shadow:0 1px 3px rgba(0,0,0,.10)!important}
+/* الأجزاء التقيلة تتحسب وتتدهن لما تقرب بس */
+#gmNews{content-visibility:auto;contain-intrinsic-size:auto 900px}
+#gxFooter{content-visibility:auto;contain-intrinsic-size:auto 700px}
+#gateScreen .gx-ft,#gmNews .nw-card,#gateScreen .gx-how{contain:layout paint style}
+#gateScreen{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+</style>
 </body>
 </html>
