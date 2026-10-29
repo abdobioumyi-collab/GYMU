@@ -15850,7 +15850,7 @@ html:root #gmTB{--dk-bl:10px;--lk-bl:10px}
   var g=document.getElementById('gateScreen'),t=null,on=false;
   if(!g)return;
   g.addEventListener('scroll',function(){
-    if(!on){on=true;g.classList.add('gm-scrolling');}
+    if(!on){on=true;}
     clearTimeout(t);
     t=setTimeout(function(){on=false;g.classList.remove('gm-scrolling');},180);
   },{passive:true});
@@ -15875,6 +15875,19 @@ html,#gateScreen,#gateScreen *{scroll-behavior:auto!important}
 #gxFooter{content-visibility:auto;contain-intrinsic-size:auto 700px}
 #gateScreen .gx-ft,#gmNews .nw-card,#gateScreen .gx-how{contain:layout paint style}
 #gateScreen{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+</style>
+
+<style id="gm-perf-fix2">
+/* ===== وضع الريشة: أقصى سرعة ===== */
+#gateScreen,#gateScreen *,#gateScreen *::before,#gateScreen *::after,#gmNews *,#gxFooter *{transition:none!important;text-shadow:none!important}
+#gateScreen *{box-shadow:none!important}
+#gateScreen .gx-panel,#gmNews .nw-card,#gxFooter .gf-card,#gateScreen .gx-ft,#gateScreen .gx-how,#gateScreen .gx-fx{box-shadow:none!important}
+#gateScreen *:hover{transform:none!important}
+#gateScreen#gateScreen{background-image:none!important}
+#gateScreen .gate-deco,#gateScreen .gate-header-block::before,#gateScreen .gate-header-block::after,#gateScreen .gx-panel::before,#gateScreen .gx-tip::after,#gateScreen .gx-sep::before,#gateScreen .gx-sep::after{display:none!important}
+#gateScreen .gx-feat,#gateScreen #gxHow,#gateScreen #gxFaq,#gmNews .nw-grid{content-visibility:auto;contain-intrinsic-size:auto 600px}
+#gateScreen .gate-extra{content-visibility:auto;contain-intrinsic-size:auto 1800px}
+#gmTB,#gmTB *{box-shadow:none!important;transition:none!important}
 </style>
 </body>
 </html>
