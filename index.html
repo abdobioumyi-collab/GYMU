@@ -9665,9 +9665,17 @@ window.__gmShellRun = function () {
       pill.style.cssText = 'position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:16px;z-index:6500;padding:12px 18px;border:0;border-radius:30px;background:linear-gradient(180deg,#f9d25c,#d9990a);color:#1b1403;font:900 15px Cairo,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer;display:none';
       document.body.appendChild(pill);
     }
-    function pending() { return sb.from('member_requests').select('id', { count: 'exact', head: true }).eq('gym_id', gid).eq('status', 'pending').then(function (r) { var n = r.count || 0; pill.style.display = n ? '' : 'none'; pill.textContent = '📥 طلبات المشتركين (' + n + ')'; }); }
-    pending(); setInterval(function () { if (!document.hidden) pending(); }, 45000);
+    function pending() {
+      return sb.from('member_requests').select('id,kind,member_code,member_name,note,created_at').eq('gym_id', gid).eq('status', 'pending').order('created_at', { ascending: true }).limit(100).then(function (r) {
+        if (r.error) return; var rows = r.data || []; window.__gmPendingReqs = rows;
+        var n = rows.length; pill.style.display = n ? '' : 'none'; pill.textContent = '📥 طلبات المشتركين (' + n + ')';
+      });
+    }
+    window.__gmRefreshReqs = function () { return pending(); };
+    pending(); setInterval(function () { if (!document.hidden) pending(); }, 30000);
     function findM(code) { return (typeof membersData !== 'undefined' ? membersData : []).find(function (m) { return String(m.id) === String(code); }); }
+    var KL = { renewal: '💳 تجديد', freeze: '❄️ تجميد', complaint: '📝 شكوى', profile_edit: '✏️ تعديل الاسم', plan_change: '🔄 تغيير باقة', suggestion: '💡 رأي' };
+    window.__gmReqLabel = function (k) { return KL[k] || k; };
     function apply(q, amount) {
       var t = findM(q.member_code); if (!t) throw new Error('المشترك مش موجود في البرنامج.');
       var b = new Date(t.end);
@@ -9679,12 +9687,70 @@ window.__gmShellRun = function () {
         logActivity('تجديد من بوابة المشترك: "' + t.name + '" (كود ' + t.id + ') — حتى ' + t.end, 'fa-rotate');
       } else if (q.kind === 'freeze') {
         var d = parseInt(((q.note || '').match(/\d+/) || [0])[0], 10); if (!d) throw new Error('عدد أيام التجميد غير واضح.');
+        if (d > 7) throw new Error('التجميد من بوابة المشترك أقصاه أسبوع (7 أيام).');
         if (isNaN(b)) b = new Date(); b.setDate(b.getDate() + d); t.end = getFormattedDateString(b);
         logActivity('تجميد ' + d + ' يوم من بوابة المشترك: "' + t.name + '" (كود ' + t.id + ') — ينتهي ' + t.end, 'fa-snowflake');
+      } else if (q.kind === 'profile_edit') {
+        var nm = ((q.note || '').match(/اسم جديد:\s*([^|\n]+)/) || [])[1];
+        if (!nm) throw new Error('مفيش اسم جديد في الطلب.');
+        t.name = nm.trim();
+        logActivity('تعديل اسم من بوابة المشترك: كود ' + t.id + ' — الاسم الجديد: ' + t.name, 'fa-pen');
+      } else if (q.kind === 'plan_change') {
+        var pn = ((q.note || '').match(/الباقة المطلوبة:\s*([^—\n]+)/) || [])[1]; if (!pn) throw new Error('اسم الباقة غير واضح.');
+        t.subtype = pn.trim();
+        if (amount > 0) financialsLog.push({ at: Date.now(), timestamp: getFormattedDateString(new Date()), memberId: t.id, memberName: t.name, gender: t.gender, amountCollected: amount, type: 'UPDATE_MODIFICATION' });
+        logActivity('تغيير باقة من بوابة المشترك: "' + t.name + '" (كود ' + t.id + ') — ' + t.subtype, 'fa-tag');
       }
       commitSystemStateToStorage(); recalculateMetricsDashboard(); renderMembersList();
     }
-    function decide(q, st) { return sb.from('member_requests').update({ status: st, decided_at: new Date().toISOString() }).eq('id', q.id).then(function (r) { if (r.error) throw r.error; }); }
+    function decide(q, st, note) {
+      var by = ''; try { by = (window.__captain && window.__captain.name) || 'المالك'; } catch (e) { by = 'المالك'; }
+      return sb.from('member_requests').update({ status: st, decided_at: new Date().toISOString(), decision_note: (note || '').trim() || null, decided_by: by }).eq('id', q.id).then(function (r) { if (r.error) throw r.error; });
+    }
+    // نطاق الكابتن: كابتن الرجالة يشوف طلبات الرجالة، كابتن البنات طلبات البنات، والمالك الكل
+    function scopeOf() { try { var c = window.__captain; if (!c || c.id === 'owner') return ''; return c.section === 'MEN' ? 'شاب' : c.section === 'WOMEN' ? 'بنت' : ''; } catch (e) { return ''; } }
+    function scoped(rows) { var g = scopeOf(); if (!g) return rows || []; return (rows || []).filter(function (q) { var m = findM(q.member_code); return !m || m.gender === g; }); }
+    window.__gmScopedReqs = function () { return scoped(window.__gmPendingReqs || []); };
+
+    // شاشة المراجعة والرد: قبول أو رفض + سبب بيوصل للعضو
+    function review(q0, done) {
+      var ov = el('div', 'cap-overlay'); ov.style.display = 'flex'; ov.style.zIndex = 7500;
+      var c = el('div', 'cap-card'); c.style.cssText = 'text-align:start;max-width:520px;max-height:90vh;overflow:auto';
+      c.appendChild(el('h2', '', (KL[q0.kind] || q0.kind) + ' — ' + (q0.member_name || '') + ' (كود ' + (q0.member_code || '?') + ')'));
+      var body = el('div'); body.appendChild(el('p', 'cap-hint', 'جاري التحميل…')); c.appendChild(body); ov.appendChild(c); document.body.appendChild(ov);
+      var info = el('div'); sb.from('member_requests').select('*').eq('id', q0.id).single().then(function (r) {
+        body.textContent = ''; var q = r.data || q0;
+        if (q.status && q.status !== 'pending') { body.appendChild(el('p', 'cap-hint', 'الطلب ده اتردّ عليه قبل كده.')); var x0 = el('button', 'sh-btn sh-ghost', 'إغلاق'); x0.type = 'button'; x0.onclick = function () { ov.remove(); if (done) done(); }; body.appendChild(x0); return; }
+        body.appendChild(el('div', '', q.note || '')); body.appendChild(el('div', 'cap-hint', new Date(q.created_at).toLocaleString('ar-EG')));
+        if (q.kind === 'freeze') { var fd = parseInt(((q.note || '').match(/\d+/) || [0])[0], 10); if (fd > 7) body.appendChild(el('p', 'sh-msg', '⚠️ الطلب ده أكتر من أسبوع، مش هينفع يتنفذ من هنا.')); }
+        if (q.proof) { var im = el('img'); im.src = q.proof; im.style.cssText = 'max-width:100%;max-height:240px;border-radius:12px;margin:8px 0;cursor:zoom-in'; im.onclick = function () { var w = window.open(); if (w) w.document.write('<img src="' + q.proof + '" style="max-width:100%">'); }; body.appendChild(im); }
+        var info2 = q.kind === 'complaint' || q.kind === 'suggestion';
+        body.appendChild(el('label', 'sh-lbl', 'رد للعضو / السبب (اختياري، بيظهر له في صفحته)'));
+        var tx = el('textarea', 'sh-input'); tx.rows = 3; tx.maxLength = 300; tx.placeholder = info2 ? 'اكتب ردك على العضو' : 'مثلاً: تمت الموافقة، أو اعتذار مع السبب'; body.appendChild(tx);
+        var msg = el('div', 'sh-msg'); body.appendChild(msg);
+        var ok = el('button', 'sh-btn', info2 ? '✅ تم الاطلاع وإرسال الرد' : '✅ موافقة وتنفيذ'), no = el('button', 'sh-btn sh-ghost', info2 ? 'تجاهل' : '❌ رفض'), cl = el('button', 'sh-btn sh-ghost', 'إغلاق');
+        ok.type = no.type = cl.type = 'button';
+        function finish(st) { return decide(q, st, tx.value).then(function () { ov.remove(); pending().then(function () { if (done) done(); }); try { if (typeof toastMsg === 'function') toastMsg(st === 'approved' ? '✅ تم الرد على العضو' : '❌ تم رفض الطلب وإبلاغ العضو'); } catch (e) {} }); }
+        ok.onclick = function () {
+          try {
+            var amt = 0;
+            if (q.kind === 'renewal') { var v = prompt('المبلغ اللي وصلك (جنيه) لتسجيله في الخزنة:', ''); if (v === null) return; amt = parseFloat(v) || 0; }
+            if (q.kind === 'plan_change') { var v2 = prompt('فرق السعر المدفوع (جنيه) لتسجيله في الخزنة — سيبه 0 لو مفيش:', '0'); if (v2 === null) return; amt = parseFloat(v2) || 0; }
+            ok.disabled = no.disabled = true; msg.textContent = '';
+            if (!info2) apply(q, amt);
+            finish('approved').catch(function (e) { msg.textContent = (e && e.message) || 'حصلت مشكلة'; ok.disabled = no.disabled = false; });
+          } catch (e) { msg.textContent = e.message; ok.disabled = no.disabled = false; }
+        };
+        no.onclick = function () {
+          if (!info2 && !tx.value.trim() && !confirm('رفض من غير سبب؟ العضو هيشوف «مرفوض» بس.')) return;
+          ok.disabled = no.disabled = true; finish('rejected').catch(function (e) { msg.textContent = (e && e.message) || 'حصلت مشكلة'; ok.disabled = no.disabled = false; });
+        };
+        cl.onclick = function () { ov.remove(); };
+        body.appendChild(ok); body.appendChild(no); body.appendChild(cl);
+      });
+    }
+    window.__gmReview = function (q, done) { try { review(q, done); } catch (e) { alert(e.message); } };
+
     pill.onclick = function () {
       var ov = el('div', 'cap-overlay'); ov.style.display = 'flex'; ov.style.zIndex = 7400;
       var card = el('div', 'cap-card'); card.style.cssText = 'text-align:start;max-width:520px;max-height:88vh;overflow:auto'; card.appendChild(el('h2', '', '📥 طلبات المشتركين'));
@@ -9693,25 +9759,15 @@ window.__gmShellRun = function () {
       ov.appendChild(card); document.body.appendChild(ov);
       function draw() {
         list.textContent = 'جاري التحميل...';
-        sb.from('member_requests').select('*').eq('gym_id', gid).eq('status', 'pending').order('created_at', { ascending: true }).limit(50).then(function (r) {
-          list.textContent = ''; var rows = r.data || [];
+        pending().then(function () {
+          list.textContent = ''; var rows = scoped(window.__gmPendingReqs || []);
           if (!rows.length) { list.appendChild(el('p', 'cap-hint', 'مفيش طلبات جديدة 🎉')); return; }
           rows.forEach(function (q) {
             var it = el('div', 'kg-warn'); it.style.background = 'transparent'; it.style.color = 'inherit'; it.style.border = '1px solid var(--border-color,#e2e8f0)';
-            it.appendChild(el('b', '', ({ renewal: '💳 تجديد', freeze: '❄️ تجميد', complaint: '📝 شكوى' })[q.kind] + ' — ' + (q.member_name || '') + ' (كود ' + (q.member_code || '?') + ')'));
+            it.appendChild(el('b', '', (KL[q.kind] || q.kind) + ' — ' + (q.member_name || '') + ' (كود ' + (q.member_code || '?') + ')'));
             it.appendChild(el('div', '', q.note || '')); it.appendChild(el('div', 'cap-hint', new Date(q.created_at).toLocaleString('ar-EG')));
-            if (q.proof) { var im = el('img'); im.src = q.proof; im.style.cssText = 'max-width:100%;max-height:240px;border-radius:12px;margin:8px 0;cursor:zoom-in'; im.onclick = function () { var w = window.open(); if (w) w.document.write('<img src="' + q.proof + '" style="max-width:100%">'); }; it.appendChild(im); }
-            var ok = el('button', 'sh-btn', q.kind === 'complaint' ? 'تمت المعالجة' : 'موافقة وتنفيذ'), no = el('button', 'sh-btn sh-ghost', q.kind === 'complaint' ? 'تجاهل' : 'رفض'); ok.type = no.type = 'button';
-            ok.onclick = function () {
-              try {
-                var amt = 0;
-                if (q.kind === 'renewal') { var v = prompt('المبلغ اللي وصلك (جنيه) لتسجيله في الخزنة:', ''); if (v === null) return; amt = parseFloat(v) || 0; }
-                if (q.kind !== 'complaint') apply(q, amt);
-                ok.disabled = true; decide(q, 'approved').then(draw, function (e) { alert(e.message); });
-              } catch (e) { alert(e.message); }
-            };
-            no.onclick = function () { if (confirm('رفض الطلب؟')) decide(q, 'rejected').then(draw, function (e) { alert(e.message); }); };
-            it.appendChild(ok); it.appendChild(no); list.appendChild(it);
+            var go = el('button', 'sh-btn', 'مراجعة والرد'); go.type = 'button'; go.onclick = function () { review(q, draw); };
+            it.appendChild(go); list.appendChild(it);
           });
         });
       }
@@ -10464,8 +10520,15 @@ var mix = g.layout_mode === 'mixed';
         else return href;
       }else{
         t+=personal
-          ?'\n\n📲 اضغط على اللينك ده هيفتح لك على طول على بوابتك باسمك (كارنيهك واشتراكك وتقدمك) من غير ما تكتب رقم ولا كود:\n'+pu+'\n🔒 اللينك ده خاص بيك، متشاركوش مع حد.'
+          ?'\n\nاضغط على اللينك ده هيفتح لك على طول على بوابتك باسمك (كارنيهك واشتراكك وتقدمك) من غير ما تكتب رقم ولا كود:\n'+pu
           :'\n\n📲 لو عايز تتابع تقدمك واشتراكك والكارنيه بتاعك وتحمّله، ادخل من هنا:\n'+pu;
+      }
+      if(personal){
+        // الإيموجي + عربي + لينك في نفس الرسالة بتبوّظ ترتيب النص في واتساب (حصل إن جزء من الرسالة دخل جوه اللينك)، فبنشيل الإيموجي ونخلي اللينك آخر سطر لوحده
+        t=t.replace(/[\u2190-\u2BFF\uFE0F\u200D]|[\uD83C-\uD83E][\uDC00-\uDFFF]/g,'').replace(/[ \t]+\n/g,'\n').replace(/ {2,}/g,' ');
+        t=t.split(pu).join('').replace(/\n{3,}/g,'\n\n').replace(/\s+$/,'');
+        t=t.replace(/اللينك ده خاص بيك، متشاركوش مع حد\.?/,'').replace(/\s+$/,'');
+        t+='\n\nاللينك ده خاص بيك، متشاركوش مع حد.\n\n'+pu;
       }
       return m[1]+'?text='+encodeURIComponent(t);
     }catch(e){return href;}
@@ -14080,8 +14143,12 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
   /* ---------- الإشعارات ---------- */
   function notifItems(d) {
     var items = [];
-    if (d.mode === 'owner' || d.mode === 'kingGym') {
-      if (S.req) items.push({ ic: 'inbox', hot: 1, t: S.req + ' طلب من المشتركين مستني ردك', s: 'تجديد / تجميد / شكوى — اضغط للمراجعة', fn: function () { var p = $('mrPill'); if (p) p.click(); } });
+    if (d.mode === 'owner' || d.mode === 'kingGym' || d.mode === 'captain') {
+      var RL = { renewal: 'تجديد', freeze: 'تجميد', complaint: 'شكوى', profile_edit: 'تعديل بيانات', plan_change: 'تغيير باقة', suggestion: 'رأي' };
+      ((window.__gmScopedReqs && window.__gmScopedReqs()) || []).forEach(function (q) {
+        items.push({ ic: q.kind === 'complaint' ? 'alert' : 'inbox', hot: 1, t: (RL[q.kind] || q.kind) + ' من ' + (q.member_name || 'مشترك') + ' (كود ' + (q.member_code || '?') + ')', s: String(q.note || '').slice(0, 70) + ' — اضغط للرد',
+          fn: function () { if (window.__gmReview) window.__gmReview(q, function () { setTimeout(tick, 200); }); } });
+      });
     }
     if (d.mode === 'owner' || d.mode === 'kingGym' || d.mode === 'captain') {
       var dayTxt = function (n) { return n <= 0 ? 'بينتهي النهارده' : n === 1 ? 'فاضل يوم واحد' : n === 2 ? 'فاضل يومين' : 'فاضل ' + n + ' أيام'; };
@@ -14107,11 +14174,11 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
   function badgeCount(d) {
     if (d.mode === 'gate') return 0;
     if (d.mode === 'king') return (S.kingStats.req || 0) + S.kingNew + ((window.__gmKingLogins && window.__gmKingLogins.n) || 0);
-    return (d.mode === 'captain' ? 0 : (S.req || 0)) + S.soon.length;
+    return (S.req || 0) + S.soon.length;
   }
 
   /* ---------- البيانات ---------- */
-  function readReq() { var p = $('mrPill'), n = 0; if (p && p.style.display !== 'none') { var m = (p.textContent || '').match(/\((\d+)\)/); n = m ? +m[1] : 0; } return n; }
+  function readReq() { try { if (window.__gmScopedReqs) return window.__gmScopedReqs().length; } catch (e) {} var p = $('mrPill'), n = 0; if (p && p.style.display !== 'none') { var m = (p.textContent || '').match(/\((\d+)\)/); n = m ? +m[1] : 0; } return n; }
   /* نطاق الكابتن: رجالي = شاب فقط، بنات = بنت فقط، غير كده بيشوف الكل */
   function scopeG() {
     try {
@@ -14355,7 +14422,7 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
     if (!d) { S.req = null; S.sig = ''; closePanel(); bar.classList.remove('show'); document.body.classList.remove('gm-tb-on'); return; }
     S.tickN++;
     var prevReq = S.req;
-    S.req = (d.mode === 'owner' || d.mode === 'kingGym') ? readReq() : 0;
+    S.req = (d.mode === 'owner' || d.mode === 'kingGym' || d.mode === 'captain') ? readReq() : 0;
     if (d.mode === 'owner' || d.mode === 'kingGym' || d.mode === 'captain') { if (S.tickN % 10 === 1 || (S.soon.length === 0 && S.tickN % 3 === 0)) S.soon = readSoon(); }
     if (d.mode === 'king') { S.kingStats = readKingStats(); loadKingLog(); }
     if (prevReq !== null && S.req > prevReq) { toastMsg('📥 طلب جديد من مشترك'); var bl = $('gmBell'); if (bl) { bl.classList.add('ring'); setTimeout(function () { bl.classList.remove('ring'); }, 1600); } }
