@@ -6550,10 +6550,6 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     _lines.push('🔐 ده لينك بروفايلك الخاص — اضغط عليه هيفتح لك على طول على كارنيهك واشتراكك من غير ما تكتب أي كود:');
                     _lines.push(_link);
                     _lines.push('(خاص بيك، متشاركوش مع حد 🔒)');
-                } else {
-                    _lines.push('🔗 ده لينك البروفايل بتاعك على صفحة الجيم:');
-                    _lines.push(_link);
-                    _lines.push('ادخل برقم موبايلك ' + memberInfo.phone + ' وكلمة السر هي كودك ' + memberInfo.id);
                 }
                 _lines.push('');
                 _lines.push('🆔 كودك: ' + memberInfo.id + (memberInfo.plan ? ' • 🏷️ ' + memberInfo.plan : '') + (memberInfo.end ? ' • ⏳ ينتهي ' + _fd(memberInfo.end) : ''));
@@ -6561,8 +6557,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 return _lines.join('\n');
             };
             if (portalUrl) {
-                const _ok = !!window.__gmKeysOk;
-                gymLinksMessage = _mkMsg(_ok ? window.__gmPersonal(memberInfo.phone) : portalUrl, _ok);
+                let _ok2 = false; const _ok = !!window.__gmKeysOk;
+                var _pl0 = _ok ? window.__gmPersonal(memberInfo.phone) : ''; _ok2 = _pl0.indexOf('#k=') !== -1; gymLinksMessage = _mkMsg(_ok2 ? _pl0 : '', _ok2);
             }
             if (!portalUrl) {
                 if (relevantWaGroupLink) gymLinksMessage += `\n\n📱 جروب الواتساب:\n${relevantWaGroupLink}`;
@@ -6583,7 +6579,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     let w = document.getElementById('prlWarn');
                     if (!on) { if (w) w.remove(); return; }
                     if (!w) { w = document.createElement('div'); w.id = 'prlWarn'; w.style.cssText = 'font-size:.8rem;font-weight:700;color:var(--danger,#c0392b)'; const acts = document.querySelector('#postRegLinksToast .prl-actions'); acts.parentNode.insertBefore(w, acts); }
-                    w.textContent = (typeof on === 'string') ? on : '⚠️ تعذر إنشاء اللينك الشخصي (' + (window.__gmLastErr || 'مشكلة اتصال') + ') — هيتبعت اللينك العام.';
+                    w.textContent = (typeof on === 'string') ? on : '⚠️ تعذر إنشاء اللينك الشخصي (' + (window.__gmLastErr || 'مشكلة اتصال') + ') — الرسالة هتتبعت من غير لينك (مش هيتبعت لينك عام).';
                     w.style.color = (typeof on === 'string') ? 'var(--warning,#b7791f)' : 'var(--danger,#c0392b)';
                 };
                 _warn(false);
@@ -10515,13 +10511,12 @@ var mix = g.layout_mode === 'mixed';
       var num=m[1].replace(/^.*wa\.me\//,'');
       var pu=window.__gmPersonal?window.__gmPersonal(num):u, personal=pu.indexOf('#k=')!==-1;
       if(t.indexOf(u)!==-1){
-        // الرسالة فيها اللينك العام: نبدله باللينك الشخصي
+        // الرسالة فيها اللينك العام: نبدله باللينك الشخصي، ولو مش جاهز نشيله خالص (ممنوع يتبعت اللينك العام)
         if(personal)t=t.replace(u,pu);
-        else return href;
+        else{t=t.split(u).join('').replace(/\n{3,}/g,'\n\n').replace(/\s+$/,'');return m[1]+'?text='+encodeURIComponent(t);}
       }else{
-        t+=personal
-          ?'\n\nاضغط على اللينك ده هيفتح لك على طول على بوابتك باسمك (كارنيهك واشتراكك وتقدمك) من غير ما تكتب رقم ولا كود:\n'+pu
-          :'\n\n📲 لو عايز تتابع تقدمك واشتراكك والكارنيه بتاعك وتحمّله، ادخل من هنا:\n'+pu;
+        if(!personal)return href; // اللينك الشخصي مش جاهز: مفيش لينك نهائيًا بدل اللينك العام
+        t+='\n\nاضغط على اللينك ده هيفتح لك على طول على بوابتك باسمك (كارنيهك واشتراكك وتقدمك) من غير ما تكتب رقم ولا كود:\n'+pu;
       }
       if(personal){
         // الإيموجي + عربي + لينك في نفس الرسالة بتبوّظ ترتيب النص في واتساب (حصل إن جزء من الرسالة دخل جوه اللينك)، فبنشيل الإيموجي ونخلي اللينك آخر سطر لوحده
@@ -10562,10 +10557,12 @@ var mix = g.layout_mode === 'mixed';
       var num=m[1].replace(/^.*wa\.me\//,'');if(!isMemberPhone(num))return;
       e.preventDefault();note('⏳ بجهّز اللينك الشخصي للمشترك...');
       var tgt=a.target||'_blank';
-      Promise.race([window.__gmPersonalAsync(num).catch(function(){return null;}),new Promise(function(r){setTimeout(function(){r(null);},4500);})]).then(function(){
+      Promise.race([window.__gmPersonalAsync(num).catch(function(){return null;}),new Promise(function(r){setTimeout(function(){r(null);},12000);})]).then(function(){
         addFooter(a);
+        var ok=a.href.indexOf(encodeURIComponent('#k='))!==-1;
+        if(!ok)note('⚠️ اللينك الشخصي مش جاهز (النت أو بيانات المشترك) — الرسالة اتفتحت من غير لينك');
         var w=null;try{w=_open.call(window,a.href,tgt);}catch(x){}
-        if(!w)note('✅ اللينك جاهز — اضغط إرسال تاني');
+        if(!w)note('✅ جاهز — اضغط إرسال تاني');
       });
     }catch(x){}
   },true);
