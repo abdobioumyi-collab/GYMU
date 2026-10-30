@@ -6510,13 +6510,14 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             if (fbLink) gymLinksMessage += `\n\n📘 صفحتنا على فيسبوك:\n${fbLink}`;
 
             const gymLinksBtn = document.getElementById('waGymLinksBtn');
-            if (!relevantWaGroupLink && !fbLink) {
+            if (!relevantWaGroupLink && !fbLink && !window.__memberPortalUrl) {
                 gymLinksBtn.style.display = 'none';
             } else {
                 gymLinksBtn.style.display = 'flex';
                 gymLinksBtn.href = `https://wa.me/${clientCleanPhone}?text=${encodeURIComponent(gymLinksMessage)}`;
             }
 
+            try { if (window.__gmPersonalAsync && memberObj.phone) window.__gmPersonalAsync(memberObj.phone).catch(function () {}); } catch (e) {}
             renderProfileBrand();
             document.getElementById('profileViewerModal').style.display = 'flex';
         }
@@ -9517,7 +9518,13 @@ window.__gmShellRun = function () {
       function load() { return rpc('portal_link_keys', { p_gym: gid0 }).then(function (k) { if (k && typeof k === 'object') Object.keys(k).forEach(function (p) { keys[p] = k[p]; (window.__gmKeysConfirmed = window.__gmKeysConfirmed || {})[p] = 1; }); persistKeys(); }).catch(function () {}); }
       window.__gmPersonal = function (phone) {
         var p = n10(phone), base = window.__memberPortalUrl;
-        if (p.length < 10 || !window.__gmKeysOk) return base;
+        if (p.length < 10) return base;
+        if (!keys[p] && !window.__gmKeysOk) {
+          // المفاتيح لسه بتتحمل: نجهّز اللينك الشخصي في الخلفية (مرة كل 30 ثانية للرقم)، والضغطة الجاية هتلاقيه جاهز
+          var _w = (window.__gmWarming = window.__gmWarming || {}), _n = Date.now();
+          if (!_w[p] || _n - _w[p] > 30000) { _w[p] = _n; try { window.__gmPersonalAsync(phone).catch(function () {}); } catch (e) {} }
+          return base;
+        }
         if (!keys[p]) { var k = rnd(); keys[p] = k; rpc('portal_link_set', { p_gym: gid0, p_phone: p, p_key: k, p_rotate: false }).then(function (real) { if (real) keys[p] = real; }).catch(function () { delete keys[p]; }); }
         return base + '#k=' + keys[p];
       };
@@ -10440,20 +10447,65 @@ var mix = g.layout_mode === 'mixed';
     };img.src=rd.result;};
     rd.readAsDataURL(f.files[0]);
   });
-  // أي رسالة واتساب تخرج من البرنامج تنتهي بدعوة لمتابعة الاشتراك والكارنيه
-  function addFooter(a){
+  // أي رسالة واتساب تخرج من البرنامج (تجديد، غياب، قرب الانتهاء، روابط الجيم، إيصال...) بتتحط فيها دعوة + لينك البوابة الشخصي
+  // اللينك الشخصي بيفتح للمشترك على طول باسمه وكارنيهه من غير ما يكتب رقم ولا كود
+  function n10(p){return String(p||'').replace(/[٠-٩]/g,function(d){return '٠١٢٣٤٥٦٧٨٩'.indexOf(d);}).replace(/\D/g,'').slice(-10);}
+  function hasKey(t,u){return t.indexOf(u+'#k=')!==-1;}
+  function upgradeWa(href){
     try{
-      var u=window.__memberPortalLink&&window.__memberPortalLink();if(!u)return;
-      var m=a.href.match(/^(https:\/\/wa\.me\/[^?]*)\?text=(.*)$/);if(!m)return;
-      var t=decodeURIComponent(m[2]);if(t.indexOf(u)!==-1)return;
-      var pu=window.__gmPersonal?window.__gmPersonal(m[1].replace(/^.*wa\.me\//,'')):u;
-      t+='\n\n📲 لو عايز تتابع تقدمك واشتراكك والكارنيه بتاعك وتحمّله، ادخل من هنا:\n'+pu+(pu!==u?'\n⚠️ الرابط ده خاص بيك، متشاركوش مع حد.':'');
-      a.href=m[1]+'?text='+encodeURIComponent(t);
-    }catch(e){}
+      var u=window.__memberPortalLink&&window.__memberPortalLink();if(!u)return href;
+      var m=String(href).match(/^(https:\/\/wa\.me\/[^?]*)\?text=(.*)$/);if(!m)return href;
+      var t=decodeURIComponent(m[2]);if(hasKey(t,u))return href;
+      var num=m[1].replace(/^.*wa\.me\//,'');
+      var pu=window.__gmPersonal?window.__gmPersonal(num):u, personal=pu.indexOf('#k=')!==-1;
+      if(t.indexOf(u)!==-1){
+        // الرسالة فيها اللينك العام: نبدله باللينك الشخصي
+        if(personal)t=t.replace(u,pu);
+        else return href;
+      }else{
+        t+=personal
+          ?'\n\n📲 اضغط على اللينك ده هيفتح لك على طول على بوابتك باسمك (كارنيهك واشتراكك وتقدمك) من غير ما تكتب رقم ولا كود:\n'+pu+'\n🔒 اللينك ده خاص بيك، متشاركوش مع حد.'
+          :'\n\n📲 لو عايز تتابع تقدمك واشتراكك والكارنيه بتاعك وتحمّله، ادخل من هنا:\n'+pu;
+      }
+      return m[1]+'?text='+encodeURIComponent(t);
+    }catch(e){return href;}
   }
-  ['click','auxclick','touchstart'].forEach(function(ev){
+  function addFooter(a){try{var h=upgradeWa(a.href);if(h!==a.href)a.href=h;}catch(e){}}
+  // فتح واتساب بـ window.open (قايمة قرب الانتهاء / المنتهي / الإيصالات للكباتن)
+  var _open=window.open;
+  window.open=function(){
+    var args=[].slice.call(arguments);
+    try{if(typeof args[0]==='string'&&/^https:\/\/wa\.me\/[^?]+\?text=/.test(args[0]))args[0]=upgradeWa(args[0]);}catch(e){}
+    return _open.apply(this,args);
+  };
+  function isMemberPhone(num){
+    try{var p=n10(num);if(p.length<10)return false;return (typeof membersData!=='undefined'?membersData:[]).some(function(x){return n10(x.phone)===p;});}catch(e){return false;}
+  }
+  function note(txt){
+    var d=document.getElementById('gmPlNote');if(!d){d=document.createElement('div');d.id='gmPlNote';d.style.cssText='position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:2147483600;background:#111827;color:#fff;padding:10px 16px;border-radius:14px;font:800 14px Cairo,sans-serif;max-width:88vw;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.35)';document.body.appendChild(d);}
+    d.textContent=txt;d.style.display='block';clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none';},3500);
+  }
+  ['auxclick','touchstart'].forEach(function(ev){
     document.addEventListener(ev,function(e){var a=e.target.closest&&e.target.closest('a[href^="https://wa.me/"]');if(a)addFooter(a);},true);
   });
+  // عند الضغط: لو اللينك الشخصي لسه مش جاهز لمشترك معروف، نستناه لحظات ونفتح واتساب بعده (بدل ما نبعت اللينك العام)
+  document.addEventListener('click',function(e){
+    var a=e.target.closest&&e.target.closest('a[href^="https://wa.me/"]');if(!a)return;
+    addFooter(a);
+    try{
+      var u=window.__memberPortalLink&&window.__memberPortalLink();if(!u||!window.__gmPersonalAsync)return;
+      var m=a.href.match(/^(https:\/\/wa\.me\/[^?]*)\?text=(.*)$/);if(!m)return;
+      var t=decodeURIComponent(m[2]);if(hasKey(t,u))return;
+      var num=m[1].replace(/^.*wa\.me\//,'');if(!isMemberPhone(num))return;
+      e.preventDefault();note('⏳ بجهّز اللينك الشخصي للمشترك...');
+      var tgt=a.target||'_blank';
+      Promise.race([window.__gmPersonalAsync(num).catch(function(){return null;}),new Promise(function(r){setTimeout(function(){r(null);},4500);})]).then(function(){
+        addFooter(a);
+        var w=null;try{w=_open.call(window,a.href,tgt);}catch(x){}
+        if(!w)note('✅ اللينك جاهز — اضغط إرسال تاني');
+      });
+    }catch(x){}
+  },true);
   // زرار رابط الأعضاء الظاهر للمالك والفريق
   var btn=document.createElement('button');
   btn.type='button';btn.textContent='🔗 رابط الأعضاء';
@@ -13777,6 +13829,7 @@ html.gmb #gmKingBack{bottom:calc(var(--gmoffb,80px) + 10px)}
 .gmq-tx{flex:1;min-width:0}.gmq-tx b{display:block;font-weight:800;font-size:.84rem;line-height:1.4}.gmq-tx small{display:block;font-weight:700;font-size:.66rem;color:var(--text-muted,#6b6f78);line-height:1.5;margin-top:1px}
 .gmq-n{min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#e5233d;color:#fff;font:900 .68rem/22px 'Cairo',sans-serif;text-align:center}
 .gmq-row.hot{background:color-mix(in srgb,#e5233d 8%,transparent)}
+.gmq-wa{flex-shrink:0;background:#25D366;color:#fff!important;text-decoration:none;font:800 .72rem 'Cairo',sans-serif;padding:7px 11px;border-radius:12px;white-space:nowrap}.gmq-wa:active{transform:scale(.96)}
 .gmq-div{height:1px;background:var(--border-color,rgba(120,100,180,.16));margin:6px 6px}
 .gmq-empty{padding:30px 10px;text-align:center;color:var(--text-muted,#6b6f78);font-weight:800;font-size:.86rem}
 #gmToast{position:fixed;top:calc(env(safe-area-inset-top,0px) + var(--gmoff,84px) - 2px);left:50%;z-index:5098;max-width:min(92vw,420px);padding:11px 18px;border-radius:99px;background:color-mix(in srgb,#14102a 90%,var(--primary,#5b2ad0));color:#fff;font:800 .86rem 'Cairo',sans-serif;box-shadow:0 18px 36px -12px rgba(0,0,0,.5);opacity:0;transform:translate(-50%,-14px);pointer-events:none;transition:opacity .25s,transform .25s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -14031,11 +14084,16 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
       if (S.req) items.push({ ic: 'inbox', hot: 1, t: S.req + ' طلب من المشتركين مستني ردك', s: 'تجديد / تجميد / شكوى — اضغط للمراجعة', fn: function () { var p = $('mrPill'); if (p) p.click(); } });
     }
     if (d.mode === 'owner' || d.mode === 'kingGym' || d.mode === 'captain') {
-      S.soon.slice(0, 8).forEach(function (m) {
-        items.push({ ic: m.left <= 0 ? 'alert' : 'hourglass', hot: m.left <= 0, t: m.name + (m.left <= 0 ? ' — اشتراكه بينتهي النهارده' : ' — فاضل ' + m.left + (m.left === 1 ? ' يوم' : ' أيام')), s: 'كود ' + m.id + ' · اضغط للبحث عنه',
+      var dayTxt = function (n) { return n <= 0 ? 'بينتهي النهارده' : n === 1 ? 'فاضل يوم واحد' : n === 2 ? 'فاضل يومين' : 'فاضل ' + n + ' أيام'; };
+      var gnm = function () { try { return (localStorage.getItem('gym_pro_app_name') || (window.__GYM && window.__GYM.name) || 'الجيم').trim(); } catch (e) { return 'الجيم'; } };
+      S.soon.forEach(function (m) {
+        var ph = String(m.phone || '').replace(/\D/g, ''); if (/^01\d{9}$/.test(ph)) ph = '2' + ph;
+        var first = String(m.name || '').trim().split(' ')[0];
+        var msg = gnm() + ' \n\nID : ' + m.id + '\nكابتن ' + first + ' ❤️\nنذكرك بتاريخ تجديد الاشتراك في ' + gnm() + ' يوم ' + m.end + ' (' + dayTxt(m.left) + ')';
+        items.push({ ic: m.left <= 0 ? 'alert' : 'hourglass', hot: m.left <= 1, t: m.name + ' — ' + dayTxt(m.left), s: 'كود ' + m.id + ' · اضغط للبحث عنه',
+          wa: ph ? 'https://wa.me/' + ph + '?text=' + encodeURIComponent(msg) : '',
           fn: function () { if (!shown('mainContentArea')) return; var i = $('searchInput'); if (i) { i.value = m.name; try { i.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {} var s = $('sidebar'); if (s) s.classList.add('open'); } } });
       });
-      if (S.soon.length > 8) items.push({ ic: 'list', t: 'و ' + (S.soon.length - 8) + ' اشتراكات تانية قربت تخلص', s: '' });
     }
     if (d.mode === 'king') {
       var st = S.kingStats, chip = function (txt) { return function () { var b = document.querySelectorAll('.kg-tab')[0]; if (b) b.click(); setTimeout(function () { var cs = document.querySelectorAll('.kg-chip'); for (var i = 0; i < cs.length; i++) if (cs[i].textContent.indexOf(txt) > -1) { cs[i].click(); return; } }, 90); }; };
@@ -14068,7 +14126,7 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
     members().forEach(function (m) {
       if (!m || !m.end) return; if (sg && m.gender !== sg) return; if (isCap && m.hiddenFromCaptain) return;
       var e = new Date(m.end + 'T00:00:00'); if (isNaN(e)) return;
-      var left = Math.round((e - now) / 86400000); if (left >= 0 && left <= 3) out.push({ name: m.name || '—', id: m.id, left: left });
+      var left = Math.round((e - now) / 86400000); if (left >= 0 && left <= 5) out.push({ name: m.name || '—', id: m.id, left: left, phone: m.phone || '', end: m.end });
     });
     out.sort(function (a, b) { return a.left - b.left; }); return out;
   }
@@ -14279,9 +14337,10 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
       var items = notifItems(d);
       if (!items.length) body.appendChild(el('div', 'gmq-empty', 'مفيش إشعارات جديدة 🎉'));
       items.forEach(function (x, k) {
-        var r = el('button', 'gmq-row' + (x.hot ? ' hot' : '')); r.type = 'button';
+        var r = el(x.wa ? 'div' : 'button', 'gmq-row' + (x.hot ? ' hot' : '')); if (!x.wa) r.type = 'button'; else r.setAttribute('role', 'button');
         var i = el('span', 'gmq-ic' + (x.hot ? ' dg' : ' t' + (2 + k % 4))); i.innerHTML = svg(x.ic); r.appendChild(i);
         var tx = el('span', 'gmq-tx'); tx.appendChild(el('b', '', x.t)); if (x.s) tx.appendChild(el('small', '', x.s)); r.appendChild(tx);
+        if (x.wa) { var w = el('a', 'gmq-wa', '💬 تجديد'); w.href = x.wa; w.target = 'waSendWindow'; w.rel = 'noopener'; w.onclick = function (ev) { ev.stopPropagation(); }; r.appendChild(w); }
         r.onclick = function () { if (x.fn) { closePanel(); x.fn(); } }; body.appendChild(r);
       });
     }
