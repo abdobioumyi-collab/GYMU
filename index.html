@@ -6517,7 +6517,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 gymLinksBtn.href = `https://wa.me/${clientCleanPhone}?text=${encodeURIComponent(gymLinksMessage)}`;
             }
 
-            try { if (window.__gmPersonalAsync && memberObj.phone) window.__gmPersonalAsync(memberObj.phone).catch(function () {}); } catch (e) {}
+            try { if (window.__gmPersonalAsync && memberObj.id) window.__gmPersonalAsync(memberObj.phone, memberObj.id).catch(function () {}); } catch (e) {}
             renderProfileBrand();
             document.getElementById('profileViewerModal').style.display = 'flex';
         }
@@ -6558,7 +6558,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             };
             if (portalUrl) {
                 let _ok2 = false; const _ok = !!window.__gmKeysOk;
-                var _pl0 = _ok ? window.__gmPersonal(memberInfo.phone) : ''; _ok2 = _pl0.indexOf('#k=') !== -1; gymLinksMessage = _mkMsg(_ok2 ? _pl0 : '', _ok2);
+                var _pl0 = _ok ? window.__gmPersonal(memberInfo.phone, memberInfo.id) : ''; _ok2 = _pl0.indexOf('#k=') !== -1; gymLinksMessage = _mkMsg(_ok2 ? _pl0 : '', _ok2);
             }
             if (!portalUrl) {
                 if (relevantWaGroupLink) gymLinksMessage += `\n\n📱 جروب الواتساب:\n${relevantWaGroupLink}`;
@@ -6589,7 +6589,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                     if (pl) { _btn.href = `https://wa.me/${clientCleanPhone}?text=${encodeURIComponent(_mkMsg(pl, true))}`; _warn(false); }
                     _btn.style.pointerEvents = ''; _btn.style.opacity = '';
                 };
-                window.__gmPersonalAsync(memberInfo.phone).then((pl) => { _once(pl); if (!pl && _tok === window.__gmPrlTok) _warn(true); else if (pl && _tok === window.__gmPrlTok && window.__gmLinkIsQueued && window.__gmLinkIsQueued(memberInfo.phone)) _warn('📴 مفيش نت دلوقتي — اللينك الشخصي اتعمل على الجهاز، وهيشتغل عند المشترك أول ما النت يرجع عندك ويتسجل على السيرفر.'); }, () => { _once(null); if (_tok === window.__gmPrlTok) _warn(true); });
+                window.__gmPersonalAsync(memberInfo.phone, memberInfo.id).then((pl) => { _once(pl); if (!pl && _tok === window.__gmPrlTok) _warn(true); else if (pl && _tok === window.__gmPrlTok && window.__gmLinkIsQueued && window.__gmLinkIsQueued(memberInfo.phone)) _warn('📴 مفيش نت دلوقتي — اللينك الشخصي اتعمل على الجهاز، وهيشتغل عند المشترك أول ما النت يرجع عندك ويتسجل على السيرفر.'); }, () => { _once(null); if (_tok === window.__gmPrlTok) _warn(true); });
                 setTimeout(() => _once(null), 11000);
             }
 
@@ -9497,87 +9497,64 @@ window.__gmShellRun = function () {
     window.__memberPortalUrl = location.origin + location.pathname.replace(/[^\/]*$/, '') + 'member.html?g=' + encodeURIComponent(row.gyms.slug);
     window.__memberPortalLink = function () { return window.__memberPortalUrl; };
     window.__gmGymId = row.gyms.id;
-    // ---- روابط شخصية لكل مشترك (تفتح مباشرة من غير كود) ----
+    // ---- روابط شخصية: السيرفر هو اللي بيعمل المفتاح، والمفتاح مربوط بكود المشترك (مش بالموبايل). التطبيق مبيخترعش مفاتيح أبدًا ----
     (function () {
-      var keys = {}, gid0 = row.gyms.id;
-      // ---- دعم الأوفلاين: المفاتيح بتتحفظ على الجهاز، واللينكات اللي اتعملت من غير نت بتستنى في طابور وتتسجل على السيرفر لوحدها لما النت يرجع ----
-      var KEYS_CK = 'sh_link_keys_' + gid0, QUEUE_CK = 'sh_link_q_' + gid0;
-      try { var _ck = cacheGet(KEYS_CK); if (_ck && typeof _ck === 'object') Object.keys(_ck).forEach(function (p) { keys[p] = _ck[p]; }); } catch (e) {}
-      function persistKeys() { try { cacheSet(KEYS_CK, keys); } catch (e) {} }
-      function qGet() { return cacheGet(QUEUE_CK) || {}; }
-      function qSet(q) { cacheSet(QUEUE_CK, q); }
-      window.__gmLinkQueued = window.__gmLinkQueued || {};
-      (function () { var q0 = qGet(); Object.keys(q0).forEach(function (p) { window.__gmLinkQueued[p] = 1; }); })();
-      window.__gmLinkIsQueued = function (phone) { var p = String(phone || '').replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).replace(/\D/g, '').slice(-10); return !!window.__gmLinkQueued[p]; };
+      var gid0 = row.gyms.id, keys = {}, inflight = {};   // كود المشترك -> مفتاح جاي من السيرفر بس
+      function sid(x) { return String(x == null ? '' : x).trim(); }
       function n10(p) { return String(p || '').replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).replace(/\D/g, '').slice(-10); }
-      function rnd() { var a = new Uint8Array(24); (window.crypto || window.msCrypto).getRandomValues(a); return Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }
-      function load() { return rpc('portal_link_keys', { p_gym: gid0 }).then(function (k) { if (k && typeof k === 'object') Object.keys(k).forEach(function (p) { keys[p] = k[p]; (window.__gmKeysConfirmed = window.__gmKeysConfirmed || {})[p] = 1; }); persistKeys(); }).catch(function () {}); }
-      window.__gmPersonal = function (phone) {
-        var p = n10(phone), base = window.__memberPortalUrl;
-        if (p.length < 10) return base;
-        if (!keys[p] && !window.__gmKeysOk) {
-          // المفاتيح لسه بتتحمل: نجهّز اللينك الشخصي في الخلفية (مرة كل 30 ثانية للرقم)، والضغطة الجاية هتلاقيه جاهز
-          var _w = (window.__gmWarming = window.__gmWarming || {}), _n = Date.now();
-          if (!_w[p] || _n - _w[p] > 30000) { _w[p] = _n; try { window.__gmPersonalAsync(phone).catch(function () {}); } catch (e) {} }
-          return base;
-        }
-        if (!keys[p]) { var k = rnd(); keys[p] = k; rpc('portal_link_set', { p_gym: gid0, p_phone: p, p_key: k, p_rotate: false }).then(function (real) { if (real) keys[p] = real; }).catch(function () { delete keys[p]; }); }
-        return base + '#k=' + keys[p];
-      };
-      window.__gmRotateKey = function (phone) {
-        var p = n10(phone), k = rnd();
-        return rpc('portal_link_set', { p_gym: gid0, p_phone: p, p_key: k, p_rotate: true }).then(function (real) { keys[p] = real || k; return window.__gmPersonal(phone); });
-      };
-      window.__gmPersonalAsync = function (phone) {
-        var p = n10(phone), base = window.__memberPortalUrl;
-        if (p.length < 10) return Promise.resolve(null);
-        if (keys[p] && window.__gmKeysConfirmed && window.__gmKeysConfirmed[p]) return Promise.resolve(base + '#k=' + keys[p]);
-        var k = keys[p] || rnd();
-        var attempt = function () {
-          return rpc('portal_link_set', { p_gym: gid0, p_phone: p, p_key: k, p_rotate: false }).then(function (real) {
-            keys[p] = real || k; (window.__gmKeysConfirmed = window.__gmKeysConfirmed || {})[p] = 1;
-            window.__gmKeysOk = true; window.__gmLastErr = '';
-            return base + '#k=' + keys[p];
-          });
-        };
-        // المشترك الجديد بيترفع للسيرفر بعد حوالي ثانية، فلو السيرفر قال لسه مش لاقيه (no_member) بنعيد كذا مرة
-        var tries = 0;
-        var retry = function (e) {
-          if (isNetErr(e) || ++tries >= 6) throw e;   // مفيش نت = مفيش فايدة من إعادة المحاولة، نروح على الوضع الأوفلاين فورًا
-          return new Promise(function (r) { setTimeout(r, 1400); }).then(attempt).catch(retry);
-        };
-        return attempt().catch(retry)
-          .catch(function (e) {
-            // مفيش نت: نعمل اللينك الشخصي محليًا ونحطه في الطابور، وبيتسجل على السيرفر أول ما النت يرجع
-            if (isNetErr(e)) {
-              keys[p] = k; var q = qGet(); q[p] = k; qSet(q); persistKeys();
-              window.__gmLinkQueued[p] = 1; window.__gmLastErr = '';
-              return base + '#k=' + k;
-            }
-            window.__gmLastErr = (e && e.message) || 'error'; try { console.warn('portal_link_set failed:', window.__gmLastErr); } catch (_) {} return null;
-          });
-      };
-      // رفع اللينكات اللي اتعملت أوفلاين
-      var _flushingQ = false;
-      function flushLinkQ() {
-        if (_flushingQ || !navigator.onLine) return;
-        var q = qGet(), ps = Object.keys(q); if (!ps.length) return;
-        _flushingQ = true;
-        ps.reduce(function (chain, p) {
-          return chain.then(function () {
-            return rpc('portal_link_set', { p_gym: gid0, p_phone: p, p_key: q[p], p_rotate: false }).then(function (real) {
-              keys[p] = real || q[p]; (window.__gmKeysConfirmed = window.__gmKeysConfirmed || {})[p] = 1;
-              var qq = qGet(); delete qq[p]; qSet(qq); delete window.__gmLinkQueued[p]; persistKeys();
-            }).catch(function () { /* المشترك لسه ما اترفعش أو النت قطع: يفضل في الطابور ونعيد بعدين */ });
-          });
-        }, Promise.resolve()).then(function () { _flushingQ = false; }, function () { _flushingQ = false; });
+      function allMembers() { try { return (typeof membersData !== 'undefined' && membersData) ? membersData : []; } catch (e) { return []; } }
+      function idByPhone(phone) {
+        var p = n10(phone); if (p.length < 10) return '';
+        var f = allMembers().filter(function (m) { return n10(m.phone) === p; });
+        return f.length === 1 ? sid(f[0].id) : '';   // لو الرقم مشترك بين أكتر من مشترك لازم الكود يتحدد صراحة
       }
-      window.addEventListener('online', function () { [2000, 6000, 15000, 30000].forEach(function (ms) { setTimeout(flushLinkQ, ms); }); });
-      setInterval(flushLinkQ, 60000);
-      setTimeout(flushLinkQ, 8000);
-      load().then(function () { }); 
-      rpc('portal_link_keys', { p_gym: gid0 }).then(function () { window.__gmKeysOk = true; }).catch(function () { window.__gmKeysOk = false; });
-      setInterval(load, 120000);
+      function resolveId(phone, id) { return sid(id) || idByPhone(phone); }
+      window.__gmResolveMemberId = resolveId;
+      function fetchKeys(ids) {
+        ids = ids.filter(Boolean);
+        if (!ids.length) return Promise.resolve({});
+        return rpc('portal_link_for', { p_gym: gid0, p_ids: ids }).then(function (map) {
+          if (map && typeof map === 'object') Object.keys(map).forEach(function (k) { keys[k] = map[k]; });
+          window.__gmKeysOk = true; window.__gmLastErr = '';
+          return map || {};
+        });
+      }
+      window.__gmPersonalAsync = function (phone, memberId) {
+        var id = resolveId(phone, memberId), base = window.__memberPortalUrl;
+        if (!id) return Promise.resolve(null);
+        if (keys[id]) return Promise.resolve(base + '#k=' + keys[id]);
+        if (!inflight[id]) {
+          var tries = 0;
+          var attempt = function () {
+            return fetchKeys([id]).then(function () {
+              if (keys[id] || ++tries >= 6) return;   // المشترك الجديد بيترفع للسيرفر بعد حوالي ثانية، فبنعيد كذا مرة
+              return new Promise(function (r) { setTimeout(r, 1400); }).then(attempt);
+            });
+          };
+          inflight[id] = attempt().then(function () { delete inflight[id]; }, function (e) { delete inflight[id]; throw e; });
+        }
+        return inflight[id].then(function () { return keys[id] ? base + '#k=' + keys[id] : null; })
+          .catch(function (e) { window.__gmLastErr = (e && e.message) || 'error'; return null; });
+      };
+      window.__gmPersonal = function (phone, memberId) {
+        var id = resolveId(phone, memberId), base = window.__memberPortalUrl;
+        if (id && keys[id]) return base + '#k=' + keys[id];
+        if (id) { try { window.__gmPersonalAsync(phone, id).catch(function () {}); } catch (e) {} }   // نجهّزه في الخلفية
+        return base;   // اللي بيستخدمه بيشيل اللينك العام ومبيبعتهوش
+      };
+      window.__gmRotateKey = function (phone, memberId) {
+        var id = resolveId(phone, memberId);
+        return rpc('portal_link_rotate', { p_gym: gid0, p_id: id }).then(function (k) { if (k) keys[id] = k; return window.__memberPortalUrl + '#k=' + keys[id]; });
+      };
+      window.__gmLinkIsQueued = function () { return false; };
+      // تجهيز مفاتيح كل المشتركين مقدمًا عشان أي رسالة تتبعت واللينك جاهز
+      function prefetch() {
+        if (!navigator.onLine) return;
+        var ids = allMembers().map(function (m) { return sid(m.id); }).filter(function (i) { return i && !keys[i]; });
+        for (var i = 0; i < ids.length; i += 100) fetchKeys(ids.slice(i, i + 100)).catch(function (e) { window.__gmLastErr = (e && e.message) || 'error'; });
+      }
+      setTimeout(prefetch, 4000); setInterval(prefetch, 60000);
+      window.addEventListener('online', function () { setTimeout(prefetch, 1500); });
     })();
     if (row.role !== 'owner' && row.role !== 'manager' && !row.support) return;
     var gid = row.gyms.id, slug = row.gyms.slug;
@@ -9614,13 +9591,13 @@ window.__gmShellRun = function () {
           if (m && a) {
             var head = 'أهلاً ' + m.name + ' 👋\nكارنيه اشتراكك في ' + row.gyms.name + ' جاهز 🎫\n\nكود المشترك: ' + m.id + '\nالباقة: ' + (m.subtype || '—') + '\nيبدأ: ' + m.start + '\nينتهي: ' + m.end;
             var tailP = function (pl) { return '\n\n🔐 افتح بوابتك من الرابط ده، هيفتح لك على طول من غير ما تكتب كود:\n' + pl + '\n\n⚠️ الرابط ده خاص بيك وبيفتح كارنيهك وبياناتك، متشاركوش مع حد.'; };
-            var msgGeneric = head + '\n\nادخل بوابتك من هنا بالرقم ده وكود المشترك ككلمة سر:\n' + link();
+            var msgGeneric = head;   // ممنوع اللينك العام: لو اللينك الشخصي مش جاهز الرسالة تتبعت من غير لينك
             var waBase = 'https://wa.me/' + waNum(m.phone) + '?text=';
             window.__gmCardFor = m.id;
             var oldWarn = $('waCardWarn'); if (oldWarn) oldWarn.remove();
             a.style.pointerEvents = ''; a.style.opacity = '';
             a.href = waBase + encodeURIComponent(msgGeneric);
-            if (m.phone && window.__gmPersonalAsync) {
+            if (m.id && window.__gmPersonalAsync) {
               // الزرار بيستنى لحظات لحد ما اللينك الشخصي يتأكد، عشان مايتبعتش اللينك العام بالغلط
               a.style.pointerEvents = 'none'; a.style.opacity = '.55';
               var cardFin = function (pl, final) {
@@ -9639,12 +9616,12 @@ window.__gmShellRun = function () {
                 } else if (final && !w) {
                   w = document.createElement('div'); w.id = 'waCardWarn';
                   w.style.cssText = 'grid-column:span 2;font-size:.8rem;font-weight:700;color:var(--danger,#c0392b);text-align:center';
-                  w.textContent = '⚠️ تعذر إنشاء اللينك الشخصي (' + (window.__gmLastErr || 'مشكلة اتصال') + ') — هيتبعت اللينك العام. جرب تفتح البروفايل تاني.';
+                  w.textContent = '⚠️ تعذر إنشاء اللينك الشخصي (' + (window.__gmLastErr || 'مشكلة اتصال') + ') — الرسالة هتتبعت من غير لينك. جرب تفتح البروفايل تاني.';
                   cur.parentNode.insertBefore(w, cur.nextSibling);
                 }
                 cur.style.pointerEvents = ''; cur.style.opacity = '';
               };
-              window.__gmPersonalAsync(m.phone).then(function (pl) { cardFin(pl, true); }, function () { cardFin(null, true); });
+              window.__gmPersonalAsync(m.phone, m.id).then(function (pl) { cardFin(pl, true); }, function () { cardFin(null, true); });
               setTimeout(function () { cardFin(null, false); }, 11000);
             }
             { var _old = $('waRotBtn'); if (_old) _old.remove(); }   // زرار "إلغاء رابط المشترك" اتشال، وحذف المشترك نهائيًا هو آخر زرار
@@ -10503,13 +10480,24 @@ var mix = g.layout_mode === 'mixed';
   // اللينك الشخصي بيفتح للمشترك على طول باسمه وكارنيهه من غير ما يكتب رقم ولا كود
   function n10(p){return String(p||'').replace(/[٠-٩]/g,function(d){return '٠١٢٣٤٥٦٧٨٩'.indexOf(d);}).replace(/\D/g,'').slice(-10);}
   function hasKey(t,u){return t.indexOf(u+'#k=')!==-1;}
+  // تحديد المشترك: بالكود اللي في الرسالة (ID : 868)، ولو مفيش فبالرقم لو مشترك واحد بس بيه
+  function memberIdFor(num,t){
+    try{
+      var p=n10(num),ms=(typeof membersData!=='undefined'?membersData:[]);
+      var cands=ms.filter(function(x){return n10(x.phone)===p;});
+      var mm=String(t||'').match(/(?:ID|كود المشترك|الـ ID)\s*[:：]\s*(\d+)/i);
+      if(mm&&cands.some(function(c){return String(c.id).trim()===mm[1];}))return mm[1];
+      if(cands.length===1)return String(cands[0].id).trim();
+    }catch(e){}
+    return '';
+  }
   function upgradeWa(href){
     try{
       var u=window.__memberPortalLink&&window.__memberPortalLink();if(!u)return href;
       var m=String(href).match(/^(https:\/\/wa\.me\/[^?]*)\?text=(.*)$/);if(!m)return href;
       var t=decodeURIComponent(m[2]);if(hasKey(t,u))return href;
       var num=m[1].replace(/^.*wa\.me\//,'');
-      var pu=window.__gmPersonal?window.__gmPersonal(num):u, personal=pu.indexOf('#k=')!==-1;
+      var mid=memberIdFor(num,t), pu=(window.__gmPersonal&&mid)?window.__gmPersonal(num,mid):u, personal=pu.indexOf('#k=')!==-1;
       if(t.indexOf(u)!==-1){
         // الرسالة فيها اللينك العام: نبدله باللينك الشخصي، ولو مش جاهز نشيله خالص (ممنوع يتبعت اللينك العام)
         if(personal)t=t.replace(u,pu);
@@ -10554,10 +10542,10 @@ var mix = g.layout_mode === 'mixed';
       var u=window.__memberPortalLink&&window.__memberPortalLink();if(!u||!window.__gmPersonalAsync)return;
       var m=a.href.match(/^(https:\/\/wa\.me\/[^?]*)\?text=(.*)$/);if(!m)return;
       var t=decodeURIComponent(m[2]);if(hasKey(t,u))return;
-      var num=m[1].replace(/^.*wa\.me\//,'');if(!isMemberPhone(num))return;
+      var num=m[1].replace(/^.*wa\.me\//,'');var mid0=memberIdFor(num,t);if(!mid0)return;
       e.preventDefault();note('⏳ بجهّز اللينك الشخصي للمشترك...');
       var tgt=a.target||'_blank';
-      Promise.race([window.__gmPersonalAsync(num).catch(function(){return null;}),new Promise(function(r){setTimeout(function(){r(null);},12000);})]).then(function(){
+      Promise.race([window.__gmPersonalAsync(num,mid0).catch(function(){return null;}),new Promise(function(r){setTimeout(function(){r(null);},12000);})]).then(function(){
         addFooter(a);
         var ok=a.href.indexOf(encodeURIComponent('#k='))!==-1;
         if(!ok)note('⚠️ اللينك الشخصي مش جاهز (النت أو بيانات المشترك) — الرسالة اتفتحت من غير لينك');
@@ -10600,14 +10588,14 @@ var mix = g.layout_mode === 'mixed';
       var names=[];
       Object.keys(r.data).forEach(function(ph){
         var o=r.data[ph];photos[ph]=o.p;if(o.t&&(!lastT||o.t>lastT))lastT=o.t;
-        if(!first){var m=members().find(function(x){return norm(x.phone)===ph;});if(m)names.push(m.name);}
+        if(!first){var m=members().find(function(x){return ph.indexOf('id:')===0?String(x.id).trim()===ph.slice(3):norm(x.phone)===ph;});if(m)names.push(m.name);}
       });
       if(names.length)toast('📷 '+names.join('، ')+(names.length>1?' أضافوا صورهم':' أضاف صورته'));
       first=false;
       if(Object.keys(r.data).length)refreshProfile();
     },function(){busy=false;});
   }
-  function photoOf(m){return (m&&(photos[norm(m.phone)]||m.photo))||'';}
+  function photoOf(m){return (m&&(photos['id:'+String(m.id).trim()]||photos[norm(m.phone)]||m.photo))||'';}
   function refreshProfile(){
     var nm=document.getElementById('modalProfileName');if(!nm)return;
     var id=(document.getElementById('modalProfileId').innerText||'').replace('#','');

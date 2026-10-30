@@ -718,6 +718,8 @@ window.gmQR = function (text) {
   setTimeout(function () { if (app.querySelector('.spin')) retryView('التحميل واخد وقت'); }, 25000);
   if (!slug) { app.innerHTML = '<h1>الرابط ناقص</h1><p class="sub">اطلب من الجيم رابط البوابة الصحيح.</p>'; return; }
   var snap0 = readSnap(), tk0 = sget(TK);
+  var hasKeyInUrl = /[#&]k=[0-9a-f]{32,64}/i.test(location.hash || '');
+  if (hasKeyInUrl) { snap0 = null; tk0 = null; }
   if (snap0 && tk0 && !navigator.onLine) { goOffline(snap0); return; }
   rpc('portal_gym', { p_slug: slug }, snap0 ? 1 : undefined, snap0 ? 4500 : undefined).then(function (g) {
     if (g.error === 'net') { if (snap0 && tk0) { goOffline(snap0); return; } retryView(); return; }
@@ -729,9 +731,8 @@ window.gmQR = function (text) {
       var key0 = km[1].toLowerCase();
       rpc('portal_magic', { p_slug: slug, p_key: key0 }, 2).then(function (r) {
         if (r.token) { token = r.token; sset(TK, token); sset('mp_key_' + slug, key0); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} load(); }
-        else if (r.error === 'net') { if (token) load(); else if (snap0 && tk0) goOffline(snap0); else retryView('مفيش اتصال بالإنترنت دلوقتي'); }   // اللينك سليم، النت بس هو المشكلة: نسيب اللينك في العنوان ونعيد المحاولة
-        else if (token) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} load(); }
-        else authView('اللينك ده مش متعرّف عندنا دلوقتي (ممكن رقمك اتغيّر في الجيم أو بياناتك اتعدّلت). ادخل برقم موبايلك وكودك، أو اطلب لينك جديد من الجيم.');
+        else if (r.error === 'net') { retryView('مفيش اتصال بالإنترنت دلوقتي'); }   // اللينك سليم، النت بس هو المشكلة: نسيب اللينك في العنوان ونعيد المحاولة
+        else { sdel(TK); sdel('mp_key_' + slug); sdel('mp_snap_' + slug); token = null; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} authView('اللينك ده مش متعرّف عندنا دلوقتي (ممكن رقمك اتغيّر في الجيم أو بياناتك اتعدّلت). ادخل برقم موبايلك وكودك، أو اطلب لينك جديد من الجيم.'); }
       });
       return;
     }
