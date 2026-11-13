@@ -2947,7 +2947,19 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
     <!-- Firebase SDK (Compat) - يعمل مباشرة بتاج script بدون أي أدوات بناء -->
 </div>
 
-<script id="gmSbLib" async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" onload="window.__gmSbDone=1;window.__gmSbReady&&window.__gmSbReady()" onerror="window.__gmSbDone=1;window.__gmSbReady&&window.__gmSbReady()"></script>
+<script id="gmSbLib">
+/* مكتبة Supabase: أول مرة بتتحمّل من النت وبتتخزّن على الجهاز، وبعد كده بتشتغل من الجهاز نفسه (البرنامج يفتح بدون إنترنت) */
+(function(){
+  var V='2.45.4',K='gm_sb_lib_'+V,U='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@'+V+'/dist/umd/supabase.js';
+  function fin(){window.__gmSbDone=1;window.__gmSbReady&&window.__gmSbReady();}
+  function run(t){try{(0,eval)(t+'\n//# sourceURL=supabase-local.js');}catch(e){}return !!window.supabase;}
+  var c=null;try{c=localStorage.getItem(K);}catch(e){}
+  if(c&&c.length>20000&&run(c)){window.__gmSbDone=1;return;}
+  var s=document.createElement('script');s.async=true;s.src=U;
+  s.onload=function(){fin();try{fetch(U,{cache:'force-cache'}).then(function(r){return r.ok?r.text():''}).then(function(t){if(t&&t.length>20000)localStorage.setItem(K,t);}).catch(function(){});}catch(e){}};
+  s.onerror=fin;document.head.appendChild(s);
+})();
+</script>
 <script type="text/plain" id="gymScriptDate">
                 // ==========================================================
                 // منتقي التاريخ (يوم / شهر / سنة) — بديل حقل التاريخ العادي
@@ -6410,6 +6422,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 const pendingReq = findPendingRequestByItem('MEMBER', m.id);
                 const itemRowElement = document.createElement('div');
                 itemRowElement.className = 'member-item' + (pendingReq ? ' pending-delete-item' : '');
+                itemRowElement.setAttribute('data-mid', m.id);
                 itemRowElement.onclick = () => {
                     if (pendingReq) { openPendingDeleteStatusModal(pendingReq); return; }
                     launchDetailedProfileModal(m.id);
@@ -6419,6 +6432,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 itemRowElement.innerHTML = `
                     <div class="member-info-wrapper">
                         <span class="status-badge ${chosenBadgeClass}"></span>
+                        ${(window.gmAvatarHtml ? window.gmAvatarHtml(m) : '')}
                         <div>
                             <strong style="display:block; font-size:1rem; ${pendingReq ? 'color:var(--danger); font-weight:900;' : ''}">${pendingBadge}${m.name}</strong>
                             <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">${m.phone ? m.phone + ' | ' : ''}انتهائه: ${m.end} ${parseFloat(m.debt) > 0 ? `| مديونية: ${m.debt}ج` : ''}${ownerHiddenTag}</span>
@@ -6737,6 +6751,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                                 <span class="ico" data-i="fa-plus-circle"></span> إضافة حضور
                             </button>
                             <button style="background:none; border:none; color:var(--text-muted); font-size:0.85rem; font-weight:700; cursor:pointer; text-decoration:underline;" onclick="manuallyModifySessionCountPrompt(${m.id}, ${maxSessionsLimitValue})">تعديل يدوي</button>
+                            <button type="button" class="gm-prof-btn" onclick="launchDetailedProfileModal(${m.id})">👤 الملف الشخصي</button>
                         </div>
                     </div>
                 `;
@@ -10760,24 +10775,55 @@ var mix = g.layout_mode === 'mixed';
   var photos={},lastT=null,first=true,busy=false;
   function norm(p){return String(p||'').replace(/[٠-٩]/g,function(d){return '٠١٢٣٤٥٦٧٨٩'.indexOf(d);}).replace(/\D/g,'').slice(-10);}
   function members(){try{return typeof membersData!=='undefined'?membersData:[];}catch(e){return [];}}
-  function toast(msg){
+  function toast(msg,fn){
     var t=document.createElement('div');t.textContent=msg;
     t.style.cssText='position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:99995;background:var(--primary);color:var(--on-primary,#fff);padding:12px 20px;border-radius:30px;font:800 15px Cairo,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.3);max-width:92vw;text-align:center';
-    document.body.appendChild(t);setTimeout(function(){t.remove();},5000);
+    if(fn){t.style.cursor='pointer';t.onclick=function(){t.remove();try{fn();}catch(e){}};}
+    document.body.appendChild(t);setTimeout(function(){t.remove();},fn?9000:5000);
+  }
+  function privNow(){try{return !!(window.__GYM&&window.__GYM.support)||(typeof currentAppMode!=='undefined'&&currentAppMode==='OWNER');}catch(e){return false;}}
+  function evKey(){return 'gm_photo_ev_'+(window.__gmGymId||'');}
+  function evAll(){try{return JSON.parse(localStorage.getItem(evKey())||'[]')||[];}catch(e){return [];}}
+  function evSave(a){try{localStorage.setItem(evKey(),JSON.stringify(a.slice(-40)));}catch(e){}}
+  window.__gmPhotoEvents=function(){var lim=Date.now()-3*864e5;return evAll().filter(function(x){return x.at>lim;});};
+  window.__gmPhotoNew=function(){return window.__gmPhotoEvents().filter(function(x){return !x.seen;}).length;};
+  window.__gmPhotoSeen=function(id){var a=evAll();a.forEach(function(x){if(String(x.id)===String(id))x.seen=1;});evSave(a);};
+  window.__gmPhotoSeenAll=function(){var a=evAll(),ch=0;a.forEach(function(x){if(!x.seen){x.seen=1;ch=1;}});if(ch)evSave(a);};
+  function sysNote(title,body){
+    try{if(!('Notification' in window)||Notification.permission!=='granted')return;
+      var o={body:body,tag:'gm-photo',dir:'rtl',lang:'ar',icon:'icon-192.png',badge:'icon-192.png',vibrate:[200,100,200],renotify:true};
+      if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(function(r){r.showNotification(title,o);},function(){try{new Notification(title,o);}catch(e){}});
+      else new Notification(title,o);}catch(e){}
+  }
+  function onPhotos(ms){
+    var a=evAll(),now=Date.now();
+    ms.forEach(function(m){a=a.filter(function(x){return String(x.id)!==String(m.id);});a.push({id:m.id,name:m.name,at:now,seen:0});});
+    evSave(a);
+    if(!privNow())return;
+    var one=ms.length===1?ms[0]:null,names=ms.map(function(m){return m.name;}).join('، ');
+    toast(one?'📷 '+one.name+' رفع صورته — اضغط لفتح ملفه':'📷 '+names+' رفعوا صورهم — اضغط للتفاصيل',function(){
+      if(one){window.__gmPhotoSeen(one.id);if(typeof window.launchDetailedProfileModal==='function')window.launchDetailedProfileModal(one.id);}
+      else if(window.__gmTBApi&&window.__gmTBApi.openTab)window.__gmTBApi.openTab('notif');
+    });
+    sysNote('📷 صورة جديدة',(one?one.name+' رفع صورته':names+' رفعوا صورهم')+' من بوابة المشترك');
+    try{navigator.vibrate&&navigator.vibrate([120,60,120]);}catch(e){}
+    try{if(window.__gmTBApi){window.__gmTBApi.refresh();window.__gmTBApi.ringBell();}}catch(e){}
   }
   function poll(){
     if(busy||!window.__gmSb||!window.__gmGymId||document.hidden)return;
     busy=true;
     window.__gmSb.rpc('gym_member_photos',{p_gym_id:window.__gmGymId,p_since:lastT}).then(function(r){
       busy=false;if(r.error||!r.data)return;
-      var names=[];
+      var evs=[],stKey='gm_photo_lt_'+window.__gmGymId,stT=0;try{stT=Date.parse(localStorage.getItem(stKey)||'')||0;}catch(e){}
       Object.keys(r.data).forEach(function(ph){
         var o=r.data[ph];photos[ph]=o.p;if(o.t&&(!lastT||o.t>lastT))lastT=o.t;
-        if(!first){var m=members().find(function(x){return ph.indexOf('id:')===0?String(x.id).trim()===ph.slice(3):norm(x.phone)===ph;});if(m)names.push(m.name);}
+        var isNew=!first||(stT&&o.t&&Date.parse(o.t)>stT);
+        if(isNew){var m=members().find(function(x){return ph.indexOf('id:')===0?String(x.id).trim()===ph.slice(3):norm(x.phone)===ph;});if(m&&!evs.some(function(e){return e.id===m.id;}))evs.push(m);}
       });
-      if(names.length)toast('📷 '+names.join('، ')+(names.length>1?' أضافوا صورهم':' أضاف صورته'));
+      if(lastT){try{localStorage.setItem(stKey,lastT);}catch(e){}}
+      if(evs.length)onPhotos(evs);
       first=false;
-      if(Object.keys(r.data).length)refreshProfile();
+      if(Object.keys(r.data).length){refreshProfile();updateAvatars();}
     },function(){busy=false;});
   }
   function photoOf(m){return (m&&(photos['id:'+String(m.id).trim()]||photos[norm(m.phone)]||m.photo))||'';}
@@ -10802,7 +10848,168 @@ var mix = g.layout_mode === 'mixed';
     if(++tries>120)clearInterval(iv);
   },1000);
   window.__gmPhotoOf=photoOf;
+  function escA(v){return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+  function initialOf(n){return (String(n||'').replace(/^[^\p{L}\p{N}]+/u,'').charAt(0)||'•').toUpperCase();}
+  window.gmAvatarHtml=function(m){
+    var ph=photoOf(m);
+    return ph?'<img class="gm-av" loading="lazy" decoding="async" alt="" src="'+escA(ph)+'">':'<span class="gm-av gm-av-i">'+escA(initialOf(m&&m.name))+'</span>';
+  };
+  function updateAvatars(){
+    var rows=document.querySelectorAll('#membersList .member-item[data-mid]');if(!rows.length)return;
+    var byId={};members().forEach(function(m){byId[String(m.id)]=m;});
+    rows.forEach(function(r){
+      var m=byId[r.getAttribute('data-mid')];if(!m)return;
+      var ph=photoOf(m),cur=r.querySelector('.gm-av');if(!cur)return;
+      if(ph&&cur.tagName!=='IMG'){var t=document.createElement('div');t.innerHTML=window.gmAvatarHtml(m);cur.replaceWith(t.firstChild);}
+      else if(ph&&cur.getAttribute('src')!==ph)cur.setAttribute('src',ph);
+    });
+  }
+  window.gmUpdateAvatars=updateAvatars;
   setInterval(poll,20000);setTimeout(poll,4000);
+})();
+</script>
+
+<style id="gm-av-css">
+.member-info-wrapper .gm-av{width:44px;height:44px;border-radius:50%;flex:none;object-fit:cover;border:2px solid color-mix(in srgb,var(--primary) 55%,transparent);box-shadow:0 2px 8px rgba(0,0,0,.14);background:var(--primary-light)}
+.member-info-wrapper .gm-av-i{display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:1.05rem;color:var(--primary)}
+.gm-prof-btn{background:var(--primary-light);border:0;color:var(--primary);font:800 .85rem Cairo,sans-serif;padding:7px 12px;border-radius:10px;cursor:pointer}
+.tracker-actions{flex-wrap:wrap;gap:8px}
+#gmSeenBox{margin-top:14px;border:1px solid var(--border-color);border-radius:14px;padding:12px 14px;background:var(--bg-main);font-size:.92rem;line-height:1.9}
+#gmSeenBox b{font-weight:900}#gmSeenBox .gs-h{display:flex;align-items:center;gap:8px;font-weight:900;margin-bottom:4px}
+#gmSeenBox .gs-ok{color:var(--success,#16a34a)}#gmSeenBox .gs-no{color:var(--text-muted)}#gmSeenBox small{color:var(--text-muted);font-weight:700}
+</style>
+<script>
+/* نشاط رابط العضو (شاف اللينك؟ وآخر ظهور) — يظهر لصاحب الجيم/الأدمن (وضع الإدارة) والكينج بس */
+(function(){
+  var seen={},at=0,ok=true,busy=false;
+  function priv(){try{return !!(window.__GYM&&window.__GYM.support)||(typeof currentAppMode!=='undefined'&&currentAppMode==='OWNER');}catch(e){return false;}}
+  function fmtDt(t){try{return new Date(t).toLocaleString('ar-EG-u-nu-latn',{day:'numeric',month:'long',year:'numeric',hour:'numeric',minute:'2-digit'});}catch(e){return '';}}
+  function ago(t){var d=Date.now()-new Date(t).getTime(),m=Math.round(d/60000);if(m<2)return 'دلوقتي';if(m<60)return 'من '+m+' دقيقة';var h=Math.round(m/60);if(h<24)return 'من '+h+' ساعة';var dd=Math.round(h/24);return dd===1?'من يوم':'من '+dd+' يوم';}
+  function box(){
+    var b=document.getElementById('gmSeenBox');if(b)return b;
+    var body=document.querySelector('#profileViewerModal .modal-body');if(!body)return null;
+    b=document.createElement('div');b.id='gmSeenBox';body.appendChild(b);return b;
+  }
+  function render(){
+    var b=box();if(!b)return;
+    if(!priv()){b.style.display='none';return;}
+    b.style.display='';
+    var id=((document.getElementById('modalProfileId')||{}).innerText||'').replace('#','').trim(),e=seen[id];
+    if(!ok){b.innerHTML='<div class="gs-h gs-no">📲 نشاط رابط العضو</div><small>التتبع لسه مش مفعّل على السيرفر.</small>';return;}
+    if(!e){b.innerHTML='<div class="gs-h gs-no">📲 نشاط رابط العضو</div><span class="gs-no">⚪ <b>لسه ما فتحش</b> لينك البوابة.</span>';return;}
+    b.innerHTML='<div class="gs-h gs-ok">📲 نشاط رابط العضو</div>✅ <b>شاف اللينك</b><br>🕒 آخر ظهور: <b>'+ago(e.last)+'</b> <small>('+fmtDt(e.last)+')</small><br>🔁 عدد مرات الدخول: <b>'+(e.opens||1)+'</b> · أول دخول: <small>'+fmtDt(e.first)+'</small>';
+  }
+  function fetchSeen(force){
+    if(!priv()||busy||!window.__gmSb||!window.__gmGymId)return;
+    if(!force&&Date.now()-at<15000)return;
+    busy=true;
+    window.__gmSb.rpc('gym_portal_seen',{p_gym_id:window.__gmGymId}).then(function(r){
+      busy=false;at=Date.now();
+      if(r.error){ok=!/function|does not exist|schema cache/i.test(r.error.message||'')&&ok;render();return;}
+      ok=true;seen=r.data||{};render();
+    },function(){busy=false;});
+  }
+  window.__gmIsPriv=priv;window.__gmSeenGet=function(id){return seen[String(id)]||null;};window.__gmSeenFetch=fetchSeen;
+  function init(){
+    var pid=document.getElementById('modalProfileId'),pm=document.getElementById('profileViewerModal');if(!pid||!pm)return;
+    function onOpen(){render();fetchSeen(false);}
+    if(window.MutationObserver){
+      new MutationObserver(onOpen).observe(pid,{childList:true,characterData:true,subtree:true});
+      new MutationObserver(function(){if(getComputedStyle(pm).display!=='none')onOpen();}).observe(pm,{attributes:true,attributeFilter:['style','class']});
+    }
+    setInterval(function(){if(!document.hidden&&getComputedStyle(pm).display!=='none')fetchSeen(true);},60000);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+
+<style id="gm-link-css">
+.gml-sum{margin:2px 4px 8px;padding:10px 12px;border-radius:16px;background:color-mix(in srgb,var(--primary,#5b2ad0) 8%,transparent);font:800 .8rem Cairo,sans-serif}
+.gml-sum .bar{height:7px;border-radius:9px;background:color-mix(in srgb,var(--primary,#5b2ad0) 14%,transparent);margin-top:7px;overflow:hidden}
+.gml-sum .bar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width .4s}
+.gml-chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 4px 8px}
+.gml-chips button{border:1.5px solid color-mix(in srgb,var(--primary,#5b2ad0) 22%,transparent);background:transparent;color:var(--text-main,#1b1233);font:800 .74rem Cairo,sans-serif;padding:6px 10px;border-radius:99px;cursor:pointer}
+.gml-chips button.on{background:var(--primary,#5b2ad0);border-color:var(--primary,#5b2ad0);color:#fff}
+.gml-q{width:calc(100% - 8px);margin:0 4px 8px;padding:9px 12px;border-radius:13px;border:1.5px solid color-mix(in srgb,var(--primary,#5b2ad0) 20%,transparent);background:var(--bg-card,#fff);color:var(--text-main,#1b1233);font:700 .85rem Cairo,sans-serif;outline:none}
+.gml-row{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:16px}
+.gml-row:hover{background:color-mix(in srgb,var(--primary,#5b2ad0) 6%,transparent)}
+.gml-av{width:38px;height:38px;border-radius:50%;flex:none;object-fit:cover;background:color-mix(in srgb,var(--primary,#5b2ad0) 14%,transparent);display:inline-flex;align-items:center;justify-content:center;font-weight:900;color:var(--primary,#5b2ad0)}
+.gml-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.gml-tx b{font:800 .86rem Cairo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gml-tx small{font:700 .7rem Cairo,sans-serif;color:var(--text-muted,#6b6f78)}
+.gml-tg{display:flex;gap:5px;flex-wrap:wrap}.gml-tg span{font:800 .66rem Cairo,sans-serif;padding:2px 8px;border-radius:99px;background:#eef2f7;color:#475569}
+.gml-tg .ok{background:#dcfce7;color:#15803d}.gml-tg .eye{background:#dbeafe;color:#1d4ed8}.gml-tg .warn{background:#fef3c7;color:#b45309}
+.gml-go{flex:none;text-decoration:none;border:0;cursor:pointer;background:#25D366;color:#fff!important;font:800 .72rem Cairo,sans-serif;padding:8px 11px;border-radius:12px;white-space:nowrap}
+.gml-go.again{background:#e2e8f0;color:#334155!important}.gml-go.off{background:#e2e8f0;color:#94a3b8!important;pointer-events:none}
+.gml-more{margin:6px 4px;padding:10px;border-radius:13px;border:1.5px dashed color-mix(in srgb,var(--primary,#5b2ad0) 30%,transparent);background:none;color:var(--primary,#5b2ad0);font:800 .8rem Cairo,sans-serif;cursor:pointer;width:calc(100% - 8px)}
+</style>
+<script>
+/* تبويب «اللينكات» في الإشعارات: إرسال لينك البوابة للمشتركين (هيخلصوا خلال 5 أيام / لسه مشتركين) + علامة «اتبعت» */
+(function(){
+  var F={cat:'soon',unsent:false,q:'',limit:60};
+  function gid(){return window.__gmGymId||'';}
+  function sk(){return 'gm_link_sent_'+gid();}
+  function sent(){try{return JSON.parse(localStorage.getItem(sk())||'{}')||{};}catch(e){return {};}}
+  function markSent(id){var s=sent();s[String(id)]=Date.now();try{localStorage.setItem(sk(),JSON.stringify(s));}catch(e){}}
+  function members(){try{return typeof membersData!=='undefined'?membersData:[];}catch(e){return [];}}
+  function waNum(p){var d=String(p||'').replace(/[٠-٩]/g,function(c){return '٠١٢٣٤٥٦٧٨٩'.indexOf(c);}).replace(/\D/g,'');if(d.indexOf('00')===0)d=d.slice(2);else if(d.charAt(0)==='0')d='20'+d.slice(1);else if(/^1\d{9}$/.test(d))d='20'+d;return d.length>=11?d:'';}
+  function gym(){try{return (localStorage.getItem('gym_pro_app_name')||(window.__GYM&&window.__GYM.name)||'الجيم').trim();}catch(e){return 'الجيم';}}
+  function left(m){var e=new Date(m.end+'T00:00:00');if(!m.end||isNaN(e))return null;var n=new Date();n.setHours(0,0,0,0);return Math.round((e-n)/864e5);}
+  function ago(t){var m=Math.max(0,Math.round((Date.now()-t)/60000));if(m<2)return 'دلوقتي';if(m<60)return 'من '+m+' دقيقة';var h=Math.round(m/60);if(h<24)return 'من '+h+' ساعة';var d=Math.round(h/24);return d===1?'من يوم':'من '+d+' يوم';}
+  function dayTxt(n){return n<=0?'بينتهي النهارده':n===1?'فاضل يوم':n===2?'فاضل يومين':'فاضل '+n+' يوم';}
+  function msg(m,url){var f=String(m.name||'').trim().split(' ')[0];return 'أهلاً كابتن '+f+' 👋\nده رابط بوابتك الخاصة في «'+gym()+'» 🔐\nتشوف منه كارنيهك ومدة اشتراكك، وتجدد وتجمّد وتبعت أي طلب أو شكوى:\n'+url+'\n\n⚠️ الرابط ده خاص بيك، متشاركوش مع حد.';}
+  function h(tag,cls,txt,p){var x=document.createElement(tag);if(cls)x.className=cls;if(txt!=null&&txt!=='')x.textContent=txt;if(p)p.appendChild(x);return x;}
+  function pool(){
+    var out=[];members().forEach(function(m){if(!m)return;var l=left(m);if(l==null||l<0)return;out.push({m:m,l:l});});return out;
+  }
+  window.__gmLinkTab=function(body){
+    try{if(window.__gmSeenFetch)window.__gmSeenFetch(false);}catch(e){}
+    var wrap=h('div','',null,body),sumEl=h('div','gml-sum','',wrap),chips=h('div','gml-chips','',wrap);
+    var q=h('input','gml-q','',wrap);q.type='search';q.placeholder='🔎 دوّر بالاسم أو الكود أو الموبايل';q.value=F.q;
+    var list=h('div','','',wrap),tries=0,seenRedraw=false;
+    function counts(){var p=pool(),s=sent(),c={soon:0,active:0,all:p.length,unsent:0};p.forEach(function(x){if(x.l<=5)c.soon++;else c.active++;});return c;}
+    function inCat(x){return F.cat==='all'||(F.cat==='soon'?x.l<=5:x.l>5);}
+    function draw(){
+      if(!wrap.isConnected)return;
+      var s=sent(),all=pool(),c=counts(),cat=all.filter(inCat),nSent=cat.filter(function(x){return s[String(x.m.id)];}).length;
+      sumEl.textContent='';var t=h('div','','اتبعت لـ '+nSent+' من '+cat.length+(cat.length?'':' — مفيش حد هنا'),sumEl);
+      var bar=h('div','bar','',sumEl),fi=h('i','','',bar);fi.style.width=(cat.length?Math.round(nSent/cat.length*100):0)+'%';
+      chips.textContent='';
+      [['soon','⏳ هيخلصوا خلال 5 أيام · '+c.soon],['active','✅ لسه مشتركين · '+c.active],['all','الكل · '+c.all]].forEach(function(k){
+        var b=h('button',F.cat===k[0]?'on':'',k[1],chips);b.type='button';b.onclick=function(){F.cat=k[0];F.limit=60;draw();};
+      });
+      var ub=h('button',F.unsent?'on':'','📭 ما اتبعتلهمش بس',chips);ub.type='button';ub.onclick=function(){F.unsent=!F.unsent;F.limit=60;draw();};
+      var qq=F.q.trim().toLowerCase();
+      var rows=cat.filter(function(x){
+        if(F.unsent&&s[String(x.m.id)])return false;
+        if(!qq)return true;
+        return String(x.m.name||'').toLowerCase().indexOf(qq)>-1||String(x.m.id).indexOf(qq)>-1||String(x.m.phone||'').indexOf(qq)>-1;
+      });
+      rows.sort(function(a,b){var sa=s[String(a.m.id)]?1:0,sb=s[String(b.m.id)]?1:0;return sa-sb||a.l-b.l;});
+      list.textContent='';
+      if(!rows.length){h('div','gmq-empty',F.unsent?'كله اتبعتله 🎉':'مفيش مشتركين هنا',list);return;}
+      var notReady=0;
+      rows.slice(0,F.limit).forEach(function(x){
+        var m=x.m,r=h('div','gml-row','',list),ph=window.__gmPhotoOf?window.__gmPhotoOf(m):'';
+        if(ph){var im=h('img','gml-av','',r);im.src=ph;im.alt='';im.loading='lazy';}else h('span','gml-av',(String(m.name||'').replace(/^[^\p{L}\p{N}]+/u,'').charAt(0)||'•').toUpperCase(),r);
+        var tx=h('div','gml-tx','',r);h('b','',m.name||'—',tx);h('small','','كود '+m.id+' · '+dayTxt(x.l),tx);
+        var tg=h('div','gml-tg','',tx),at=s[String(m.id)];
+        if(at)h('span','ok','✅ اتبعت '+ago(at),tg);else h('span','','⚪ لسه ما اتبعتلوش',tg);
+        var sn=window.__gmSeenGet?window.__gmSeenGet(m.id):null;if(sn)h('span','eye','👁 فتح اللينك '+ago(new Date(sn.last).getTime()),tg);
+        var num=waNum(m.phone),u=window.__gmPersonal?window.__gmPersonal(m.phone,m.id):'',ready=!!(u&&u.indexOf('#k=')>-1);
+        var a=h('a','gml-go'+(at?' again':''),'',r);
+        if(!num){a.className='gml-go off';a.textContent='مفيش رقم';}
+        else if(!ready){a.className='gml-go off';a.textContent='بيتجهز…';notReady++;}
+        else{a.textContent=at?'💬 ابعت تاني':'💬 ابعت اللينك';a.href='https://wa.me/'+num+'?text='+encodeURIComponent(msg(m,u));a.target='waSendWindow';a.rel='noopener';
+          a.onclick=function(){markSent(m.id);setTimeout(draw,350);};}
+      });
+      if(rows.length>F.limit){var mo=h('button','gml-more','عرض المزيد ('+(rows.length-F.limit)+')',list);mo.type='button';mo.onclick=function(){F.limit+=60;draw();};}
+      if(notReady&&tries++<8)setTimeout(draw,1800);
+    }
+    q.oninput=function(){F.q=q.value;F.limit=60;draw();};
+    draw();
+    setTimeout(function(){if(!seenRedraw){seenRedraw=true;draw();}},1600);
+  };
 })();
 </script>
 
@@ -13039,6 +13246,9 @@ html body #adminDashboardArea#adminDashboardArea>.brand-container>.section-badge
     Promise.all([drawCard(), drawCard('b')]).then(function (us) {
       box.textContent = '';
       us.forEach(function (u, i) { var im = new Image(); im.src = u; im.alt = i ? 'ضهر الكارنيه' : 'وش الكارنيه'; im.style.cssText = 'width:100%;max-width:440px;display:block;margin:' + (i ? '14px' : '0') + ' auto 0;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)'; box.appendChild(im); });
+      var bk = document.createElement('button'); bk.type = 'button'; bk.className = 'btn-action btn-edit'; bk.style.cssText = 'width:100%;margin-top:14px'; bk.textContent = '👤 رجوع للملف الشخصي';
+      bk.onclick = function () { resetPreview(); var md = document.querySelector('#profileViewerModal .modal'); if (md && md.scrollTo) md.scrollTo({ top: 0, behavior: 'smooth' }); };
+      box.appendChild(bk);
       box.style.display = 'block'; shown = true; b.textContent = '🙈 إخفاء الكارت';
     }).catch(function () { alert('تعذّر رسم الكارت، جرّب تاني.'); }).then(function () { busy(b, false); });
   }
@@ -14118,6 +14328,8 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
 (function () {
   if (window.__gmTopBar) return; window.__gmTopBar = true;
   var P = {
+    camera: '<path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
     back: '<path d="M5 12h14M12 5l7 7-7 7"/>',
     home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
     bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
@@ -14320,6 +14532,13 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
   /* ---------- الإشعارات ---------- */
   function notifItems(d) {
     var items = [];
+    if (d.mode === 'owner' || d.mode === 'kingGym') {
+      ((window.__gmPhotoEvents && window.__gmPhotoEvents()) || []).slice().reverse().forEach(function (ev) {
+        var ago = Math.max(0, Math.round((Date.now() - ev.at) / 60000)), at = ago < 2 ? 'دلوقتي' : ago < 60 ? 'من ' + ago + ' دقيقة' : ago < 1440 ? 'من ' + Math.round(ago / 60) + ' ساعة' : 'من ' + Math.round(ago / 1440) + ' يوم';
+        items.push({ ic: 'camera', hot: !ev.seen, t: '📷 ' + ev.name + ' رفع صورته', s: 'تم الرفع بواسطة العضو من بوابته · ' + at + ' · اضغط لفتح ملفه',
+          fn: function () { try { window.__gmPhotoSeen(ev.id); } catch (e) {} if (typeof window.launchDetailedProfileModal === 'function') window.launchDetailedProfileModal(ev.id); } });
+      });
+    }
     if (d.mode === 'owner' || d.mode === 'kingGym' || d.mode === 'captain') {
       var RL = { renewal: 'تجديد', freeze: 'تجميد', complaint: 'شكوى', profile_edit: 'تعديل بيانات', plan_change: 'تغيير باقة', suggestion: 'رأي' };
       ((window.__gmScopedReqs && window.__gmScopedReqs()) || []).forEach(function (q) {
@@ -14351,7 +14570,7 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
   function badgeCount(d) {
     if (d.mode === 'gate') return 0;
     if (d.mode === 'king') return (S.kingStats.req || 0) + S.kingNew + ((window.__gmKingLogins && window.__gmKingLogins.n) || 0);
-    return (S.req || 0) + S.soon.length;
+    return (S.req || 0) + S.soon.length + ((d.mode === 'owner' || d.mode === 'kingGym') && window.__gmPhotoNew ? window.__gmPhotoNew() : 0);
   }
 
   /* ---------- البيانات ---------- */
@@ -14563,7 +14782,7 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
     var hd = el('div', 'gmq-head'), ic = el('span', 'gmq-ic'); ic.innerHTML = svg(d.icon || 'dumbbell');
     var who = el('div', 'who'); who.appendChild(el('b', '', d.name)); who.appendChild(el('small', '', d.sub)); hd.appendChild(ic); hd.appendChild(who); panel.appendChild(hd);
     var n = badgeCount(d), seg = el('div', 'gmq-seg');
-    [['feat', 'المميزات'], ['notif', 'الإشعارات']].forEach(function (x) {
+    (function () { var a = [['feat', 'المميزات'], ['notif', 'الإشعارات']]; if (d.mode === 'owner' || d.mode === 'kingGym') a.push(['link', '🔗 اللينكات']); return a; })().forEach(function (x) {
       var b = el('button', tab === x[0] ? 'on' : '', x[1]); b.type = 'button'; if (x[0] === 'notif' && n) b.appendChild(el('em', '', n > 99 ? '99+' : String(n)));
       b.onclick = function () { tab = x[0]; renderPanel(); if (x[0] === 'notif' && d.mode === 'king') { try { localStorage.setItem(S.seenKey, String(Date.now())); localStorage.setItem('gm_king_login_seen', String(Date.now())); if (window.__gmKingLogins) window.__gmKingLogins.n = 0; } catch (e) {} S.kingNew = 0; renderDock(); } }; seg.appendChild(b);
     }); panel.appendChild(seg);
@@ -14577,6 +14796,8 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
         if (x.n) r.appendChild(el('span', 'gmq-n', String(x.n)));
         r.onclick = function () { closePanel(); track(d, x.lb); x.fn(); setTimeout(tick, 250); }; body.appendChild(r);
       });
+    } else if (tab === 'link' && (d.mode === 'owner' || d.mode === 'kingGym') && window.__gmLinkTab) {
+      try { window.__gmLinkTab(body); } catch (e) { console.error(e); }
     } else {
       var items = notifItems(d);
       if (!items.length) body.appendChild(el('div', 'gmq-empty', 'مفيش إشعارات جديدة 🎉'));
@@ -14587,6 +14808,7 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
         if (x.wa) { var w = el('a', 'gmq-wa', '💬 تجديد'); w.href = x.wa; w.target = 'waSendWindow'; w.rel = 'noopener'; w.onclick = function (ev) { ev.stopPropagation(); }; r.appendChild(w); }
         r.onclick = function () { if (x.fn) { closePanel(); x.fn(); } }; body.appendChild(r);
       });
+      if (items.length && (d.mode === 'owner' || d.mode === 'kingGym') && window.__gmPhotoSeenAll) setTimeout(window.__gmPhotoSeenAll, 1800);
     }
     if (tab === 'feat') { try { if (window.__gmFeatPost) window.__gmFeatPost(body, d, closePanel); } catch (e) { console.error(e); } }
     panel.appendChild(body);
@@ -14609,10 +14831,10 @@ body.gm-tb-on #shRibbon.show{top:calc(env(safe-area-inset-top,0px) + var(--gmoff
     document.body.classList.add('gm-tb-on'); bar.classList.add('show');
     if (firstShow) { bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = ''; }
     var actEl = document.querySelector('.tab-btn.active'), kgOn = document.querySelector('.kg-tab.on');
-    var sig = [d.mode, d.area, d.name, d.sub, S.req, S.soon.length, JSON.stringify(S.kingStats), S.kingNew, navigator.onLine, actEl && actEl.id + (actEl.getAttribute('data-tab') || ''), kgOn && kgOn.textContent, panel.classList.contains('show') ? tab : '-'].join('|');
+    var sig = [d.mode, d.area, d.name, d.sub, S.req, S.soon.length, (window.__gmPhotoNew ? window.__gmPhotoNew() : 0), JSON.stringify(S.kingStats), S.kingNew, navigator.onLine, actEl && actEl.id + (actEl.getAttribute('data-tab') || ''), kgOn && kgOn.textContent, panel.classList.contains('show') ? tab : '-'].join('|');
     if (sig !== S.sig) { S.sig = sig; renderDock(); if (panel.classList.contains('show')) renderPanel(); }
   }
-  window.__gmTBApi = { toast: function (t) { toastMsg(t); }, cur: function () { return S.cur; }, refresh: function () { S.sig = ''; try { tick(); } catch (e) {} } };
+  window.__gmTBApi = { toast: function (t) { toastMsg(t); }, openTab: function (k) { if (panel.classList.contains('show') && tab === k) return; toggle(k); }, ringBell: function () { var bl = $('gmBell'); if (bl) { bl.classList.add('ring'); setTimeout(function () { bl.classList.remove('ring'); }, 1600); } }, cur: function () { return S.cur; }, refresh: function () { S.sig = ''; try { tick(); } catch (e) {} } };
   function start() { build(); tick(); setInterval(tick, 1000); window.addEventListener('online', tick); window.addEventListener('offline', tick); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

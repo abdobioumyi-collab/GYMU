@@ -313,6 +313,12 @@ window.gmQR = function (text) {
     }
     go.onclick = submit; document.getElementById('pn').onkeydown = function (e) { if (e.key === 'Enter') submit(); };
   }
+  // تسجيل إن العضو فتح البوابة (آخر ظهور) — بيظهر لصاحب الجيم/الأدمن/الكينج بس. مرة كل 10 دقايق، وفشله مبيأثرش على الصفحة
+  var lastPing = 0;
+  function pingSeen() {
+    if (!token || Date.now() - lastPing < 600000) return; lastPing = Date.now();
+    try { rpc('portal_seen', { p_slug: slug, p_token: token }, 1, 6000); } catch (e) {}
+  }
   function load() {
     if (savingPhoto) return;
     rpc('portal_me', { p_token: token }).then(function (r) {
@@ -330,7 +336,7 @@ window.gmQR = function (text) {
         }
         sdel(TK); sdel('mp_snap_' + slug); token = null; me = null; authView(kicked ? 'تم تسجيل الدخول بنفس الحساب من جهاز تاني، فاتسجّل خروجك من هنا.' : ''); return;
       }
-      me = r; offline = false; saveSnap(r);
+      me = r; offline = false; saveSnap(r); pingSeen();
       try { window.__mpInfo = window.__mpInfo || {}; window.__mpInfo.name = String((r.member && r.member.name) || '').trim(); window.__mpInfo.photo = r.photo || ''; window.dispatchEvent(new Event('mpinfo')); } catch (e) {}
       home();
     }).catch(function () { if (!me) retryView(); });
