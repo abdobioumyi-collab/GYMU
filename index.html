@@ -10998,18 +10998,28 @@ var mix = g.layout_mode === 'mixed';
   function gym(){try{return (localStorage.getItem('gym_pro_app_name')||(window.__GYM&&window.__GYM.name)||'الجيم').trim();}catch(e){return 'الجيم';}}
   function left(m){var e=new Date(m.end+'T00:00:00');if(!m.end||isNaN(e))return null;var n=new Date();n.setHours(0,0,0,0);return Math.round((e-n)/DAY);}
   function ago(t){var m=Math.max(0,Math.round((Date.now()-t)/60000));if(m<2)return 'دلوقتي';if(m<60)return 'من '+m+' دقيقة';var h=Math.round(m/60);if(h<24)return 'من '+h+' ساعة';var d=Math.round(h/24);return d===1?'من يوم':'من '+d+' يوم';}
-  function dayTxt(n,noEnd){if(noEnd)return 'من غير تاريخ انتهاء';return n<0?(n===-1?'خلص إمبارح':'خلص من '+(-n)+' يوم'):n===0?'بينتهي النهارده':n===1?'فاضل يوم':n===2?'فاضل يومين':'فاضل '+n+' يوم';}
+  function dayTxt(n,noEnd,stale){if(noEnd)return 'من غير تاريخ انتهاء';if(stale)return n<0?'تقريباً خلص من '+(-n)+' يوم':'تقريباً فاضل '+n+' يوم';return n<0?(n===-1?'خلص إمبارح':'خلص من '+(-n)+' يوم'):n===0?'بينتهي النهارده':n===1?'فاضل يوم':n===2?'فاضل يومين':'فاضل '+n+' يوم';}
   function catOf(x){return x.l<0?'expired':(x.l<=5?'soon':'active');}
   var CATS=[['active','✅ لسه مشتركين'],['soon','⏳ هيخلصوا خلال 5 أيام'],['expired','🔴 خلصوا'],['all','الكل']];
   var HD={active:'✅ لسه مشتركين',soon:'⏳ هيخلصوا خلال 5 أيام',expired:'🔴 خلصوا اشتراكهم'},RANK={active:0,soon:1,expired:2};
   /* رسالة شيك فيها الاسم والكود بتاع المشترك عشان يحس إننا متابعينه */
   function msg(m,url,x){
-    var full=String(m.name||'').trim(),f=full.split(' ')[0],fem=(m.gender==='بنت'),title=(fem?'كابتنة ':'كابتن ')+f,st;
-    if(x.l<0)st='اشتراكك '+(x.l===-1?'خلص إمبارح':'خلص من '+(-x.l)+' يوم')+(m.end?' ('+m.end+')':'')+' 😔\nوحشتنا في الجيم، ومتابعين معاك ومستنيينك ترجع تكمل 💪';
-    else if(x.l<=5)st='اشتراكك '+(x.l<=0?'بينتهي النهارده':'فاضل عليه '+(x.l===1?'يوم':x.l===2?'يومين':x.l+' أيام'))+(m.end?' ('+m.end+')':'')+' ⏳\nومتابعين معاك عشان تكمل من غير ما تقطع 💪';
-    else if(x.fresh&&x.kind==='جديد')st='🎉 نورتنا في عيلة «'+gym()+'»! إحنا متابعين معاك من أول يوم ومعاك خطوة بخطوة 💪';
-    else if(x.fresh)st='✅ تم تجديد اشتراكك'+(m.end?' لحد '+m.end:'')+'\nشكراً لثقتك، وإحنا متابعين معاك أولاً بأول 💪';
-    else st='إحنا متابعين معاك أولاً بأول وفخورين بالتزامك ✨';
+    var full=String(m.name||'').trim(),f=full.split(' ')[0],fem=(m.gender==='بنت'),title=(fem?'كابتنة ':'كابتن ')+f,st,e=m.end?' ('+m.end+')':'';
+    var dd=x.l<=0?'النهارده':x.l===1?'بكره':x.l===2?'بعد يومين':'بعد '+x.l+' أيام';
+    if(x.stale){
+      /* تجديد متسجل وتاريخ الانتهاء في البيانات قديم: ما نذكرش أي تاريخ أو أيام */
+      st=x.l>=0?'✅ تم تجديد اشتراكك، شكراً لثقتك 🙏\nوإحنا متابعين معاك أولاً بأول 💪':'متابعين معاك ومستنيين نشوفك تكمل رحلتك معانا 💪';
+    }else if(x.l<0){
+      st='اشتراكك '+(x.l===-1?'خلص إمبارح':'خلص من '+(-x.l)+' يوم')+e+' 😔\nوحشتنا في الجيم ومستنيينك ترجع وتجدد وتكمل معانا 💪';
+    }else if(x.l<=5){
+      st='اشتراكك قرب يخلص — '+(x.l<=0?'بينتهي النهارده':'هيخلص '+dd)+e+' ⏳\nومستنيينك تجدد وتكمل معانا من غير ما تقطع 💪';
+    }else if(x.fresh&&x.kind==='جديد'){
+      st='🎉 نورتنا في عيلة «'+gym()+'»! إحنا متابعين معاك من أول يوم ومعاك خطوة بخطوة 💪';
+    }else if(x.fresh){
+      st='✅ تم تجديد اشتراكك'+(m.end?' لحد '+m.end:'')+'\nشكراً لثقتك، وإحنا متابعين معاك أولاً بأول 💪';
+    }else{
+      st='اشتراكك ساري'+e+' ✅\nإحنا متابعين معاك أولاً بأول وفخورين بالتزامك ✨';
+    }
     return 'أهلاً '+title+' 👋\nمعاك إدارة «'+gym()+'» 🏋️\n\n🪪 الاسم: '+full+'\n🆔 كودك عندنا: '+m.id+'\n\n'+st+'\n\nده رابط بوابتك الخاصة 🔐\nتشوف منه كارنيهك ومدة اشتراكك، وتجدد وتجمّد وتبعت أي طلب أو شكوى:\n'+url+'\n\n⚠️ الرابط ده خاص بيك، متشاركوش مع حد.';
   }
   function h(tag,cls,txt,p){var x=document.createElement(tag);if(cls)x.className=cls;if(txt!=null&&txt!=='')x.textContent=txt;if(p)p.appendChild(x);return x;}
@@ -11019,9 +11029,13 @@ var mix = g.layout_mode === 'mixed';
     members().forEach(function(m){
       if(!m)return;
       var l=left(m),ev=Math.max(map[String(m.id)]||0,Number(m.renewedAt)||0),fresh=ev>0&&(now-ev)<FRESH,noEnd=false;
+      var stale=false;
       if(l==null){if(!fresh)return;l=99;noEnd=true;}
+      else if(ev>0){var ed=new Date(m.end+'T00:00:00').getTime(),evd=new Date(ev);evd.setHours(0,0,0,0);
+        if(evd.getTime()>ed){var est=new Date(evd);est.setMonth(est.getMonth()+1);var t0=new Date();t0.setHours(0,0,0,0);l=Math.round((est-t0)/DAY);stale=true;}}
+      if(l<-60&&!fresh)return;
       var kind=(map['t'+m.id]==='NEW_REGISTRATION'&&ev===map[String(m.id)])?'جديد':'تجديد';
-      out.push({m:m,l:l,ev:ev,fresh:fresh,kind:kind,noEnd:noEnd,r:window.gmMemberRecency?window.gmMemberRecency(m,map):ev});
+      out.push({m:m,l:l,ev:ev,fresh:fresh,kind:kind,noEnd:noEnd,stale:stale,r:window.gmMemberRecency?window.gmMemberRecency(m,map):ev});
     });
     return out;
   }
@@ -11069,11 +11083,11 @@ var mix = g.layout_mode === 'mixed';
         if(F.cat==='all'&&k!==lastCat){lastCat=k;h('div','gml-hd',HD[k]+' · '+rows.filter(function(y){return catOf(y)===k;}).length,list);}
         var r=h('div','gml-row','',list),ph=window.__gmPhotoOf?window.__gmPhotoOf(m):'';
         if(ph){var im=h('img','gml-av','',r);im.src=ph;im.alt='';im.loading='lazy';}else h('span','gml-av',(String(m.name||'').replace(/^[^\p{L}\p{N}]+/u,'').charAt(0)||'•').toUpperCase(),r);
-        var tx=h('div','gml-tx','',r);h('b','',m.name||'—',tx);h('small','','كود '+m.id+' · '+dayTxt(x.l,x.noEnd),tx);
+        var tx=h('div','gml-tx','',r);h('b','',m.name||'—',tx);h('small','','كود '+m.id+' · '+dayTxt(x.l,x.noEnd,x.stale),tx);
         var tg=h('div','gml-tg','',tx),at=sentAt(x,s);
         if(x.fresh)h('span','new',(x.kind==='جديد'?'🆕 اشتراك جديد ':'🔄 جدّد ')+ago(x.ev),tg);
         if(at)h('span','ok','✅ اتبعت '+ago(at),tg);else if(s[String(m.id)])h('span','warn','🔁 اتبعتله قبل التجديد',tg);else h('span','','⚪ لسه ما اتبعتلوش',tg);
-        if(k==='expired'&&!x.fresh)h('span','exp','🔴 منتهي',tg);
+        if(x.stale)h('span','warn','⚠️ تاريخ الانتهاء في بياناته قديم — راجع بروفايله',tg);else if(k==='expired'&&!x.fresh)h('span','exp','🔴 منتهي',tg);
         var sn=window.__gmSeenGet?window.__gmSeenGet(m.id):null;if(sn)h('span','eye','👁 فتح اللينك '+ago(new Date(sn.last).getTime()),tg);
         var num=waNum(m.phone),u=window.__gmPersonal?window.__gmPersonal(m.phone,m.id):'',ready=!!(u&&u.indexOf('#k=')>-1);
         var a=h('a','gml-go'+(at?' again':''),'',r);
