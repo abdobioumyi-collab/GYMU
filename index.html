@@ -281,6 +281,12 @@ var t=0;addEventListener('scroll',function(){window.__gmScr=1;clearTimeout(t);t=
         .msub-list { margin-top:12px; max-height:340px; overflow-y:auto; }
         .msub-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border-color); border-radius:10px; margin-bottom:8px; background:var(--bg-main); font-weight:700; font-size:0.9rem; }
         .msub-row small { color:var(--text-muted); font-weight:700; }
+        .msub-click { cursor:pointer; transition:background .15s, border-color .15s, transform .1s; }
+        .msub-click:hover { background:color-mix(in srgb, var(--primary) 9%, var(--bg-main)); border-color:var(--primary); }
+        .msub-click:active { transform:scale(.99); }
+        tr.msub-click:hover td { background:color-mix(in srgb, var(--primary) 9%, transparent); }
+        .msub-go { color:var(--primary); font-weight:900; font-size:1.3rem; line-height:1; }
+        .msub-hint { font-size:.78rem; font-weight:800; color:var(--text-muted); margin:0 2px 8px; }
         .msub-debt { background:var(--danger-light); color:var(--danger); border-radius:20px; padding:2px 9px; font-size:0.72rem; font-weight:900; margin-inline-start:4px; }
         .msub-warn { background:var(--warning-light); color:var(--warning); border-radius:20px; padding:2px 9px; font-size:0.72rem; font-weight:900; margin-inline-start:4px; }
         .msub-note { margin-top:14px; font-size:0.78rem; color:var(--text-muted); font-weight:600; text-align:center; }
@@ -2477,7 +2483,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
 
             <!-- المشتركين في الشهر المحدد أعلاه (يُستخدم لحساب مستحقات الكباتن) -->
             <h3 class="admin-section-title"><span class="ico" data-i="fa-user-plus"></span> المشتركين في الشهر - <span id="adminMsubMonthLabel"></span></h3>
-            <p class="hint-note">كل مشترك اتسجّل له دفع فعلي (اشتراك جديد أو تجديد بمبلغ أكبر من صفر) داخل الشهر المحدد، من أول يوم لآخر يوم. المشتركين القدام اللي ما دفعوش الشهر ده، والمديونيات المتأخرة، والمخفيين والمحذوفين: غير محسوبين. اضغط على أي مربع لعرض الأسماء.</p>
+            <p class="hint-note">كل مشترك اتسجّل له دفع فعلي (اشتراك جديد أو تجديد بمبلغ أكبر من صفر) داخل الشهر المحدد، من أول يوم لآخر يوم. المشتركين القدام اللي ما دفعوش الشهر ده، والمديونيات المتأخرة، والمخفيين والمحذوفين: غير محسوبين. اضغط على أي مربع لعرض الأسماء. 👆 اضغط على أي صف لفتح بروفايل المشترك.</p>
             <div class="admin-summary-boxes" style="grid-template-columns: repeat(3, 1fr);">
                 <div class="admin-stat-inner clickable" onclick="filterAdminMsubTable(null)"><h4>إجمالي الجيم</h4><p id="adminMsubTotal">0</p></div>
                 <div class="admin-stat-inner clickable" onclick="filterAdminMsubTable('شاب')"><h4>القسم الرجالي 🚹</h4><p id="adminMsubMen">0</p></div>
@@ -6095,7 +6101,9 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                      return;
                 }
 
-                membersData[underlyingIndex] = { photo: window.__gmPhoto || '', id: inputId, name: inputName, phone: inputPhone, gender: inputGender, subtype: inputSubtype, paid: inputPaid, debt: inputDebt, start: inputStart, end: inputEnd, sessionsCount: preExistingSessionsCount, ...(membersData[underlyingIndex].visits ? { visits: membersData[underlyingIndex].visits, lastVisit: membersData[underlyingIndex].lastVisit } : {}), ...(preExistingHidden ? { hiddenFromCaptain: true } : {}), ...(membersData[underlyingIndex].createdAt ? { createdAt: membersData[underlyingIndex].createdAt } : {}), ...(membersData[underlyingIndex].idMovedFrom != null ? { idMovedFrom: membersData[underlyingIndex].idMovedFrom } : {}) };
+                const _prevRec = membersData[underlyingIndex];
+                const _renewedStamp = (inputEnd && String(inputEnd) > String(_prevRec.end || '')) ? Date.now() : (_prevRec.renewedAt || 0);
+                membersData[underlyingIndex] = { photo: window.__gmPhoto || '', id: inputId, name: inputName, phone: inputPhone, gender: inputGender, subtype: inputSubtype, paid: inputPaid, debt: inputDebt, start: inputStart, end: inputEnd, sessionsCount: preExistingSessionsCount, ...(membersData[underlyingIndex].visits ? { visits: membersData[underlyingIndex].visits, lastVisit: membersData[underlyingIndex].lastVisit } : {}), ...(preExistingHidden ? { hiddenFromCaptain: true } : {}), ...(membersData[underlyingIndex].createdAt ? { createdAt: membersData[underlyingIndex].createdAt } : {}), ...(_renewedStamp ? { renewedAt: _renewedStamp } : {}), ...(membersData[underlyingIndex].idMovedFrom != null ? { idMovedFrom: membersData[underlyingIndex].idMovedFrom } : {}) };
 
                 // تسجيل حركة مالية جديدة فقط لو المبلغ المدفوع اتغير فعلاً عن قبل التعديل
                 // (تعديل الاسم أو الرقم أو التاريخ بس من غير تغيير الفلوس، متسجلش فلوس جديدة تاني في الخزينة)
@@ -6185,6 +6193,35 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
         function msubEsc(s) {
             return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
+        // ===== ترتيب "الأحدث نشاطًا": أي مشترك جدّد أو اشترك جديد يطلع في أول أي قائمة =====
+        function gmToMs(d) { const p = String(d || '').split('-').map(Number); return (p[0] && !isNaN(p[0])) ? new Date(p[0], (p[1] || 1) - 1, p[2] || 1).getTime() : 0; }
+        // خريطة: كود المشترك -> وقت آخر (اشتراك جديد / تجديد) من سجل الحركات، + نوع آخر حركة في المفتاح 't'+الكود
+        function gmActivityMap() {
+            const map = {};
+            (Array.isArray(financialsLog) ? financialsLog : []).forEach(l => {
+                if (!l || (l.type !== 'NEW_REGISTRATION' && l.type !== 'RENEWAL_EXTENSION') || l.memberId == null) return;
+                const t = (typeof l.at === 'number' && l.at > 0) ? l.at : gmToMs(l.timestamp);
+                const k = String(l.memberId);
+                if (t > (map[k] || 0)) { map[k] = t; map['t' + k] = l.type; }
+            });
+            return map;
+        }
+        // آخر نشاط للمشترك: أحدث (دفع جديد/تجديد) أو علامة التجديد أو وقت الإنشاء أو تاريخ بداية الاشتراك
+        function gmMemberRecency(m, map) {
+            map = map || gmActivityMap();
+            return Math.max(map[String(m.id)] || 0, Number(m.renewedAt) || 0, Number(m.createdAt) || 0, gmToMs(m.start));
+        }
+        function gmSortByRecency(list) {
+            const map = gmActivityMap();
+            const pos = new Map(); membersData.forEach((m, i) => pos.set(m, i));
+            return list.slice().sort((a, b) => (gmMemberRecency(b, map) - gmMemberRecency(a, map)) || ((pos.get(b) || 0) - (pos.get(a) || 0)));
+        }
+        function gmOpenMemberById(id) {
+            const m = membersData.find(x => String(x.id) === String(id));
+            if (m) launchDetailedProfileModal(m.id);
+        }
+        window.gmActivityMap = gmActivityMap; window.gmMemberRecency = gmMemberRecency; window.gmOpenMemberById = gmOpenMemberById;
+
         function msubRangeText(monthKey) {
             const [y, m] = monthKey.split('-').map(Number);
             const last = new Date(y, m, 0).getDate();
@@ -6302,8 +6339,8 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             if (!showList) { listEl.style.display = 'none'; toggleBtn.innerText = 'عرض الأسماء ▾'; }
             listEl.innerHTML = shown.length === 0
                 ? '<div style="text-align:center; color:var(--text-muted); font-weight:700; padding:14px;">لا يوجد مشتركين في هذا الشهر 🔍</div>'
-                : shown.map(x =>
-                    `<div class="msub-row"><span><b style="color:var(--text-muted);">${x.serial}.</b> ${msubEsc(x.member.name)} <small>#${x.member.id}</small>${x.debt > 0 ? ` <span class="msub-debt">عليه ${x.debt.toLocaleString('en-US')} ج</span>` : ''}${x.warn ? ` <span class="msub-warn">${x.warn}</span>` : ''}</span><small>${x.kind === 'تجديد' ? '🔄 تجديد' : '🆕 جديد'} • ${msubEsc(x.date)} • ${x.amount.toLocaleString('en-US')} ج</small></div>`).join('');
+                : '<div class="msub-hint">👆 اضغط على أي مشترك لفتح بروفايله والتعامل معاه</div>' + shown.map(x =>
+                    `<div class="msub-row msub-click" role="button" tabindex="0" data-mid="${msubEsc(x.member.id)}" onclick="gmOpenMemberById(this.dataset.mid)" onkeydown="if(event.key==='Enter')gmOpenMemberById(this.dataset.mid)"><span><b style="color:var(--text-muted);">${x.serial}.</b> ${msubEsc(x.member.name)} <small>#${x.member.id}</small>${x.debt > 0 ? ` <span class="msub-debt">عليه ${x.debt.toLocaleString('en-US')} ج</span>` : ''}${x.warn ? ` <span class="msub-warn">${x.warn}</span>` : ''}</span><small>${x.kind === 'تجديد' ? '🔄 تجديد' : '🆕 جديد'} • ${msubEsc(x.date)} • ${x.amount.toLocaleString('en-US')} ج</small><span class="msub-go">‹</span></div>`).join('');
 
             const noteEl = document.getElementById('msubNote');
             if (isOwner) {
@@ -6346,7 +6383,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
             if (warnCount) hn.innerText = (hn.innerText ? hn.innerText + '  ' : '') + `⚠️ ${warnCount} حالة دفع قريب من دفعة سابقة، راجعها في عمود الملاحظة.`;
             tbody.innerHTML = rows.length === 0
                 ? '<tr><td colspan="9" style="color:var(--text-muted); font-weight:700;">لا يوجد مشتركين في هذا الشهر 🔍</td></tr>'
-                : rows.map(x => `<tr><td>#${x.member.id}</td><td>${msubEsc(x.member.name)} <small style="color:var(--text-muted);">(اشتراك ${x.serial})</small></td><td>${x.member.gender === 'شاب' ? '🚹 رجالي' : '🚺 بنات'}</td><td>${msubEsc(x.member.subtype || '')}</td><td>${msubEsc(x.date)}</td><td>${x.kind}</td><td>${x.amount.toLocaleString('en-US')} ج</td><td style="${x.debt > 0 ? 'color:var(--danger); font-weight:900;' : ''}">${x.debt > 0 ? x.debt.toLocaleString('en-US') + ' ج' : '-'}</td><td style="color:var(--warning); font-weight:800;">${x.warn}</td></tr>`).join('');
+                : rows.map(x => `<tr class="msub-click" role="button" tabindex="0" data-mid="${msubEsc(x.member.id)}" onclick="gmOpenMemberById(this.dataset.mid)" onkeydown="if(event.key==='Enter')gmOpenMemberById(this.dataset.mid)"><td>#${x.member.id}</td><td>${msubEsc(x.member.name)} <small style="color:var(--text-muted);">(اشتراك ${x.serial})</small></td><td>${x.member.gender === 'شاب' ? '🚹 رجالي' : '🚺 بنات'}</td><td>${msubEsc(x.member.subtype || '')}</td><td>${msubEsc(x.date)}</td><td>${x.kind}</td><td>${x.amount.toLocaleString('en-US')} ج</td><td style="${x.debt > 0 ? 'color:var(--danger); font-weight:900;' : ''}">${x.debt > 0 ? x.debt.toLocaleString('en-US') + ' ج' : '-'}</td><td style="color:var(--warning); font-weight:800;">${x.warn}</td></tr>`).join('');
         }
 
         function toggleSidebar() {
@@ -6403,7 +6440,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
                 return true;
             });
 
-            operationalFilteredDataset.reverse();
+            operationalFilteredDataset = gmSortByRecency(operationalFilteredDataset); // الأحدث (جديد/تجديد) فوق
 
             if (operationalFilteredDataset.length === 0) {
                 scrollContainer.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.95rem; font-weight:700;">لا يوجد نتائج 🔍</div>`;
@@ -6630,6 +6667,7 @@ body.custom-brand #gateLogoIconDefault{display:none!important}
 
             // تصفير الحصص عند التجديد
             targetRecord.sessionsCount = 0;
+            targetRecord.renewedAt = Date.now();
 
             financialsLog.push({ at: Date.now(), timestamp: getFormattedDateString(new Date()), memberId: targetRecord.id, memberName: targetRecord.name, gender: targetRecord.gender, amountCollected: parseFloat(targetRecord.paid) || 0, type: "RENEWAL_EXTENSION" });
             logActivity(`تم تجديد اشتراك: "${targetRecord.name}" (كود ${targetRecord.id}) - حتى ${targetRecord.end}`, 'fa-rotate');
@@ -10943,11 +10981,14 @@ var mix = g.layout_mode === 'mixed';
 .gml-go{flex:none;text-decoration:none;border:0;cursor:pointer;background:#25D366;color:#fff!important;font:800 .72rem Cairo,sans-serif;padding:8px 11px;border-radius:12px;white-space:nowrap}
 .gml-go.again{background:#e2e8f0;color:#334155!important}.gml-go.off{background:#e2e8f0;color:#94a3b8!important;pointer-events:none}
 .gml-more{margin:6px 4px;padding:10px;border-radius:13px;border:1.5px dashed color-mix(in srgb,var(--primary,#5b2ad0) 30%,transparent);background:none;color:var(--primary,#5b2ad0);font:800 .8rem Cairo,sans-serif;cursor:pointer;width:calc(100% - 8px)}
+.gml-tg .new{background:#ede9fe;color:#6d28d9}.gml-tg .exp{background:#fee2e2;color:#b91c1c}
+.gml-hd{margin:14px 6px 4px;padding-bottom:5px;font:900 .8rem Cairo,sans-serif;color:var(--text-main,#1b1233);border-bottom:1.5px dashed color-mix(in srgb,var(--primary,#5b2ad0) 28%,transparent)}
+.gml-chips button small{font:800 .66rem Cairo,sans-serif;opacity:.85}
 </style>
 <script>
-/* تبويب «اللينكات» في الإشعارات: إرسال لينك البوابة للمشتركين (هيخلصوا خلال 5 أيام / لسه مشتركين) + علامة «اتبعت» */
+/* تبويب «اللينكات» في الإشعارات: لسه مشتركين / هيخلصوا خلال 5 أيام / خلصوا — كل واحد بزر «ابعت» + علامة «اتبعت». أي حد جدّد أو اشترك جديد بيطلع فوق وبيرجع «لسه ما اتبعتلوش» */
 (function(){
-  var F={cat:'soon',unsent:false,q:'',limit:60};
+  var F={cat:'active',unsent:true,q:'',limit:60},DAY=864e5,FRESH=35*DAY;
   function gid(){return window.__gmGymId||'';}
   function sk(){return 'gm_link_sent_'+gid();}
   function sent(){try{return JSON.parse(localStorage.getItem(sk())||'{}')||{};}catch(e){return {};}}
@@ -10955,53 +10996,90 @@ var mix = g.layout_mode === 'mixed';
   function members(){try{return typeof membersData!=='undefined'?membersData:[];}catch(e){return [];}}
   function waNum(p){var d=String(p||'').replace(/[٠-٩]/g,function(c){return '٠١٢٣٤٥٦٧٨٩'.indexOf(c);}).replace(/\D/g,'');if(d.indexOf('00')===0)d=d.slice(2);else if(d.charAt(0)==='0')d='20'+d.slice(1);else if(/^1\d{9}$/.test(d))d='20'+d;return d.length>=11?d:'';}
   function gym(){try{return (localStorage.getItem('gym_pro_app_name')||(window.__GYM&&window.__GYM.name)||'الجيم').trim();}catch(e){return 'الجيم';}}
-  function left(m){var e=new Date(m.end+'T00:00:00');if(!m.end||isNaN(e))return null;var n=new Date();n.setHours(0,0,0,0);return Math.round((e-n)/864e5);}
+  function left(m){var e=new Date(m.end+'T00:00:00');if(!m.end||isNaN(e))return null;var n=new Date();n.setHours(0,0,0,0);return Math.round((e-n)/DAY);}
   function ago(t){var m=Math.max(0,Math.round((Date.now()-t)/60000));if(m<2)return 'دلوقتي';if(m<60)return 'من '+m+' دقيقة';var h=Math.round(m/60);if(h<24)return 'من '+h+' ساعة';var d=Math.round(h/24);return d===1?'من يوم':'من '+d+' يوم';}
-  function dayTxt(n){return n<=0?'بينتهي النهارده':n===1?'فاضل يوم':n===2?'فاضل يومين':'فاضل '+n+' يوم';}
-  function msg(m,url){var f=String(m.name||'').trim().split(' ')[0];return 'أهلاً كابتن '+f+' 👋\nده رابط بوابتك الخاصة في «'+gym()+'» 🔐\nتشوف منه كارنيهك ومدة اشتراكك، وتجدد وتجمّد وتبعت أي طلب أو شكوى:\n'+url+'\n\n⚠️ الرابط ده خاص بيك، متشاركوش مع حد.';}
-  function h(tag,cls,txt,p){var x=document.createElement(tag);if(cls)x.className=cls;if(txt!=null&&txt!=='')x.textContent=txt;if(p)p.appendChild(x);return x;}
-  function pool(){
-    var out=[];members().forEach(function(m){if(!m)return;var l=left(m);if(l==null||l<0)return;out.push({m:m,l:l});});return out;
+  function dayTxt(n,noEnd){if(noEnd)return 'من غير تاريخ انتهاء';return n<0?(n===-1?'خلص إمبارح':'خلص من '+(-n)+' يوم'):n===0?'بينتهي النهارده':n===1?'فاضل يوم':n===2?'فاضل يومين':'فاضل '+n+' يوم';}
+  function catOf(x){return x.l<0?'expired':(x.l<=5?'soon':'active');}
+  var CATS=[['active','✅ لسه مشتركين'],['soon','⏳ هيخلصوا خلال 5 أيام'],['expired','🔴 خلصوا'],['all','الكل']];
+  var HD={active:'✅ لسه مشتركين',soon:'⏳ هيخلصوا خلال 5 أيام',expired:'🔴 خلصوا اشتراكهم'},RANK={active:0,soon:1,expired:2};
+  /* رسالة شيك فيها الاسم والكود بتاع المشترك عشان يحس إننا متابعينه */
+  function msg(m,url,x){
+    var full=String(m.name||'').trim(),f=full.split(' ')[0],fem=(m.gender==='بنت'),title=(fem?'كابتنة ':'كابتن ')+f,st;
+    if(x.l<0)st='اشتراكك '+(x.l===-1?'خلص إمبارح':'خلص من '+(-x.l)+' يوم')+(m.end?' ('+m.end+')':'')+' 😔\nوحشتنا في الجيم، ومتابعين معاك ومستنيينك ترجع تكمل 💪';
+    else if(x.l<=5)st='اشتراكك '+(x.l<=0?'بينتهي النهارده':'فاضل عليه '+(x.l===1?'يوم':x.l===2?'يومين':x.l+' أيام'))+(m.end?' ('+m.end+')':'')+' ⏳\nومتابعين معاك عشان تكمل من غير ما تقطع 💪';
+    else if(x.fresh&&x.kind==='جديد')st='🎉 نورتنا في عيلة «'+gym()+'»! إحنا متابعين معاك من أول يوم ومعاك خطوة بخطوة 💪';
+    else if(x.fresh)st='✅ تم تجديد اشتراكك'+(m.end?' لحد '+m.end:'')+'\nشكراً لثقتك، وإحنا متابعين معاك أولاً بأول 💪';
+    else st='إحنا متابعين معاك أولاً بأول وفخورين بالتزامك ✨';
+    return 'أهلاً '+title+' 👋\nمعاك إدارة «'+gym()+'» 🏋️\n\n🪪 الاسم: '+full+'\n🆔 كودك عندنا: '+m.id+'\n\n'+st+'\n\nده رابط بوابتك الخاصة 🔐\nتشوف منه كارنيهك ومدة اشتراكك، وتجدد وتجمّد وتبعت أي طلب أو شكوى:\n'+url+'\n\n⚠️ الرابط ده خاص بيك، متشاركوش مع حد.';
   }
+  function h(tag,cls,txt,p){var x=document.createElement(tag);if(cls)x.className=cls;if(txt!=null&&txt!=='')x.textContent=txt;if(p)p.appendChild(x);return x;}
+  /* كل المشتركين (لسه شغالين + خلصوا). أي حد جدّد/اشترك جديد من آخر 35 يوم = fresh وبيطلع في الأول حتى لو تاريخ انتهائه ناقص */
+  function pool(){
+    var out=[],map=window.gmActivityMap?window.gmActivityMap():{},now=Date.now();
+    members().forEach(function(m){
+      if(!m)return;
+      var l=left(m),ev=Math.max(map[String(m.id)]||0,Number(m.renewedAt)||0),fresh=ev>0&&(now-ev)<FRESH,noEnd=false;
+      if(l==null){if(!fresh)return;l=99;noEnd=true;}
+      var kind=(map['t'+m.id]==='NEW_REGISTRATION'&&ev===map[String(m.id)])?'جديد':'تجديد';
+      out.push({m:m,l:l,ev:ev,fresh:fresh,kind:kind,noEnd:noEnd,r:window.gmMemberRecency?window.gmMemberRecency(m,map):ev});
+    });
+    return out;
+  }
+  /* «اتبعت» ما يتحسبش لو المشترك جدّد/اشترك بعد آخر إرسال — لازم نبعتله تاني */
+  function sentAt(x,s){var t=s[String(x.m.id)];return (t&&t>x.ev)?t:0;}
   window.__gmLinkTab=function(body){
     try{if(window.__gmSeenFetch)window.__gmSeenFetch(false);}catch(e){}
     var wrap=h('div','',null,body),sumEl=h('div','gml-sum','',wrap),chips=h('div','gml-chips','',wrap);
     var q=h('input','gml-q','',wrap);q.type='search';q.placeholder='🔎 دوّر بالاسم أو الكود أو الموبايل';q.value=F.q;
     var list=h('div','','',wrap),tries=0,seenRedraw=false;
-    function counts(){var p=pool(),s=sent(),c={soon:0,active:0,all:p.length,unsent:0};p.forEach(function(x){if(x.l<=5)c.soon++;else c.active++;});return c;}
-    function inCat(x){return F.cat==='all'||(F.cat==='soon'?x.l<=5:x.l>5);}
     function draw(){
       if(!wrap.isConnected)return;
-      var s=sent(),all=pool(),c=counts(),cat=all.filter(inCat),nSent=cat.filter(function(x){return s[String(x.m.id)];}).length;
-      sumEl.textContent='';var t=h('div','','اتبعت لـ '+nSent+' من '+cat.length+(cat.length?'':' — مفيش حد هنا'),sumEl);
+      var s=sent(),all=pool(),cs={active:[0,0],soon:[0,0],expired:[0,0],all:[0,0]};
+      all.forEach(function(x){var k=catOf(x),ok=sentAt(x,s)?1:0;cs[k][1]++;cs.all[1]++;if(!ok){cs[k][0]++;cs.all[0]++;}});
+      var cat=all.filter(function(x){return F.cat==='all'||catOf(x)===F.cat;}),nSent=cat.filter(function(x){return sentAt(x,s);}).length;
+      sumEl.textContent='';h('div','','اتبعت لـ '+nSent+' من '+cat.length+(cat.length?'':' — مفيش حد هنا'),sumEl);
       var bar=h('div','bar','',sumEl),fi=h('i','','',bar);fi.style.width=(cat.length?Math.round(nSent/cat.length*100):0)+'%';
       chips.textContent='';
-      [['soon','⏳ هيخلصوا خلال 5 أيام · '+c.soon],['active','✅ لسه مشتركين · '+c.active],['all','الكل · '+c.all]].forEach(function(k){
-        var b=h('button',F.cat===k[0]?'on':'',k[1],chips);b.type='button';b.onclick=function(){F.cat=k[0];F.limit=60;draw();};
+      CATS.forEach(function(k){
+        var b=h('button',F.cat===k[0]?'on':'',k[1]+' ',chips);b.type='button';h('small','','· '+cs[k[0]][0]+' لسه',b);
+        b.onclick=function(){F.cat=k[0];F.limit=60;draw();};
       });
       var ub=h('button',F.unsent?'on':'','📭 ما اتبعتلهمش بس',chips);ub.type='button';ub.onclick=function(){F.unsent=!F.unsent;F.limit=60;draw();};
       var qq=F.q.trim().toLowerCase();
       var rows=cat.filter(function(x){
-        if(F.unsent&&s[String(x.m.id)])return false;
+        if(F.unsent&&sentAt(x,s))return false;
         if(!qq)return true;
         return String(x.m.name||'').toLowerCase().indexOf(qq)>-1||String(x.m.id).indexOf(qq)>-1||String(x.m.phone||'').indexOf(qq)>-1;
       });
-      rows.sort(function(a,b){var sa=s[String(a.m.id)]?1:0,sb=s[String(b.m.id)]?1:0;return sa-sb||a.l-b.l;});
+      rows.sort(function(a,b){
+        if(F.cat==='all'){var ca=RANK[catOf(a)],cb=RANK[catOf(b)];if(ca!==cb)return ca-cb;}
+        var sa=sentAt(a,s)?1:0,sb=sentAt(b,s)?1:0;if(sa!==sb)return sa-sb;
+        if(a.fresh!==b.fresh)return a.fresh?-1:1;
+        if(a.fresh&&b.fresh)return b.ev-a.ev;
+        var k=F.cat==='all'?catOf(a):F.cat;
+        if(k==='soon')return a.l-b.l;
+        if(k==='expired')return b.l-a.l;
+        return (b.r-a.r)||(a.l-b.l);
+      });
       list.textContent='';
       if(!rows.length){h('div','gmq-empty',F.unsent?'كله اتبعتله 🎉':'مفيش مشتركين هنا',list);return;}
-      var notReady=0;
+      var notReady=0,lastCat=null;
       rows.slice(0,F.limit).forEach(function(x){
-        var m=x.m,r=h('div','gml-row','',list),ph=window.__gmPhotoOf?window.__gmPhotoOf(m):'';
+        var m=x.m,k=catOf(x);
+        if(F.cat==='all'&&k!==lastCat){lastCat=k;h('div','gml-hd',HD[k]+' · '+rows.filter(function(y){return catOf(y)===k;}).length,list);}
+        var r=h('div','gml-row','',list),ph=window.__gmPhotoOf?window.__gmPhotoOf(m):'';
         if(ph){var im=h('img','gml-av','',r);im.src=ph;im.alt='';im.loading='lazy';}else h('span','gml-av',(String(m.name||'').replace(/^[^\p{L}\p{N}]+/u,'').charAt(0)||'•').toUpperCase(),r);
-        var tx=h('div','gml-tx','',r);h('b','',m.name||'—',tx);h('small','','كود '+m.id+' · '+dayTxt(x.l),tx);
-        var tg=h('div','gml-tg','',tx),at=s[String(m.id)];
-        if(at)h('span','ok','✅ اتبعت '+ago(at),tg);else h('span','','⚪ لسه ما اتبعتلوش',tg);
+        var tx=h('div','gml-tx','',r);h('b','',m.name||'—',tx);h('small','','كود '+m.id+' · '+dayTxt(x.l,x.noEnd),tx);
+        var tg=h('div','gml-tg','',tx),at=sentAt(x,s);
+        if(x.fresh)h('span','new',(x.kind==='جديد'?'🆕 اشتراك جديد ':'🔄 جدّد ')+ago(x.ev),tg);
+        if(at)h('span','ok','✅ اتبعت '+ago(at),tg);else if(s[String(m.id)])h('span','warn','🔁 اتبعتله قبل التجديد',tg);else h('span','','⚪ لسه ما اتبعتلوش',tg);
+        if(k==='expired'&&!x.fresh)h('span','exp','🔴 منتهي',tg);
         var sn=window.__gmSeenGet?window.__gmSeenGet(m.id):null;if(sn)h('span','eye','👁 فتح اللينك '+ago(new Date(sn.last).getTime()),tg);
         var num=waNum(m.phone),u=window.__gmPersonal?window.__gmPersonal(m.phone,m.id):'',ready=!!(u&&u.indexOf('#k=')>-1);
         var a=h('a','gml-go'+(at?' again':''),'',r);
         if(!num){a.className='gml-go off';a.textContent='مفيش رقم';}
         else if(!ready){a.className='gml-go off';a.textContent='بيتجهز…';notReady++;}
-        else{a.textContent=at?'💬 ابعت تاني':'💬 ابعت اللينك';a.href='https://wa.me/'+num+'?text='+encodeURIComponent(msg(m,u));a.target='waSendWindow';a.rel='noopener';
+        else{a.textContent=at?'💬 ابعت تاني':'💬 ابعت اللينك';a.href='https://wa.me/'+num+'?text='+encodeURIComponent(msg(m,u,x));a.target='waSendWindow';a.rel='noopener';
           a.onclick=function(){markSent(m.id);setTimeout(draw,350);};}
       });
       if(rows.length>F.limit){var mo=h('button','gml-more','عرض المزيد ('+(rows.length-F.limit)+')',list);mo.type='button';mo.onclick=function(){F.limit+=60;draw();};}
